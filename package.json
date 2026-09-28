@@ -1,0 +1,31 @@
+{
+  "name": "primal-clash",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Primal Clash: batallas de criaturas en tiempo real con ligas mundiales",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "vite build --config client/vite.config.ts",
+    "build:server": "esbuild server/src/index.ts --bundle --platform=node --format=esm --target=node20 --packages=external --outfile=server/dist/index.js",
+    "start": "node server/dist/index.js",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@colyseus/ws-transport": "^0.16.5",
+    "colyseus": "^0.16.5",
+    "colyseus.js": "^0.16.22",
+    "esbuild": "^0.25.12",
+    "express": "^4.22.3",
+    "pg": "^8.23.0",
+    "phaser": "^3.90.0",
+    "vite": "^6.4.3"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.25",
+    "@types/node": "^22.20.4",
+    "@types/pg": "^8.23.1",
+    "typescript": "^5.9.3"
+  }
+}

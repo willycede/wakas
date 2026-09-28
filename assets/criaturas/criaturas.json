@@ -1,0 +1,17 @@
+{
+ "chispi": {"nombre": "Chispi", "talla": "pequeño", "semilla": 3, "visual": "small cute orange fire salamander with a flickering yellow flame crest on its head and a flame-tipped tail"},
+ "llamarak": {"nombre": "Llamarak", "talla": "mediano", "semilla": 11, "visual": "bipedal red fire lizard warrior with a blazing flame mane, two small horns and ember scales on its arms"},
+ "infernox": {"nombre": "Infernox", "talla": "grande", "semilla": 21, "visual": "large fierce volcanic dragon beast with dark rock plates, glowing magma cracks and flames on its back, powerful legs"},
+ "gotin": {"nombre": "Gotín", "talla": "pequeño", "semilla": 5, "visual": "small cute round blue axolotl creature with frilly gills and a floating water bubble on its tail"},
+ "marejon": {"nombre": "Marejón", "talla": "mediano", "semilla": 13, "visual": "agile blue otter warrior creature with a wave-shaped fin on its head and water swirling around its paws"},
+ "abisaurio": {"nombre": "Abisaurio", "talla": "grande", "semilla": 23, "visual": "large armored sea serpent dinosaur with a teal shell, deep blue scales, glowing cyan spots and water spouts"},
+ "brotin": {"nombre": "Brotín", "talla": "pequeño", "semilla": 7, "visual": "small cute green hedgehog creature with leaf-shaped quills and a tiny flower on its back"},
+ "espinardo": {"nombre": "Espinardo", "talla": "mediano", "semilla": 15, "visual": "sturdy green thorny boar creature covered in vines and sharp leaf spikes with wooden tusks"},
+ "selvagor": {"nombre": "Selvagor", "talla": "grande", "semilla": 25, "visual": "huge ancient forest beast like a giant boar with tree bark armor, moss, glowing flowers and a small tree growing on its back"},
+ "voltiron": {"nombre": "Voltirón", "talla": "pequeño", "semilla": 9, "visual": "small blue and yellow electric ferret creature with a zigzag lightning-bolt tail and sparking cheeks"},
+ "tormentauro": {"nombre": "Tormentauro", "talla": "grande", "semilla": 27, "visual": "muscular storm bull creature with dark blue fur, horns crackling with lightning and a small thundercloud above its back"},
+ "pedrusco": {"nombre": "Pedrusco", "talla": "pequeño", "semilla": 17, "visual": "small sturdy rock crab creature with a gray stone shell and bright purple crystals growing on its back"},
+ "golemon": {"nombre": "Golemón", "talla": "grande", "semilla": 29, "visual": "big rock golem gorilla creature made of boulders with glowing purple crystal fists and crystal shoulders"},
+ "cefiro": {"nombre": "Céfiro", "talla": "mediano", "semilla": 19, "visual": "swift white and sky blue wind falcon creature with long feathered wings, swirl-shaped tail feathers and a sharp beak"},
+ "umbraz": {"nombre": "Umbraz", "talla": "mediano", "semilla": 31, "visual": "mysterious black shadow fox creature with glowing violet eyes and two tails made of purple ghostly flames"}
+}

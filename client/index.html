@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#161029" />
+    <title>Primal Clash</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="game"></div>
+
+    <!-- Entrar -->
+    <section id="login" class="screen hidden">
+      <div class="panel title-panel">
+        <h1 class="logo">PRIMAL<br /><span>CLASH</span></h1>
+        <p class="subtitle">Liga mundial de Primales</p>
+        <label>Nombre de Domador <input id="login-user" maxlength="16" autocomplete="username" /></label>
+        <label>Contraseña <input id="login-pass" type="password" autocomplete="current-password" /></label>
+        <p class="error" id="login-error"></p>
+        <div class="row">
+          <button id="btn-login" class="primary big">Entrar</button>
+          <button id="btn-register" class="big">Crear cuenta</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Elegir inicial -->
+    <section id="starter" class="screen hidden">
+      <div class="panel wide">
+        <h2>Elige a tu primer Primal</h2>
+        <p class="muted">Será tu compañero desde el primer combate. A los demás tendrás que capturarlos.</p>
+        <div id="starter-list" class="starter-list"></div>
+        <button id="btn-starter" class="primary big" disabled>¡Este es mi Primal!</button>
+      </div>
+    </section>
+
+    <!-- Menú principal -->
+    <section id="menu" class="hidden">
+      <header id="topbar">
+        <div class="tb-player">
+          <div class="tb-level"><span id="tb-lv">1</span></div>
+          <div>
+            <b id="tb-name"></b>
+            <div class="xpbar"><div id="tb-xp"></div></div>
+          </div>
+        </div>
+        <div class="tb-res">
+          <div class="pill" id="tb-league"></div>
+          <div class="pill">🏆 <span id="tb-trophies">0</span></div>
+          <div class="pill gold">🪙 <span id="tb-coins">0</span></div>
+        </div>
+      </header>
+      <main id="menu-body"></main>
+      <nav id="tabs">
+        <button data-tab="equipo">🐾<span>Equipo</span></button>
+        <button data-tab="capturar">🕸️<span>Capturar</span></button>
+        <button data-tab="batalla" class="main">⚔️<span>Batalla</span></button>
+        <button data-tab="domador">🎖️<span>Domador</span></button>
+        <button data-tab="ranking">🌍<span>Ranking</span></button>
+      </nav>
+    </section>
+
+    <!-- Interfaz de batalla -->
+    <section id="battle-hud" class="hidden">
+      <div id="bh-top">
+        <div class="bh-side" id="bh-me"></div>
+        <div id="bh-timer">3:00</div>
+        <div class="bh-side right" id="bh-foe"></div>
+      </div>
+      <div id="bh-team"></div>
+      <div id="bh-moves"></div>
+      <div id="joystick" class="hidden"><div id="joystick-knob"></div></div>
+      <div id="bh-center"></div>
+      <div id="bh-help">WASD mover · Clic / Espacio atacar · 1-4 movimientos · Shift esquivar · Q/E cambiar Primal</div>
+    </section>
+
+    <!-- Resultado -->
+    <section id="result" class="screen hidden">
+      <div class="panel result-panel" id="result-body"></div>
+    </section>
+
+    <div id="toasts"></div>
+    <div id="loading" class="screen hidden"><div class="panel">Cargando…</div></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
