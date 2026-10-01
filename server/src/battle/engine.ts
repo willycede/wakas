@@ -182,9 +182,10 @@ export class Batalla {
       if (fin) u.dash = { vx: Math.cos(ang) * 260, vy: Math.sin(ang) * 260, hasta: this.t + 0.12, golpeados: new Set() };
       const cx = u.x + Math.cos(ang) * 30, cy = u.y + Math.sin(ang) * 30;
       this.golpearArea(l, cx, cy, fin ? 46 : 38, falso, 1, u);
-      this.fx.push({ k: 'impacto', x: r1(cx), y: r1(cy), r: fin ? 46 : 36, el });
+      this.fx.push({ k: 'basico', lado: l, x: r1(u.x), y: r1(u.y), ang: r2(ang), paso, el, cuerpo: true });
     } else {
       const n = fin ? 3 : 1;
+      this.fx.push({ k: 'basico', lado: l, x: r1(u.x), y: r1(u.y), ang: r2(ang), paso, el, cuerpo: false });
       for (let k = 0; k < n; k++) {
         const a = ang + (k - (n - 1) / 2) * 0.16;
         this.disparar(l, u, falso, a, 320, fin ? 10 : 8, 480, 1);
@@ -207,12 +208,13 @@ export class Batalla {
         u.dash = { vx: Math.cos(ang) * mov.alcance / dur, vy: Math.sin(ang) * mov.alcance / dur, hasta: this.t + dur, mov, golpeados: new Set() };
         if (mov.id === 'paso_sombrio') u.invulnHasta = this.t + dur + 0.05;
         u.anim = 'dash'; u.animHasta = this.t + dur;
+        this.fx.push({ k: 'dash', lado: l, x: r1(u.x), y: r1(u.y), ang: r2(ang), id: mov.id, el: mov.elemento });
         u.accionHasta = this.t + dur;
         break;
       }
       case 'area':
         this.golpearArea(l, u.x, u.y, mov.alcance, mov, mult, u);
-        this.fx.push({ k: 'impacto', x: r1(u.x), y: r1(u.y), r: mov.alcance, el: mov.elemento });
+        this.fx.push({ k: 'estalla', id: mov.id, forma: 'circulo', x: r1(u.x), y: r1(u.y), r: mov.alcance, el: mov.elemento });
         break;
       case 'zona': {
         const d = Math.min(mov.alcance, Math.hypot(tx - u.x, ty - u.y));
@@ -439,7 +441,7 @@ export class Batalla {
         p.golpeados.add(1);
         const at = this.activa(p.lado);
         this.danar(p.lado, at, p.mov, p.poder);
-        this.fx.push({ k: 'impacto', x: r1(p.x), y: r1(p.y), r: p.r * 2, el: p.mov.elemento });
+        this.fx.push({ k: 'impacto', x: r1(p.x), y: r1(p.y), r: p.r * 2, el: p.mov.elemento, m: p.mov.id });
         if (!p.atraviesa) fuera = true;
       }
       if (!fuera) vivos.push(p);
@@ -464,7 +466,8 @@ export class Batalla {
       if (dentro) this.danar(a.lado, at, a.mov, a.poder);
       const cx = a.forma === 'circulo' ? a.x : a.x + Math.cos(a.ang!) * a.largo! / 2;
       const cy = a.forma === 'circulo' ? a.y : a.y + Math.sin(a.ang!) * a.largo! / 2;
-      this.fx.push({ k: 'impacto', x: r1(cx), y: r1(cy), r: a.forma === 'circulo' ? a.r : a.r * 2, el: a.mov.elemento });
+      this.fx.push({ k: 'estalla', id: a.mov.id, forma: a.forma, x: r1(a.x), y: r1(a.y), r: a.r, ang: a.ang !== undefined ? r2(a.ang) : undefined, largo: a.largo, el: a.mov.elemento });
+      void cx; void cy;
     }
     this.avisos = vivos;
   }
@@ -479,7 +482,7 @@ export class Batalla {
         st: this.estado(x),
       };
     });
-    const pj: ProyectilSnap[] = this.proyectiles.map((p) => ({ id: p.id, x: r1(p.x), y: r1(p.y), vx: Math.round(p.vx), vy: Math.round(p.vy), el: p.mov.elemento, r: p.r }));
+    const pj: ProyectilSnap[] = this.proyectiles.map((p) => ({ id: p.id, x: r1(p.x), y: r1(p.y), vx: Math.round(p.vx), vy: Math.round(p.vy), el: p.mov.elemento, r: p.r, m: p.mov.id }));
     const av: AvisoSnap[] = this.avisos.map((a) => ({
       id: a.id, forma: a.forma, x: r1(a.x), y: r1(a.y), r: a.r, ang: a.ang !== undefined ? r2(a.ang) : undefined, largo: a.largo,
       t: r2(a.hasta - this.t), dur: a.dur, el: a.mov.elemento, lado: a.lado,

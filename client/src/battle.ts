@@ -11,6 +11,7 @@ import {
 import animMeta from '../../assets/criaturas/sprites/anim/animaciones.json';
 import { spriteUrl, V } from './api';
 import type { Conexion } from './net';
+import * as FX from './efectos';
 
 const INTERP = 100;
 const TICK = TICK_MS / 1000;
@@ -23,7 +24,7 @@ const ANIM = animMeta as unknown as Record<string, AnimMeta>;
 interface Vista {
   spr: Phaser.GameObjects.Sprite; sombra: Phaser.GameObjects.Ellipse; anillo: Phaser.GameObjects.Ellipse;
   esp: string; x: number; y: number; flip: number; inclina: number;
-  anim: string; bloqueo: number; ultAn: string; estocada: number; estAng: number; golpe: number; polvo: number;
+  anim: string; bloqueo: number; ultAn: string; estocada: number; estAng: number; golpe: number; polvo: number; mira: number;
 }
 
 export class BatallaScene extends Phaser.Scene {
@@ -34,7 +35,7 @@ export class BatallaScene extends Phaser.Scene {
   vistas: [Vista | null, Vista | null] = [null, null];
   gAvisos!: Phaser.GameObjects.Graphics;
   gApunte!: Phaser.GameObjects.Graphics;
-  proys = new Map<number, Phaser.GameObjects.Arc>();
+  proys = new Map<number, FX.VistaProyectil>();
   keys!: Record<string, Phaser.Input.Keyboard.Key>;
   joy = { x: 0, y: 0, activo: false };
   seq = 0;
@@ -98,6 +99,7 @@ export class BatallaScene extends Phaser.Scene {
       g.generateTexture('polvo', 4, 4);
       g.destroy();
     }
+    FX.crearTexturas(this);
     this.dibujarArena();
     this.gAvisos = this.add.graphics().setDepth(1);
     this.gApunte = this.add.graphics().setDepth(4000);
@@ -209,7 +211,7 @@ export class BatallaScene extends Phaser.Scene {
     const anillo = this.add.ellipse(0, 0, ancho + 8, (ancho + 8) * 0.36).setStrokeStyle(3, soy ? 0x4aa8ff : 0xff5a6a, 0.9);
     const spr = m ? this.add.sprite(0, 0, 'pa_' + esp, 0).setOrigin(0.5, m.pies / m.h) : this.add.sprite(0, 0, 'p_' + esp).setOrigin(0.5, 0.92);
     spr.setScale(sc);
-    const nv: Vista = { spr, sombra, anillo, esp, x: 0, y: 0, flip: l === 0 ? 1 : -1, inclina: 0, anim: '', bloqueo: 0, ultAn: '', estocada: 0, estAng: 0, golpe: 0, polvo: 0 };
+    const nv: Vista = { spr, sombra, anillo, esp, x: 0, y: 0, flip: l === 0 ? 1 : -1, inclina: 0, anim: '', bloqueo: 0, ultAn: '', estocada: 0, estAng: 0, golpe: 0, polvo: 0, mira: l === 0 ? 1 : -1 };
     this.vistas[l] = nv;
     this.reproducir(nv, 'idle');
     return nv;
@@ -376,8 +378,10 @@ export class BatallaScene extends Phaser.Scene {
       if (s.an === 'caido') this.reproducir(v, 'faint');
       else if (now > v.bloqueo) this.reproducir(v, rapidez > 25 ? 'walk' : 'idle');
       // giro suave (el sprite mira a la derecha): se aplasta al darse la vuelta
-      const quiere = Math.abs(vx) > 20 && s.an !== 'basico' && s.an !== 'mov' ? Math.sign(vx) : Math.cos(s.fa) < 0 ? -1 : 1;
-      v.flip += (quiere - v.flip) * Math.min(1, delta / 60);
+      // hacia dónde mira: al atacar, hacia el objetivo; al correr, hacia donde va (con margen para no titubear)
+      if (s.an === 'basico' || s.an === 'mov' || now < v.bloqueo) v.mira = Math.cos(s.fa) < 0 ? -1 : 1;
+      else if (Math.abs(vx) > 45) v.mira = Math.sign(vx);
+      v.flip += (v.mira - v.flip) * Math.min(1, delta / 50);
       v.inclina += (Phaser.Math.Clamp(vx / 2400, -0.13, 0.13) - v.inclina) * Math.min(1, delta / 90);
       // estocada hacia el objetivo al atacar y retroceso al recibir golpe
       v.estocada = Math.max(0, v.estocada - delta / 220);
@@ -394,6 +398,7 @@ export class BatallaScene extends Phaser.Scene {
       v.spr.setRotation(v.inclina);
       v.spr.setAlpha(s.st & 16 ? 0.6 + Math.sin(now / 40) * 0.25 : s.an === 'caido' ? 0.55 : 1);
       if (v.golpe > 0.6) v.spr.setTintFill(0xffffff);
+      else if (this.cargando(l)) v.spr.setTint(Phaser.Display.Color.Interpolate.ColorWithColor(Phaser.Display.Color.ValueToColor(0xffffff), Phaser.Display.Color.ValueToColor(FX.colorEl(ESPECIES[s.esp].elemento)), 100, 50 + Math.sin(now / 50) * 50).color);
       else if (s.st & 1) v.spr.setTint(0xffb090); else if (s.st & 8) v.spr.setTint(0xd8a0ff); else if (s.st & 2) v.spr.setTint(0xfff08a); else if (s.st & 4) v.spr.setTint(0xa0c8ff); else v.spr.clearTint();
       const somb = 1 - (salto ? 0.25 : 0);
       v.sombra.setPosition(x + ox, y + 3).setDepth(y - 1).setScale(somb);
@@ -463,6 +468,21 @@ export class BatallaScene extends Phaser.Scene {
   }
   private txtApunte: Phaser.GameObjects.Text | null = null;
 
+  /** ¿Este lado está preparando un ataque con aviso (zona o rayo)? */
+  private cargando(l: 0 | 1) {
+    return !!this.ultimo?.av.some((a) => a.lado === l && a.forma === 'linea');
+  }
+
+  /** Pausa de impacto: todo se congela un instante en los golpes fuertes. */
+  private pausaImpacto(ms: number) {
+    for (const v of this.vistas) v?.spr.anims.pause();
+    this.tweens.timeScale = 0.15;
+    this.time.delayedCall(ms, () => {
+      for (const v of this.vistas) v?.spr.anims.resume();
+      this.tweens.timeScale = 1;
+    });
+  }
+
   private dibujarAvisos() {
     if (this.apuntando === null) this.txtApunte?.setVisible(false);
     const g = this.gAvisos.clear();
@@ -498,19 +518,14 @@ export class BatallaScene extends Phaser.Scene {
     const vivos = new Set<number>();
     for (const p of s.pj) {
       vivos.add(p.id);
-      let c = this.proys.get(p.id);
-      const colr = col(ELEMENTOS[p.el as keyof typeof ELEMENTOS].color);
-      if (!c) {
-        c = this.add.circle(p.x, p.y, p.r + 2, colr).setStrokeStyle(2, 0xffffff, 0.9).setDepth(2000);
-        this.proys.set(p.id, c);
+      let v = this.proys.get(p.id);
+      if (!v) {
+        v = FX.crearProyectil(this, p.x, p.y - 14, p.el, p.m, p.r);
+        this.proys.set(p.id, v);
       }
-      c.setPosition(p.x + p.vx * dt, p.y + p.vy * dt);
-      if (Math.random() < 0.5) {
-        const tr = this.add.circle(c.x, c.y, p.r * 0.7, colr, 0.6).setDepth(1999);
-        this.tweens.add({ targets: tr, alpha: 0, scale: 0.3, duration: 220, onComplete: () => tr.destroy() });
-      }
+      FX.moverProyectil(v, p.x + p.vx * dt, p.y - 14 + p.vy * dt, p.vx, p.vy, this.time.now);
     }
-    for (const [id, c] of this.proys) if (!vivos.has(id)) { c.destroy(); this.proys.delete(id); }
+    for (const [id, v] of this.proys) if (!vivos.has(id)) { FX.borrarProyectil(this, v); this.proys.delete(id); }
   }
 
   // ---------------------------------------------------------------- efectos
@@ -522,7 +537,13 @@ export class BatallaScene extends Phaser.Scene {
         this.tweens.add({ targets: t, y: t.y - 36, alpha: 0, duration: 800, ease: 'Cubic.easeOut', onComplete: () => t.destroy() });
         if (f.ef > 1) this.etiqueta(f.x, f.y - 80, '¡Muy eficaz!', '#ffcf4a');
         if (f.ef < 1) this.etiqueta(f.x, f.y - 80, 'Poco eficaz', '#b0b0c8');
-        if (f.lado === this.init0.lado) this.cameras.main.shake(90, 0.004);
+        // chispas, pausa de impacto y temblor según la fuerza del golpe
+        const v = this.vistas[f.lado];
+        const fuerte = !!f.crit || f.ef > 1 || (v ? f.n > 0.12 * (this.ultimo?.u[f.lado].mhp ?? 999) : false);
+        const atac = this.ultimo?.u[1 - f.lado];
+        FX.impacto(this, f.x, f.y, atac ? ESPECIES[atac.esp].elemento : 'roca', fuerte);
+        if (fuerte) this.pausaImpacto(70);
+        this.cameras.main.shake(fuerte ? 140 : 70, fuerte ? 0.007 : f.lado === this.init0.lado ? 0.004 : 0.002);
         break;
       }
       case 'cura': {
@@ -530,21 +551,21 @@ export class BatallaScene extends Phaser.Scene {
         this.tweens.add({ targets: t, y: t.y - 30, alpha: 0, duration: 900, onComplete: () => t.destroy() });
         break;
       }
-      case 'impacto': {
-        const c = col(ELEMENTOS[f.el as keyof typeof ELEMENTOS].color);
-        const ring = this.add.circle(f.x, f.y, Math.max(10, f.r), c, 0.35).setStrokeStyle(3, 0xffffff, 0.8).setDepth(1500);
-        ring.setScale(0.3);
-        this.tweens.add({ targets: ring, scale: 1, alpha: 0, duration: 280, onComplete: () => ring.destroy() });
-        for (let i = 0; i < 6; i++) {
-          const a = Math.random() * Math.PI * 2;
-          const px = this.add.rectangle(f.x, f.y, 6, 6, c).setDepth(1600);
-          this.tweens.add({ targets: px, x: f.x + Math.cos(a) * f.r * 0.8, y: f.y + Math.sin(a) * f.r * 0.8, alpha: 0, duration: 350, onComplete: () => px.destroy() });
-        }
+      case 'impacto':
+        FX.estallido(this, f.x, f.y - 14, f.el, f.m === 'basico' ? 5 : 9, f.m === 'basico' ? 0.6 : 1);
+        break;
+      case 'basico': {
+        FX.basico(this, f.x, f.y, f.ang, f.paso, f.el, f.cuerpo);
         break;
       }
+      case 'estalla':
+        FX.estalla(this, f);
+        break;
       case 'mov': {
         const m = MOVIMIENTOS[f.id];
-        if (m) this.etiqueta(f.x, f.y - 90, m.nombre, ELEMENTOS[m.elemento].color);
+        if (!m) break;
+        this.etiqueta(f.x, f.y - 90, m.nombre, ELEMENTOS[m.elemento].color);
+        if (m.tipo === 'escudo' || m.tipo === 'curar' || m.tipo === 'mejora') FX.apoyo(this, f.x, f.y, m.tipo, m.elemento);
         break;
       }
       case 'cambio': {
@@ -566,9 +587,18 @@ export class BatallaScene extends Phaser.Scene {
         this.etiqueta(f.x, f.y - 70, '¡Esquivó!', '#c0a0ff');
         break;
       case 'dash': {
-        // estela: copias del Primal que se desvanecen
+        // estela: copias del Primal que se desvanecen (y partículas del elemento en las embestidas)
         const v = this.vistas[f.lado];
         if (!v) break;
+        if (f.el) {
+          const [c0, c1] = FX.pal(f.el);
+          const em = this.add.particles(0, 0, f.el === 'fuego' || f.el === 'sombra' ? 'humo' : 'px', {
+            lifespan: 300, speed: { min: 10, max: 40 }, scale: { start: f.el === 'fuego' || f.el === 'sombra' ? 0.7 : 2, end: 0 }, alpha: { start: 0.9, end: 0 },
+            frequency: 12, tint: [c0, c1], blendMode: f.el === 'sombra' ? 'NORMAL' : 'ADD',
+          }).setDepth(v.spr.depth - 1);
+          em.startFollow(v.spr, 0, -14);
+          this.time.delayedCall(260, () => { em.stop(); this.time.delayedCall(350, () => em.destroy()); });
+        }
         for (let k = 0; k < 4; k++) {
           this.time.delayedCall(k * 40, () => {
             if (!v.spr.active) return;
