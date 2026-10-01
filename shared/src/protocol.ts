@@ -66,7 +66,8 @@ export type Fx =
   | { k: 'cambio'; lado: 0 | 1; esp: string; x: number; y: number }
   | { k: 'caido'; lado: 0 | 1; esp: string; x: number; y: number }
   | { k: 'estado'; lado: 0 | 1; x: number; y: number; estado: string }
-  | { k: 'esquiva'; lado: 0 | 1; x: number; y: number };
+  | { k: 'esquiva'; lado: 0 | 1; x: number; y: number }
+  | { k: 'dash'; lado: 0 | 1; x: number; y: number; ang: number };
 
 export interface InicioBatalla {
   lado: 0 | 1;

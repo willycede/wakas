@@ -60,6 +60,7 @@ menu.onBatalla = async (roomId) => {
         scene: [],
       });
       game.scene.add('batalla', BatallaScene, false);
+      (window as any).__pc = game; // para depurar
       await new Promise((r) => game!.events.once('ready', r));
     }
     game.scene.start('batalla', { net: conexion, init });

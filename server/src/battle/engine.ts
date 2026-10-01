@@ -5,7 +5,7 @@
 
 import {
   ARENA, DURACION_BATALLA, ESPECIES, ESPERA_CAMBIO, HABILIDADES, MOVIMIENTOS, RADIO_PRIMAL, TICK_MS,
-  efectividad, statsPrimal, type AvisoSnap, type Elemento, type Estado, type Fx, type Movimiento, type Obstaculo,
+  efectividad, moverEnArena, statsPrimal, velocidadMover, ST, type AvisoSnap, type Elemento, type Estado, type Fx, type Movimiento, type Obstaculo,
   type ProyectilSnap, type Snapshot, type UnidadSnap,
 } from '../../../shared/src';
 
@@ -52,7 +52,8 @@ export interface Lado {
   cambioListo: number; // tiempo en que puede volver a cambiar
   mods: Mods;
   entrada: { x: number; y: number; ax: number; ay: number } | null; // movimiento y apuntado actuales
-  seq: number;
+  seq: number; // última entrada aplicada (se confirma al cliente)
+  cola: { s: number; x: number; y: number; ax: number; ay: number }[];
 }
 
 interface Proyectil {
@@ -90,8 +91,8 @@ export class Batalla {
   constructor(a: Unidad[], b: Unidad[], modsA: Mods, modsB: Mods, obstaculos: Obstaculo[]) {
     this.obstaculos = obstaculos;
     this.lados = [
-      { unidades: a, activo: 0, cambioListo: 0, mods: modsA, entrada: null, seq: 0 },
-      { unidades: b, activo: 0, cambioListo: 0, mods: modsB, entrada: null, seq: 0 },
+      { unidades: a, activo: 0, cambioListo: 0, mods: modsA, entrada: null, seq: 0, cola: [] },
+      { unidades: b, activo: 0, cambioListo: 0, mods: modsB, entrada: null, seq: 0, cola: [] },
     ];
     this.colocar(0);
     this.colocar(1);
@@ -117,10 +118,20 @@ export class Batalla {
   }
 
   // ---------------------------------------------------------------- acciones de los jugadores
+  /** Entrada inmediata (la IA). */
   entrada(l: 0 | 1, x: number, y: number, ax: number, ay: number) {
     const L = this.lados[l];
     const n = Math.hypot(x, y);
     L.entrada = { x: n > 1 ? x / n : x, y: n > 1 ? y / n : y, ax, ay };
+  }
+
+  /** Entrada de un jugador: se encola y se aplica una por tick (así el cliente puede predecir). */
+  encolar(l: 0 | 1, s: number, x: number, y: number, ax: number, ay: number) {
+    const L = this.lados[l];
+    if (s <= L.seq || L.cola.some((c) => c.s === s)) return;
+    const n = Math.hypot(x, y);
+    L.cola.push({ s, x: n > 1 ? x / n : x, y: n > 1 ? y / n : y, ax, ay });
+    if (L.cola.length > 8) L.cola.splice(0, L.cola.length - 8);
   }
 
   /** i: 0 = básico, 1..4 = movimientos, 5 = esquiva. (tx, ty): hacia dónde apunta (posición en la arena). */
@@ -138,6 +149,7 @@ export class Batalla {
       const mv = this.lados[l].entrada;
       const a = mv && (mv.x || mv.y) ? Math.atan2(mv.y, mv.x) : ang;
       u.dash = { vx: Math.cos(a) * ESQUIVA_DIST / 0.18, vy: Math.sin(a) * ESQUIVA_DIST / 0.18, hasta: this.t + 0.18, golpeados: new Set() };
+      this.fx.push({ k: 'dash', lado: l, x: r1(u.x), y: r1(u.y), ang: r2(a) });
       u.invulnHasta = this.t + 0.28;
       u.cds[5] = ESQUIVA_ENFRIA;
       u.anim = 'dash'; u.animHasta = this.t + 0.2;
@@ -334,17 +346,16 @@ export class Batalla {
 
   // ---------------------------------------------------------------- movimiento y colisión
   private moverUnidad(u: Unidad, dx: number, dy: number) {
-    let nx = clamp(u.x + dx, RADIO_PRIMAL, ARENA.w - RADIO_PRIMAL);
-    let ny = clamp(u.y + dy, RADIO_PRIMAL, ARENA.h - RADIO_PRIMAL);
-    for (const o of this.obstaculos) {
-      const d = Math.hypot(nx - o.x, ny - o.y);
-      const min = o.r + RADIO_PRIMAL;
-      if (d < min && d > 0.01) {
-        nx = o.x + ((nx - o.x) / d) * min;
-        ny = o.y + ((ny - o.y) / d) * min;
-      }
-    }
-    u.x = nx; u.y = ny;
+    const r = moverEnArena(u.x, u.y, dx, dy, this.obstaculos);
+    u.x = r.x; u.y = r.y;
+  }
+
+  /** Bits de estado de una unidad (los mismos que ve el cliente). */
+  estado(x: Unidad): number {
+    const t = this.t;
+    return (t < x.quemaduraHasta ? ST.quemadura : 0) | (t < x.paralisisHasta ? ST.paralisis : 0) | (t < x.lentoHasta ? ST.lento : 0) |
+      (t < x.venenoHasta ? ST.veneno : 0) | (t < x.invulnHasta ? ST.invulnerable : 0) | (t < Math.max(x.mejoraDanoHasta, x.mejoraVelHasta) ? ST.mejora : 0) |
+      (t < x.mejoraVelHasta ? ST.rapido : 0) | (t < x.accionHasta ? ST.frenado : 0);
   }
 
   // ---------------------------------------------------------------- simulación
@@ -372,6 +383,9 @@ export class Batalla {
   private tickLado(l: 0 | 1) {
     const L = this.lados[l];
     for (const u of L.unidades) for (let k = 0; k < u.cds.length; k++) u.cds[k] = Math.max(0, u.cds[k] - TICK);
+    // una entrada del jugador por tick (si no llegó ninguna, se mantiene la última)
+    const sig = L.cola.shift();
+    if (sig) { L.entrada = { x: sig.x, y: sig.y, ax: sig.ax, ay: sig.ay }; L.seq = sig.s; }
     const u = this.activa(l);
     if (u.hp <= 0) return;
     if (u.animHasta && this.t > u.animHasta) { u.anim = 'idle'; u.animHasta = 0; }
@@ -405,13 +419,7 @@ export class Batalla {
     // movimiento con la entrada del jugador
     const e = L.entrada;
     if (e && (e.x || e.y) && this.t >= u.paralisisHasta) {
-      let v = u.velocidad;
-      const esp = ESPECIES[u.esp];
-      if (esp.habilidad === 'viento_cola') v *= 1.2;
-      if (esp.habilidad === 'furia_tormenta') v *= 1.1;
-      if (this.t < u.mejoraVelHasta) v *= 1.4;
-      if (this.t < u.lentoHasta) v *= 0.6;
-      if (this.t < u.accionHasta) v *= 0.35; // al atacar se frena
+      const v = velocidadMover(u.esp, u.velocidad, this.estado(u));
       this.moverUnidad(u, e.x * v * TICK, e.y * v * TICK);
       if (u.anim === 'idle' || u.anim === 'mover') u.anim = 'mover';
       if (this.t >= u.accionHasta) u.fa = Math.atan2(e.y, e.x);
@@ -468,8 +476,7 @@ export class Batalla {
       return {
         lado: l, slot: this.lados[l].activo, esp: x.esp, nv: x.nivel, x: r1(x.x), y: r1(x.y), hp: x.hp, mhp: x.mhp, sh: x.escudo,
         fa: r2(x.fa), an: x.anim,
-        st: (this.t < x.quemaduraHasta ? 1 : 0) | (this.t < x.paralisisHasta ? 2 : 0) | (this.t < x.lentoHasta ? 4 : 0) |
-          (this.t < x.venenoHasta ? 8 : 0) | (this.t < x.invulnHasta ? 16 : 0) | (this.t < Math.max(x.mejoraDanoHasta, x.mejoraVelHasta) ? 32 : 0),
+        st: this.estado(x),
       };
     });
     const pj: ProyectilSnap[] = this.proyectiles.map((p) => ({ id: p.id, x: r1(p.x), y: r1(p.y), vx: Math.round(p.vx), vy: Math.round(p.vy), el: p.mov.elemento, r: p.r }));
@@ -481,7 +488,7 @@ export class Batalla {
       const L = this.lados[l];
       return { hp: L.unidades.map((x) => x.hp), mhp: L.unidades.map((x) => x.mhp), esp: L.unidades.map((x) => x.esp), activo: L.activo, cambioListo: r2(Math.max(0, L.cambioListo - this.t)) };
     }) as Snapshot['eq'];
-    return { t: Date.now(), ack, tiempo: Math.ceil(this.restante), u, pj, av, eq, cds: this.activa(paraLado).cds.map(r2) };
+    return { t: Date.now(), ack: this.lados[paraLado].seq || ack, tiempo: Math.ceil(this.restante), u, pj, av, eq, cds: this.activa(paraLado).cds.map(r2) };
   }
 }
 

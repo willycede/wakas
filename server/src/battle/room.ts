@@ -51,7 +51,7 @@ export class BatallaRoom extends Room {
     this.onMessage('in', (c, m) => {
       const l = this.clientes.get(c.sessionId);
       if (l === undefined || typeof m !== 'object') return;
-      this.b.entrada(l, num(m.x), num(m.y), num(m.ax), num(m.ay));
+      this.b.encolar(l, num(m.s), num(m.x), num(m.y), num(m.ax), num(m.ay));
       this.acks[l] = num(m.s);
     });
     this.onMessage('acc', (c, m) => {

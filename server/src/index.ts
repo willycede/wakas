@@ -56,7 +56,8 @@ function rivalIA(d: Domador): Participante {
   const nombres = ['Rival Kai', 'Domadora Ren', 'Rival Iker', 'Domadora Luma', 'Rival Taro', 'Domadora Nia'];
   const liga = ligaDe(d.trofeos);
   return { id: null, nombre: nombres[Math.floor(Math.random() * nombres.length)], trofeos: Math.max(0, d.trofeos + Math.floor(Math.random() * 80) - 40), equipo,
-    ia: Math.min(0.95, 0.45 + liga.trofeos / 8000 + Math.random() * 0.1) };
+    ia: Math.min(0.95, 0.18 + d.trofeos / 6000 + Math.random() * 0.08) };
+  void liga;
 }
 
 // ------------------------------------------------------------------ cola de la Liga

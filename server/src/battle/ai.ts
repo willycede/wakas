@@ -56,8 +56,8 @@ export class IA {
     }
     // ataques
     if (b.t < this.siguienteAccion) return;
-    this.siguienteAccion = b.t + 0.12 + (1 - this.nivel) * 0.35;
-    const puntería = (1 - this.nivel) * 30;
+    this.siguienteAccion = b.t + 0.15 + (1 - this.nivel) * 0.75;
+    const puntería = (1 - this.nivel) * 70;
     const tx = rival.x + (Math.random() - 0.5) * puntería, ty = rival.y + (Math.random() - 0.5) * puntería;
     const opciones: number[] = [];
     for (let i = 1; i <= 4; i++) {
@@ -69,7 +69,7 @@ export class IA {
       if (m.tipo === 'area' && d > m.alcance + 20) continue;
       opciones.push(i);
     }
-    if (opciones.length && Math.random() < 0.55) return b.accion(this.lado, opciones[Math.floor(Math.random() * opciones.length)], tx, ty);
+    if (opciones.length && Math.random() < 0.2 + this.nivel * 0.4) return b.accion(this.lado, opciones[Math.floor(Math.random() * opciones.length)], tx, ty);
     const alcanceBasico = esp.basico === 'cuerpo' ? 75 : 320;
     if (d < alcanceBasico && yo.cds[0] <= 0) b.accion(this.lado, 0, tx, ty);
     void ang;

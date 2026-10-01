@@ -178,3 +178,6 @@ h3 { margin: 14px 0 8px; color: var(--accent); }
   .tb-player b { font-size: 13px; }
   .xpbar { width: 90px; }
 }
+
+.mv.apuntando { border-color: #fff !important; box-shadow: 0 0 14px rgba(255,255,255,.7); transform: translateY(-3px); }
+#bh-help { white-space: nowrap; max-width: 96vw; overflow: hidden; text-overflow: ellipsis; }
