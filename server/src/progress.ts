@@ -101,14 +101,14 @@ export function recompensar(d: Domador, gano: boolean, empate: boolean, modo: 'l
   }
   const monedas = modo === 'liga' ? Math.round(base.monedas * (1 + habilidad(d, 'negociante'))) : 0;
   d.monedas += monedas;
-  const xpD = modo === 'liga' ? base.xpDomador : gano ? RECOMPENSAS.captura.xpDomador : 10;
+  const xpD = !gano ? 0 : modo === 'liga' ? base.xpDomador : RECOMPENSAS.captura.xpDomador;
   const ups = darXpDomador(d, xpD);
   const bonoXp = 1 + habilidad(d, 'entrenador') + medallasDe(d.nivel).length * BONO_MEDALLA_XP;
-  const xpP = (modo === 'liga' ? base.xpPrimal : gano ? RECOMPENSAS.captura.xpPrimal : 20) * bonoXp;
+  const xpP = (!gano ? 0 : modo === 'liga' ? base.xpPrimal : RECOMPENSAS.captura.xpPrimal) * bonoXp;
   const xpPrimales: FinBatalla['xpPrimales'] = [];
   for (const uid of d.equipo) {
     const p = d.primales.find((x) => x.uid === uid);
-    if (!p) continue;
+    if (!p || xpP <= 0) continue;
     // quien peleó recibe toda la experiencia; el resto del equipo, la mitad
     const xp = participaron.includes(uid) ? xpP : xpP * 0.5;
     const antesEsp = p.esp;

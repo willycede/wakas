@@ -45,7 +45,7 @@ export interface UnidadSnap {
 export interface ProyectilSnap { id: number; x: number; y: number; vx: number; vy: number; el: string; r: number; m: string }
 export interface AvisoSnap { id: number; forma: 'circulo' | 'linea'; x: number; y: number; r: number; ang?: number; largo?: number; t: number; dur: number; el: string; lado: 0 | 1 }
 
-export interface EquipoSnap { hp: number[]; mhp: number[]; esp: string[]; activo: number; cambioListo: number }
+export interface EquipoSnap { hp: number[]; mhp: number[]; esp: string[]; activo: number; cambioListo: number; carga: number; combo: number }
 
 export interface Snapshot {
   t: number;
@@ -61,11 +61,13 @@ export interface Snapshot {
 export type Fx =
   | { k: 'dano'; lado: 0 | 1; x: number; y: number; n: number; ef: number; crit?: boolean }
   | { k: 'cura'; lado: 0 | 1; x: number; y: number; n: number }
-  | { k: 'mov'; lado: 0 | 1; id: string; x: number; y: number; ang: number }
+  | { k: 'mov'; lado: 0 | 1; id: string; x: number; y: number; ang: number; enlace?: boolean }
+  | { k: 'especial'; lado: 0 | 1; id: string; el: string; x: number; y: number; ang: number }
+  | { k: 'combo'; lado: 0 | 1; n: number }
   | { k: 'impacto'; x: number; y: number; r: number; el: string; m?: string }
   | { k: 'basico'; lado: 0 | 1; x: number; y: number; ang: number; paso: number; el: string; cuerpo: boolean }
   | { k: 'estalla'; id: string; forma: 'circulo' | 'linea'; x: number; y: number; r: number; ang?: number; largo?: number; el: string }
-  | { k: 'cambio'; lado: 0 | 1; esp: string; x: number; y: number }
+  | { k: 'cambio'; lado: 0 | 1; esp: string; x: number; y: number; silencioso?: boolean }
   | { k: 'caido'; lado: 0 | 1; esp: string; x: number; y: number }
   | { k: 'estado'; lado: 0 | 1; x: number; y: number; estado: string }
   | { k: 'esquiva'; lado: 0 | 1; x: number; y: number }

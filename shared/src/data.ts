@@ -197,3 +197,17 @@ export function statsPrimal(esp: Especie, nivel: number) {
 export function xpPrimal(n: number) {
   return 40 + 20 * n;
 }
+
+// ------------------------------------------------------------------ técnicas especiales (una por elemento)
+/** Se cargan peleando (golpear y recibir golpes llena la barra) y se lanzan con R / el botón dorado. */
+export interface Especial { id: string; nombre: string; elemento: Elemento; desc: string; poder: number }
+export const ESPECIALES: Record<Elemento, Especial> = {
+  fuego: { id: 'supernova', nombre: 'Supernova', elemento: 'fuego', poder: 3.0, desc: 'Estalla en una explosión solar que quema todo a su alrededor.' },
+  agua: { id: 'maremoto', nombre: 'Maremoto', elemento: 'agua', poder: 2.6, desc: 'Desata una ola colosal que arrasa en línea recta.' },
+  planta: { id: 'jardin_espinoso', nombre: 'Jardín espinoso', elemento: 'planta', poder: 2.2, desc: 'Brota un campo de espinas venenosas y recupera vida.' },
+  electrico: { id: 'tormenta', nombre: 'Tormenta', elemento: 'electrico', poder: 0.95, desc: 'Cinco relámpagos persiguen al rival.' },
+  roca: { id: 'meteoro', nombre: 'Meteoro', elemento: 'roca', poder: 3.2, desc: 'Un meteoro cae del cielo y aturde al impactar.' },
+  viento: { id: 'huracan', nombre: 'Huracán', elemento: 'viento', poder: 2.3, desc: 'Cruza la arena como un rayo y deja un huracán a su paso.' },
+  sombra: { id: 'eclipse', nombre: 'Eclipse', elemento: 'sombra', poder: 2.8, desc: 'Se desvanece, reaparece tras el rival y lo golpea por la espalda.' },
+};
+export const CARGA_MAX = 100;

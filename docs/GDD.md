@@ -10,7 +10,10 @@ Ganas trofeos y subes de **liga** (como Clash Royale). Sin historia por ahora **
 - Cada Domador tiene un Primal en la arena; los demás esperan en el banco.
 - **Controles:** mover (WASD / joystick), **básico** (clic / espacio) con combo de 3 golpes (el tercero es más fuerte), **4 movimientos** (1-4) con recarga, **esquivar** (Shift, invulnerable un instante) y **cambiar** de Primal (Q/E o tocando su retrato; espera de 3,5 s).
 - Si un Primal cae, entra el siguiente automáticamente. Gana quien deja al rival sin Primales; si se acaba el tiempo, gana quien tenga más vida total.
-- En móvil se apunta automáticamente al rival.
+- **Puntería [decisión del dueño]:** no se apunta. Todos los ataques salen **hacia donde mira el Primal** (la dirección en la que se movió por última vez). Si el rival está más o menos enfrente (±40°, a menos de 460 px), el ataque lo busca solo. Una flecha bajo tu Primal muestra la dirección: azul = hacia donde mira, dorada = fijada en el rival.
+- Ratón: clic derecho mover (mantener = seguir el cursor), clic izquierdo atacar (mantener = combo), rueda cambiar de Primal.
+- **Combos [decisión del dueño]:** golpes seguidos sin recibir daño suben el contador; cada 5 golpes +10 % de daño (máx. +30 %). **Enlace:** usar un movimiento justo después del tercer golpe básico pega +30 %.
+- **Técnica especial [decisión del dueño]** (tecla R o botón dorado): una por elemento, se carga golpeando (+3,5 por básico, +7 por movimiento, +3 por crítico) y recibiendo golpes (+4). Al 100 % se puede lanzar: Supernova (fuego, explosión a tu alrededor), Maremoto (agua, ola en línea), Jardín espinoso (planta, zona venenosa + curación), Tormenta (eléctrico, 5 rayos que persiguen), Meteoro (roca, paraliza), Huracán (viento, carrera + tornado) y Eclipse (sombra, aparece detrás del rival).
 - Movimientos: proyectil, ráfaga, embestida, área, zona (aviso en el suelo), rayo (aviso en línea), escudo, curación y mejora.
 - Estados: quemadura, veneno (daño con el tiempo), parálisis (no se mueve un instante), lentitud.
 - Cada especie tiene una **habilidad** pasiva (p. ej. Roca sólida: −15 % de daño recibido).
@@ -32,8 +35,8 @@ Fuego, Agua, Planta, Eléctrico, Roca, Viento, Sombra. Ataque fuerte = ×1,5; d�
 ## 5. Progreso **[decisión del dueño]**
 - **Inicio:** eliges 1 de 3 iniciales (Chispi, Gotín o Brotín).
 - **Capturas:** para retar a un Primal salvaje necesitas un **nivel de Domador** y pagar **monedas**. Si lo vences con tu equipo, se une a ti; si pierdes, pierdes la entrada.
-- **Experiencia de batalla:** los Primales que pelearon reciben toda la experiencia; el resto del equipo, la mitad. Suben de nivel y **evolucionan** solos al llegar al nivel indicado.
-- **Domador:** gana experiencia en cada batalla (nivel máx. 50). Cada nivel da **1 punto de habilidad**.
+- **Experiencia de batalla:** **solo al ganar [decisión del dueño]**; perder no da experiencia (ni al Domador ni a los Primales). Los Primales que pelearon reciben toda la experiencia; el resto del equipo, la mitad. Suben de nivel y **evolucionan** solos al llegar al nivel indicado.
+- **Domador:** gana experiencia en cada victoria (nivel máx. 50). Cada nivel da **1 punto de habilidad**.
 - **Habilidades de Domador:** Entrenador nato (+exp), Negociante (+monedas), Vínculo (+vida del equipo), Relevo veloz (cambios más rápidos), Instinto (−recarga), Capturador (capturas más baratas). 5 niveles cada una.
 - **Medallas** al llegar a ciertos niveles de Domador (3, 6, 10, 14, 18, 23, 28, 35); cada una da +3 % de experiencia a tus Primales.
 
@@ -43,13 +46,16 @@ Fuego, Agua, Planta, Eléctrico, Roca, Viento, Sombra. Ataque fuerte = ×1,5; d�
 - Emparejamiento por trofeos; si no hay rival humano en 12 s, pelea contra la IA (dificultad según la liga).
 - Ranking mundial (top 50).
 
-## 7. Arte **[decisión del dueño: pixel art animado, estilo tipo Pokémon Reloaded]**
+## 7. Interfaz e idiomas **[decisión del dueño]**
+- Juego en **español e inglés**; botón de idioma en la entrada y en la barra superior (se recuerda en el navegador).
+- Interfaz cuidada: iconos propios (sin emojis), emblema por liga, tarjetas con estadísticas, botones de batalla en arco con recarga circular, ficha de cada movimiento al pasar el ratón.
+
+## 8. Arte **[decisión del dueño: pixel art animado, estilo tipo Pokémon Reloaded]**
 - Primales en pixel art (48–86 px de alto), vista 3/4 mirando a la derecha, contorno oscuro y paleta limitada.
 - Generados con IA y convertidos a pixel art real por `assets/criaturas/generar.py` (ver CLAUDE.md para agregar más).
 - Animación en el juego: rebote al caminar, respiración, estirón al atacar, destello al recibir golpe.
 
-## 8. Pendiente / siguientes pasos
-- Animaciones por cuadros para cada Primal (caminar, atacar).
+## 9. Pendiente / siguientes pasos
 - Más Primales y arenas por liga.
 - Temporadas de liga con recompensas, cofres, amigos y batallas amistosas.
 - Balance tras jugar.

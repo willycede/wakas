@@ -57,7 +57,7 @@ export class BatallaRoom extends Room {
     this.onMessage('acc', (c, m) => {
       const l = this.clientes.get(c.sessionId);
       if (l === undefined || this.inicio > Date.now()) return;
-      this.b.accion(l, Math.max(0, Math.min(5, Math.floor(num(m.i)))), num(m.x), num(m.y));
+      this.b.accion(l, Math.max(0, Math.min(6, Math.floor(num(m.i)))));
     });
     this.onMessage('cambio', (c, m) => {
       const l = this.clientes.get(c.sessionId);

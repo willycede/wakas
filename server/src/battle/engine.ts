@@ -4,7 +4,7 @@
 // Gana quien deja sin Primales al rival, o quien tenga más vida total al acabar el tiempo.
 
 import {
-  ARENA, DURACION_BATALLA, ESPECIES, ESPERA_CAMBIO, HABILIDADES, MOVIMIENTOS, RADIO_PRIMAL, TICK_MS,
+  ARENA, CARGA_MAX, DURACION_BATALLA, ESPECIALES, ESPECIES, ESPERA_CAMBIO, HABILIDADES, MOVIMIENTOS, RADIO_PRIMAL, TICK_MS,
   efectividad, moverEnArena, statsPrimal, velocidadMover, ST, type AvisoSnap, type Elemento, type Estado, type Fx, type Movimiento, type Obstaculo,
   type ProyectilSnap, type Snapshot, type UnidadSnap,
 } from '../../../shared/src';
@@ -42,7 +42,8 @@ export interface Unidad {
   accionHasta: number; // no puede hacer otra acción hasta entonces
   anim: string;
   animHasta: number;
-  dash: { vx: number; vy: number; hasta: number; mov?: Movimiento; golpeados: Set<number> } | null;
+  dash: { vx: number; vy: number; hasta: number; mov?: Movimiento; golpeados: Set<number>; poder?: number; alLlegar?: () => void } | null;
+  enlaceHasta: number; // tras el tercer golpe básico: un movimiento hace +30%
   tickDot: number;
 }
 
@@ -54,6 +55,9 @@ export interface Lado {
   entrada: { x: number; y: number; ax: number; ay: number } | null; // movimiento y apuntado actuales
   seq: number; // última entrada aplicada (se confirma al cliente)
   cola: { s: number; x: number; y: number; ax: number; ay: number }[];
+  carga: number; // barra de la técnica especial (0..100)
+  combo: number; // golpes seguidos acertados
+  comboHasta: number;
 }
 
 interface Proyectil {
@@ -74,7 +78,7 @@ export function crearUnidad(esp: string, nivel: number, mods: Mods): Unidad {
     esp, nivel, hp: mhp, mhp, ataque: s.ataque, defensa: s.defensa, velocidad: s.velocidad, x: 0, y: 0, fa: 0,
     cds: [0, 0, 0, 0, 0, 0], combo: 0, comboHasta: 0, escudo: 0, escudoHasta: 0, mejoraDanoHasta: 0, mejoraVelHasta: 0,
     quemaduraHasta: 0, venenoHasta: 0, paralisisHasta: 0, lentoHasta: 0, invulnHasta: 0, accionHasta: 0,
-    anim: 'idle', animHasta: 0, dash: null, tickDot: 0,
+    anim: 'idle', animHasta: 0, dash: null, tickDot: 0, enlaceHasta: 0,
   };
 }
 
@@ -91,8 +95,8 @@ export class Batalla {
   constructor(a: Unidad[], b: Unidad[], modsA: Mods, modsB: Mods, obstaculos: Obstaculo[]) {
     this.obstaculos = obstaculos;
     this.lados = [
-      { unidades: a, activo: 0, cambioListo: 0, mods: modsA, entrada: null, seq: 0, cola: [] },
-      { unidades: b, activo: 0, cambioListo: 0, mods: modsB, entrada: null, seq: 0, cola: [] },
+      { unidades: a, activo: 0, cambioListo: 0, mods: modsA, entrada: null, seq: 0, cola: [], carga: 0, combo: 0, comboHasta: 0 },
+      { unidades: b, activo: 0, cambioListo: 0, mods: modsB, entrada: null, seq: 0, cola: [], carga: 0, combo: 0, comboHasta: 0 },
     ];
     this.colocar(0);
     this.colocar(1);
@@ -134,13 +138,25 @@ export class Batalla {
     if (L.cola.length > 8) L.cola.splice(0, L.cola.length - 8);
   }
 
-  /** i: 0 = básico, 1..4 = movimientos, 5 = esquiva. (tx, ty): hacia dónde apunta (posición en la arena). */
-  accion(l: 0 | 1, i: number, tx: number, ty: number) {
+  /**
+   * i: 0 = básico, 1..4 = movimientos, 5 = esquiva, 6 = técnica especial.
+   * Los ataques salen hacia donde mira el Primal. Si el rival está más o menos enfrente (±40°),
+   * la puntería lo busca. La IA puede pasar un punto exacto (objetivo).
+   */
+  accion(l: 0 | 1, i: number, objetivo?: { x: number; y: number }) {
     if (this.terminado) return;
     const u = this.activa(l);
     if (u.hp <= 0 || this.t < u.accionHasta || this.t < u.paralisisHasta) return;
+    if (i === 6) return this.especial(l, u);
     if (u.cds[i] > 0) return;
-    const ang = Math.atan2(ty - u.y, tx - u.x);
+    const rival = this.activa(l === 0 ? 1 : 0);
+    let ang = u.fa;
+    let tx: number, ty: number;
+    const dr = Math.hypot(rival.x - u.x, rival.y - u.y);
+    const angR = Math.atan2(rival.y - u.y, rival.x - u.x);
+    if (objetivo) { ang = Math.atan2(objetivo.y - u.y, objetivo.x - u.x); tx = objetivo.x; ty = objetivo.y; }
+    else if (rival.hp > 0 && dr < 460 && angDif(angR, u.fa) < 0.7) { ang = angR; tx = rival.x; ty = rival.y; }
+    else { tx = u.x + Math.cos(ang) * 200; ty = u.y + Math.sin(ang) * 200; }
     u.fa = ang;
     const e = ESPECIES[u.esp];
     const enfria = this.lados[l].mods.enfriaMult;
@@ -160,8 +176,83 @@ export class Batalla {
     u.cds[i] = mov.enfriamiento * enfria;
     u.accionHasta = this.t + 0.25;
     u.anim = 'mov'; u.animHasta = this.t + 0.35;
-    this.fx.push({ k: 'mov', lado: l, id: mov.id, x: r1(u.x), y: r1(u.y), ang: r2(ang) });
-    this.usar(l, u, mov, ang, tx, ty, 1);
+    // Enlace: un movimiento justo después del tercer golpe básico pega +30%
+    const enlace = this.t < u.enlaceHasta;
+    u.enlaceHasta = 0;
+    this.fx.push({ k: 'mov', lado: l, id: mov.id, x: r1(u.x), y: r1(u.y), ang: r2(ang), enlace: enlace || undefined });
+    this.usar(l, u, mov, ang, tx, ty, enlace ? 1.3 : 1);
+  }
+
+  // ---------------------------------------------------------------- técnicas especiales
+  private especial(l: 0 | 1, u: Unidad) {
+    const L = this.lados[l];
+    if (L.carga < CARGA_MAX) return;
+    L.carga = 0;
+    const esp = ESPECIES[u.esp];
+    const sp = ESPECIALES[esp.elemento];
+    const poder = sp.poder * (0.85 + 0.15 * esp.etapa);
+    const rival = this.activa(l === 0 ? 1 : 0);
+    const angR = Math.atan2(rival.y - u.y, rival.x - u.x);
+    const dr = Math.hypot(rival.x - u.x, rival.y - u.y);
+    const ang = angDif(angR, u.fa) < 1.2 && dr < 520 ? angR : u.fa;
+    u.fa = ang;
+    const mov = (extra: Partial<Movimiento>): Movimiento => ({ id: sp.id, nombre: sp.nombre, elemento: sp.elemento, tipo: 'zona', desc: '', poder, enfriamiento: 0, alcance: 0, ...extra });
+    // pose de lanzamiento: invulnerable durante la preparación
+    u.invulnHasta = this.t + 0.7;
+    u.accionHasta = this.t + 0.6;
+    u.anim = 'mov'; u.animHasta = this.t + 0.6;
+    this.fx.push({ k: 'especial', lado: l, id: sp.id, el: sp.elemento, x: r1(u.x), y: r1(u.y), ang: r2(ang) });
+    const aviso = (forma: 'circulo' | 'linea', x: number, y: number, r: number, dur: number, m: Movimiento, extra: { ang?: number; largo?: number } = {}) =>
+      this.avisos.push({ id: this.seq++, lado: l, forma, x: clamp(x, 0, ARENA.w), y: clamp(y, 0, ARENA.h), r, hasta: this.t + dur, dur, mov: m, poder: 1, ...extra });
+    const objX = dr < 400 ? rival.x : u.x + Math.cos(ang) * 260, objY = dr < 400 ? rival.y : u.y + Math.sin(ang) * 260;
+    switch (sp.elemento) {
+      case 'fuego': aviso('circulo', u.x, u.y, 175, 0.75, mov({ estado: 'quemadura', probEstado: 1, empuje: 120 })); break;
+      case 'agua': aviso('linea', u.x, u.y, 70, 0.55, mov({ tipo: 'rayo', empuje: 240 }), { ang, largo: 440 }); break;
+      case 'planta': {
+        aviso('circulo', objX, objY, 125, 0.7, mov({ estado: 'veneno', probEstado: 1 }));
+        const n = Math.round(u.mhp * 0.2);
+        const cura = Math.min(n, u.mhp - u.hp);
+        u.hp += cura;
+        if (cura > 0) this.fx.push({ k: 'cura', lado: l, x: r1(u.x), y: r1(u.y), n: cura });
+        break;
+      }
+      case 'electrico':
+        for (let k = 0; k < 5; k++) {
+          const a = Math.random() * Math.PI * 2, d = k === 0 ? 0 : 40 + Math.random() * 50;
+          aviso('circulo', objX + Math.cos(a) * d, objY + Math.sin(a) * d, 58, 0.55 + k * 0.32, mov({ estado: 'paralisis', probEstado: 0.45 }));
+        }
+        break;
+      case 'roca': aviso('circulo', objX, objY, 115, 1.15, mov({ estado: 'paralisis', probEstado: 1, empuje: 80 })); break;
+      case 'viento': {
+        const dur = 0.3, largo = 320;
+        u.dash = { vx: Math.cos(ang) * largo / dur, vy: Math.sin(ang) * largo / dur, hasta: this.t + dur, mov: mov({ tipo: 'embestida', radio: 34, poder: poder * 0.5 }), golpeados: new Set(),
+          alLlegar: () => aviso('circulo', u.x, u.y, 135, 0.35, mov({ estado: 'lento', probEstado: 1, empuje: 160 })) };
+        u.invulnHasta = this.t + dur + 0.2;
+        u.anim = 'dash'; u.animHasta = this.t + dur;
+        this.fx.push({ k: 'dash', lado: l, x: r1(u.x), y: r1(u.y), ang: r2(ang), id: sp.id, el: sp.elemento });
+        break;
+      }
+      case 'sombra': {
+        // desaparece y reaparece detrás del rival
+        u.invulnHasta = this.t + 0.9;
+        const detras = Math.atan2(rival.y - u.y, rival.x - u.x);
+        this.programar(0.3, () => {
+          if (this.terminado || u.hp <= 0) return;
+          const r = moverEnArena(rival.x, rival.y, Math.cos(detras) * 45, Math.sin(detras) * 45, this.obstaculos);
+          u.x = r.x; u.y = r.y;
+          u.fa = detras + Math.PI;
+          this.fx.push({ k: 'cambio', lado: l, esp: u.esp, x: r1(u.x), y: r1(u.y), silencioso: true });
+          aviso('circulo', rival.x, rival.y, 80, 0.15, mov({ estado: 'veneno', probEstado: 1, empuje: 90 }));
+        });
+        break;
+      }
+    }
+  }
+
+  /** Acciones diferidas dentro de la simulación (en tiempo de batalla). */
+  private pendientes: { t: number; fn: () => void }[] = [];
+  private programar(seg: number, fn: () => void) {
+    this.pendientes.push({ t: this.t + seg, fn });
   }
 
   /** Golpe básico: combo de 3. Cuerpo a cuerpo (zarpazos) o a distancia (disparos). */
@@ -173,6 +264,7 @@ export class Batalla {
     const el = esp.elemento;
     const fin = paso === 3;
     u.cds[0] = fin ? 0.7 : 0.42;
+    if (fin) u.enlaceHasta = this.t + 0.9;
     u.accionHasta = this.t + (fin ? 0.3 : 0.18);
     u.anim = 'basico'; u.animHasta = this.t + 0.22;
     const falso: Movimiento = { id: 'basico', nombre: 'Básico', elemento: el, tipo: 'proyectil', desc: '', poder: fin ? 0.55 : 0.3, enfriamiento: 0, alcance: 0,
@@ -290,6 +382,12 @@ export class Batalla {
     if (bajo && potenciado[espAt.habilidad] === mov.elemento) dano *= 1.3;
     if (espAt.habilidad === 'furia_tormenta') dano *= 1.12;
     if (this.t < atacante.mejoraDanoHasta) dano *= 1.35;
+    // combo del atacante: +10% cada 5 golpes seguidos (máx. +30%)
+    const La = this.lados[l];
+    La.combo = this.t < La.comboHasta ? La.combo + 1 : 1;
+    La.comboHasta = this.t + 1.8;
+    dano *= 1 + Math.min(0.3, Math.floor(La.combo / 5) * 0.1);
+    if (La.combo >= 2) this.fx.push({ k: 'combo', lado: l, n: La.combo });
     if (espDef.habilidad === 'roca_solida') dano *= 0.85;
     const crit = Math.random() < 0.08;
     if (crit) dano *= 1.5;
@@ -301,6 +399,9 @@ export class Batalla {
     }
     def.hp = Math.max(0, def.hp - dano);
     def.anim = 'golpe'; def.animHasta = this.t + 0.18;
+    // la barra especial se llena golpeando (más) y recibiendo golpes (menos)
+    if (!ESPECIALES_IDS.has(mov.id)) La.carga = Math.min(CARGA_MAX, La.carga + (mov.id === 'basico' ? 3.5 : 7) + (crit ? 3 : 0));
+    this.lados[dl].carga = Math.min(CARGA_MAX, this.lados[dl].carga + 4);
     this.fx.push({ k: 'dano', lado: dl, x: r1(def.x), y: r1(def.y), n: dano, ef, crit: crit || undefined });
     // estados
     if (mov.estado && Math.random() < (mov.probEstado ?? 0)) this.aplicarEstado(dl, def, mov.estado);
@@ -365,6 +466,9 @@ export class Batalla {
     if (this.terminado) return;
     this.t += TICK;
     for (const l of [0, 1] as const) this.tickLado(l);
+    const listos = this.pendientes.filter((p) => p.t <= this.t);
+    this.pendientes = this.pendientes.filter((p) => p.t > this.t);
+    for (const p of listos) p.fn();
     this.tickProyectiles();
     this.tickAvisos();
     // separa a los dos Primales activos si se solapan
@@ -406,7 +510,7 @@ export class Batalla {
     if (u.escudo > 0 && this.t > u.escudoHasta) u.escudo = 0;
     // embestidas y esquivas
     if (u.dash) {
-      if (this.t >= u.dash.hasta) u.dash = null;
+      if (this.t >= u.dash.hasta) { const f = u.dash.alLlegar; u.dash = null; f?.(); }
       else {
         this.moverUnidad(u, u.dash.vx * TICK, u.dash.vy * TICK);
         const mov = u.dash.mov;
@@ -489,10 +593,19 @@ export class Batalla {
     }));
     const eq = ([0, 1] as const).map((l) => {
       const L = this.lados[l];
-      return { hp: L.unidades.map((x) => x.hp), mhp: L.unidades.map((x) => x.mhp), esp: L.unidades.map((x) => x.esp), activo: L.activo, cambioListo: r2(Math.max(0, L.cambioListo - this.t)) };
+      return { hp: L.unidades.map((x) => x.hp), mhp: L.unidades.map((x) => x.mhp), esp: L.unidades.map((x) => x.esp), activo: L.activo, cambioListo: r2(Math.max(0, L.cambioListo - this.t)),
+        carga: Math.floor(L.carga), combo: this.t < L.comboHasta ? L.combo : 0 };
     }) as Snapshot['eq'];
     return { t: Date.now(), ack: this.lados[paraLado].seq || ack, tiempo: Math.ceil(this.restante), u, pj, av, eq, cds: this.activa(paraLado).cds.map(r2) };
   }
+}
+
+const ESPECIALES_IDS = new Set(Object.values(ESPECIALES).map((e) => e.id));
+
+function angDif(a: number, b: number) {
+  let d = Math.abs(a - b) % (Math.PI * 2);
+  if (d > Math.PI) d = Math.PI * 2 - d;
+  return d;
 }
 
 export function clamp(v: number, a: number, b: number) {

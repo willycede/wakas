@@ -27,24 +27,28 @@ class Bot {
     room.onMessage('inicio', (m) => (init = m));
     room.onMessage('snap', (m) => (snap = m));
     room.onMessage('fin', (m) => (fin = m));
-    room.onMessage('fx', () => {});
     room.onMessage('cuenta', () => {});
-    let seq = 0;
+    let seq = 0, especiales = 0, comboMax = 0;
+    room.onMessage('fx', (l) => { for (const f of l) if (f.k === 'combo' && f.lado === init?.lado) comboMax = Math.max(comboMax, f.n); });
     const t0 = Date.now();
     while (!fin && Date.now() - t0 < 240_000) {
       if (snap && init) {
         const me = snap.u[init.lado], foe = snap.u[1 - init.lado];
         const dx = foe.x - me.x, dy = foe.y - me.y, d = Math.hypot(dx, dy) || 1;
         const ideal = 120;
-        const mx = d > ideal ? dx / d : -dy / d, my = d > ideal ? dy / d : dx / d;
-        room.send('in', { s: ++seq, x: mx, y: my, ax: foe.x, ay: foe.y });
+        // los ataques salen hacia donde mira: el bot se gira hacia el rival antes de atacar
+        const encara = d > ideal || Math.random() < 0.6;
+        const mx = encara ? dx / d : -dy / d, my = encara ? dy / d : dx / d;
+        room.send('in', { s: ++seq, x: mx, y: my, ax: 0, ay: 0 });
         const i = [1, 2, 3, 4].find((k) => snap.cds[k] <= 0) ?? 0;
-        room.send('acc', { i: Math.random() < 0.5 ? 0 : i, x: foe.x, y: foe.y });
+        if (snap.eq[init.lado].carga >= 100) { room.send('acc', { i: 6 }); especiales++; }
+        else if (encara) room.send('acc', { i: Math.random() < 0.5 ? 0 : i });
         // cambia de Primal de vez en cuando
         if (Math.random() < 0.01) room.send('cambio', { slot: Math.floor(Math.random() * snap.eq[init.lado].esp.length) });
       }
       await sleep(100);
     }
+    log('especiales usadas:', especiales, '· combo máximo:', comboMax);
     await room.leave().catch(() => {});
     return { init, fin };
   }

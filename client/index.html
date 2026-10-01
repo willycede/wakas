@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-    <meta name="theme-color" content="#161029" />
+    <meta name="theme-color" content="#0f0b1e" />
     <title>Primal Clash</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
@@ -14,26 +14,26 @@
 
     <!-- Entrar -->
     <section id="login" class="screen hidden">
+      <button class="lang-btn" data-lang></button>
       <div class="panel title-panel">
-        <h1 class="logo">PRIMAL<br /><span>CLASH</span></h1>
-        <p class="subtitle">Liga mundial de Primales</p>
-        <label>Nombre de Domador <input id="login-user" maxlength="16" autocomplete="username" /></label>
-        <label>Contraseña <input id="login-pass" type="password" autocomplete="current-password" /></label>
+        <div class="logo"><span class="l1">PRIMAL</span><span class="l2">CLASH</span></div>
+        <p class="subtitle" data-t="login.tagline"></p>
+        <label><span data-t="login.user"></span><input id="login-user" maxlength="16" autocomplete="username" /></label>
+        <label><span data-t="login.pass"></span><input id="login-pass" type="password" autocomplete="current-password" /></label>
         <p class="error" id="login-error"></p>
-        <div class="row">
-          <button id="btn-login" class="primary big">Entrar</button>
-          <button id="btn-register" class="big">Crear cuenta</button>
-        </div>
+        <button id="btn-login" class="btn primary big block" data-t="login.enter"></button>
+        <button id="btn-register" class="btn ghost block" data-t="login.create"></button>
+        <p class="hint" data-t="login.hint"></p>
       </div>
     </section>
 
     <!-- Elegir inicial -->
     <section id="starter" class="screen hidden">
-      <div class="panel wide">
-        <h2>Elige a tu primer Primal</h2>
-        <p class="muted">Será tu compañero desde el primer combate. A los demás tendrás que capturarlos.</p>
+      <div class="starter-wrap">
+        <h2 class="display" data-t="starter.title"></h2>
+        <p class="muted" data-t="starter.sub"></p>
         <div id="starter-list" class="starter-list"></div>
-        <button id="btn-starter" class="primary big" disabled>¡Este es mi Primal!</button>
+        <button id="btn-starter" class="btn primary big" disabled></button>
       </div>
     </section>
 
@@ -42,39 +42,41 @@
       <header id="topbar">
         <div class="tb-player">
           <div class="tb-level"><span id="tb-lv">1</span></div>
-          <div>
+          <div class="tb-id">
             <b id="tb-name"></b>
             <div class="xpbar"><div id="tb-xp"></div></div>
           </div>
         </div>
         <div class="tb-res">
-          <div class="pill" id="tb-league"></div>
-          <div class="pill">🏆 <span id="tb-trophies">0</span></div>
-          <div class="pill gold">🪙 <span id="tb-coins">0</span></div>
+          <div class="res trophy"><i data-ic="trofeo"></i><span id="tb-trophies">0</span></div>
+          <div class="res coin"><i data-ic="moneda"></i><span id="tb-coins">0</span></div>
+          <button class="lang-btn small" data-lang></button>
         </div>
       </header>
       <main id="menu-body"></main>
       <nav id="tabs">
-        <button data-tab="equipo">🐾<span>Equipo</span></button>
-        <button data-tab="capturar">🕸️<span>Capturar</span></button>
-        <button data-tab="batalla" class="main">⚔️<span>Batalla</span></button>
-        <button data-tab="domador">🎖️<span>Domador</span></button>
-        <button data-tab="ranking">🌍<span>Ranking</span></button>
+        <button data-tab="equipo"><i data-ic="huella"></i><span data-t="tab.team"></span></button>
+        <button data-tab="capturar"><i data-ic="red"></i><span data-t="tab.capture"></span></button>
+        <button data-tab="batalla" class="main"><i data-ic="espadas"></i><span data-t="tab.battle"></span></button>
+        <button data-tab="domador"><i data-ic="medalla"></i><span data-t="tab.trainer"></span></button>
+        <button data-tab="ranking"><i data-ic="mundo"></i><span data-t="tab.ranking"></span></button>
       </nav>
     </section>
 
     <!-- Interfaz de batalla -->
     <section id="battle-hud" class="hidden">
       <div id="bh-top">
-        <div class="bh-side" id="bh-me"></div>
-        <div id="bh-timer">3:00</div>
-        <div class="bh-side right" id="bh-foe"></div>
+        <div class="bh-card me" id="bh-me"></div>
+        <div id="bh-timer"><i data-ic="reloj"></i><span>3:00</span></div>
+        <div class="bh-card foe" id="bh-foe"></div>
       </div>
+      <div id="bh-combo"></div>
       <div id="bh-team"></div>
       <div id="bh-moves"></div>
       <div id="joystick" class="hidden"><div id="joystick-knob"></div></div>
       <div id="bh-center"></div>
-      <div id="bh-help">🖱️ Clic derecho mover · Clic izquierdo atacar (mantener = combo) · Clic en un movimiento y luego en la arena · Rueda cambiar Primal &nbsp;|&nbsp; ⌨️ WASD · Espacio · 1-4 · Shift/F esquivar · Q/E</div>
+      <div id="bh-banner"></div>
+      <div id="bh-help" data-t="hud.help"></div>
     </section>
 
     <!-- Resultado -->
@@ -83,7 +85,7 @@
     </section>
 
     <div id="toasts"></div>
-    <div id="loading" class="screen hidden"><div class="panel">Cargando…</div></div>
+    <div id="loading" class="screen hidden"><div class="spinner"></div><span data-t="misc.loading"></span></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

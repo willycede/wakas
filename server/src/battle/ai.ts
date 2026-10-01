@@ -32,7 +32,7 @@ export class IA {
       const dd = Math.hypot(yo.x - cx, yo.y - cy);
       if (dd < rr) { hx += (yo.x - cx) / (dd || 1); hy += (yo.y - cy) / (dd || 1); }
     }
-    if ((hx || hy) && Math.random() < 0.25 * this.nivel && yo.cds[5] <= 0) b.accion(this.lado, 5, yo.x + hx * 50, yo.y + hy * 50);
+    if ((hx || hy) && Math.random() < 0.25 * this.nivel && yo.cds[5] <= 0) b.accion(this.lado, 5, { x: yo.x + hx * 50, y: yo.y + hy * 50 });
     // distancia ideal según su golpe básico
     const ideal = esp.basico === 'cuerpo' ? 40 : 190;
     if (b.t > this.cambioRodeo) { this.cambioRodeo = b.t + 1.5 + Math.random() * 2; this.rodeo *= -1; }
@@ -69,9 +69,10 @@ export class IA {
       if (m.tipo === 'area' && d > m.alcance + 20) continue;
       opciones.push(i);
     }
-    if (opciones.length && Math.random() < 0.2 + this.nivel * 0.4) return b.accion(this.lado, opciones[Math.floor(Math.random() * opciones.length)], tx, ty);
+    if (opciones.length && Math.random() < 0.2 + this.nivel * 0.4) return b.accion(this.lado, opciones[Math.floor(Math.random() * opciones.length)], { x: tx, y: ty });
     const alcanceBasico = esp.basico === 'cuerpo' ? 75 : 320;
-    if (d < alcanceBasico && yo.cds[0] <= 0) b.accion(this.lado, 0, tx, ty);
+    if (L.carga >= 100 && d < 300 && Math.random() < 0.3 + this.nivel * 0.5) return b.accion(this.lado, 6);
+    if (d < alcanceBasico && yo.cds[0] <= 0) b.accion(this.lado, 0, { x: tx, y: ty });
     void ang;
   }
 }
