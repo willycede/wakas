@@ -1,13 +1,15 @@
 // Motor de batalla en tiempo real (autoritativo en el servidor).
-// Dos lados, cada uno con hasta 6 Primales; cada lado controla a UNO a la vez en la arena
+// Dos lados, cada uno con hasta 3 Primales; cada lado controla a UNO a la vez en la arena
 // y puede cambiarlo. Se mueve libremente, dispara su básico (combo), 4 movimientos y esquiva.
 // Gana quien deja sin Primales al rival, o quien tenga más vida total al acabar el tiempo.
 
 import {
-  ARENA, CARGA_MAX, DURACION_BATALLA, ESPECIALES, ESPECIES, ESPERA_CAMBIO, HABILIDADES, MOVIMIENTOS, RADIO_PRIMAL, TICK_MS,
-  efectividad, moverEnArena, statsPrimal, velocidadMover, ST, type AvisoSnap, type Elemento, type Estado, type Fx, type Movimiento, type Obstaculo,
-  type ProyectilSnap, type Snapshot, type UnidadSnap,
+  ARENA, CARGA_MAX, DURACION_BATALLA, ESPECIALES, ESPECIALES_LEGENDARIOS, ESPECIES, ESPERA_CAMBIO, HABILIDADES, MOVIMIENTOS, RADIO_PRIMAL, TICK_MS,
+  cargaMax, efectividad, especialesDe, moverEnArena, statsPrimal, tipos, velocidadMover, ST, type AvisoSnap, type CampoSnap, type Estado, type Fx,
+  type Habilidad, type Movimiento, type Obstaculo, type ProyectilSnap, type Snapshot, type UnidadSnap,
 } from '../../../shared/src';
+
+const habDe = (esp: string): Habilidad => HABILIDADES[ESPECIES[esp].habilidad] ?? { id: '', nombre: '', desc: '' };
 
 const TICK = TICK_MS / 1000;
 const COMBO_VENTANA = 0.7;
@@ -45,6 +47,8 @@ export interface Unidad {
   dash: { vx: number; vy: number; hasta: number; mov?: Movimiento; golpeados: Set<number>; poder?: number; alLlegar?: () => void } | null;
   enlaceHasta: number; // tras el tercer golpe básico: un movimiento hace +30%
   tickDot: number;
+  tickRegen: number;
+  vueloHasta: number; // en el aire (Vuelo del cóndor): no se mueve ni recibe golpes
 }
 
 export interface Lado {
@@ -55,7 +59,7 @@ export interface Lado {
   entrada: { x: number; y: number; ax: number; ay: number } | null; // movimiento y apuntado actuales
   seq: number; // última entrada aplicada (se confirma al cliente)
   cola: { s: number; x: number; y: number; ax: number; ay: number }[];
-  carga: number; // barra de la técnica especial (0..100)
+  carga: number; // barra de la técnica especial (100 por técnica; los legendarios guardan hasta 200)
   combo: number; // golpes seguidos acertados
   comboHasta: number;
 }
@@ -63,6 +67,11 @@ export interface Lado {
 interface Proyectil {
   id: number; lado: 0 | 1; x: number; y: number; vx: number; vy: number; restante: number; r: number;
   mov: Movimiento; poder: number; atraviesa: boolean; golpeados: Set<number>;
+}
+
+interface Campo {
+  id: number; lado: 0 | 1; forma: 'circulo' | 'linea'; x: number; y: number; r: number; ang?: number; largo?: number;
+  hasta: number; dur: number; mov: Movimiento | null; cada: number; prox: number; tiron: number; k: string;
 }
 
 interface Aviso {
@@ -78,7 +87,7 @@ export function crearUnidad(esp: string, nivel: number, mods: Mods): Unidad {
     esp, nivel, hp: mhp, mhp, ataque: s.ataque, defensa: s.defensa, velocidad: s.velocidad, x: 0, y: 0, fa: 0,
     cds: [0, 0, 0, 0, 0, 0], combo: 0, comboHasta: 0, escudo: 0, escudoHasta: 0, mejoraDanoHasta: 0, mejoraVelHasta: 0,
     quemaduraHasta: 0, venenoHasta: 0, paralisisHasta: 0, lentoHasta: 0, invulnHasta: 0, accionHasta: 0,
-    anim: 'idle', animHasta: 0, dash: null, tickDot: 0, enlaceHasta: 0,
+    anim: 'idle', animHasta: 0, dash: null, tickDot: 0, tickRegen: 0, enlaceHasta: 0, vueloHasta: 0,
   };
 }
 
@@ -87,6 +96,7 @@ export class Batalla {
   lados: [Lado, Lado];
   proyectiles: Proyectil[] = [];
   avisos: Aviso[] = [];
+  campos: Campo[] = [];
   fx: Fx[] = [];
   terminado: { ganador: 0 | 1 | -1; motivo: string } | null = null;
   obstaculos: Obstaculo[];
@@ -147,7 +157,7 @@ export class Batalla {
     if (this.terminado) return;
     const u = this.activa(l);
     if (u.hp <= 0 || this.t < u.accionHasta || this.t < u.paralisisHasta) return;
-    if (i === 6) return this.especial(l, u);
+    if (i === 6 || i === 7) return this.especial(l, u, i - 6);
     if (u.cds[i] > 0) return;
     const rival = this.activa(l === 0 ? 1 : 0);
     let ang = u.fa;
@@ -184,66 +194,205 @@ export class Batalla {
   }
 
   // ---------------------------------------------------------------- técnicas especiales
-  private especial(l: 0 | 1, u: Unidad) {
+  /** k = 0: primera técnica (R); k = 1: segunda (T, solo legendarios). Cada una cuesta una barra. */
+  private especial(l: 0 | 1, u: Unidad, k: number) {
     const L = this.lados[l];
-    if (L.carga < CARGA_MAX) return;
-    L.carga = 0;
+    const sp = especialesDe(u.esp)[k];
+    if (!sp || L.carga < CARGA_MAX) return;
+    L.carga -= CARGA_MAX;
     const esp = ESPECIES[u.esp];
-    const sp = ESPECIALES[esp.elemento];
-    const poder = sp.poder * (0.85 + 0.15 * esp.etapa);
-    const rival = this.activa(l === 0 ? 1 : 0);
-    const angR = Math.atan2(rival.y - u.y, rival.x - u.x);
-    const dr = Math.hypot(rival.x - u.x, rival.y - u.y);
-    const ang = angDif(angR, u.fa) < 1.2 && dr < 520 ? angR : u.fa;
+    const etapa = esp.rareza === 'legendario' ? 3 : esp.etapa || 2;
+    const poder = sp.poder * (0.85 + 0.12 * etapa);
+    const rl = (l === 0 ? 1 : 0) as 0 | 1;
+    const rival = () => this.activa(rl);
+    const r0 = rival();
+    const angR = Math.atan2(r0.y - u.y, r0.x - u.x);
+    const dr = Math.hypot(r0.x - u.x, r0.y - u.y);
+    const ang = angDif(angR, u.fa) < 1.2 && dr < 560 ? angR : u.fa;
     u.fa = ang;
-    const mov = (extra: Partial<Movimiento>): Movimiento => ({ id: sp.id, nombre: sp.nombre, elemento: sp.elemento, tipo: 'zona', desc: '', poder, enfriamiento: 0, alcance: 0, ...extra });
-    // pose de lanzamiento: invulnerable durante la preparación
-    u.invulnHasta = this.t + 0.7;
-    u.accionHasta = this.t + 0.6;
-    u.anim = 'mov'; u.animHasta = this.t + 0.6;
-    this.fx.push({ k: 'especial', lado: l, id: sp.id, el: sp.elemento, x: r1(u.x), y: r1(u.y), ang: r2(ang) });
+    const mov = (f: number, extra: Partial<Movimiento> = {}): Movimiento =>
+      ({ id: sp.id, nombre: sp.nombre, elemento: sp.elemento, tipo: 'zona', desc: '', poder: poder * f, enfriamiento: 0, alcance: 0, ...extra });
     const aviso = (forma: 'circulo' | 'linea', x: number, y: number, r: number, dur: number, m: Movimiento, extra: { ang?: number; largo?: number } = {}) =>
       this.avisos.push({ id: this.seq++, lado: l, forma, x: clamp(x, 0, ARENA.w), y: clamp(y, 0, ARENA.h), r, hasta: this.t + dur, dur, mov: m, poder: 1, ...extra });
-    const objX = dr < 400 ? rival.x : u.x + Math.cos(ang) * 260, objY = dr < 400 ? rival.y : u.y + Math.sin(ang) * 260;
-    switch (sp.elemento) {
-      case 'fuego': aviso('circulo', u.x, u.y, 175, 0.75, mov({ estado: 'quemadura', probEstado: 1, empuje: 120 })); break;
-      case 'agua': aviso('linea', u.x, u.y, 70, 0.55, mov({ tipo: 'rayo', empuje: 240 }), { ang, largo: 440 }); break;
-      case 'planta': {
-        aviso('circulo', objX, objY, 125, 0.7, mov({ estado: 'veneno', probEstado: 1 }));
-        const n = Math.round(u.mhp * 0.2);
-        const cura = Math.min(n, u.mhp - u.hp);
-        u.hp += cura;
-        if (cura > 0) this.fx.push({ k: 'cura', lado: l, x: r1(u.x), y: r1(u.y), n: cura });
+    const campo = (forma: 'circulo' | 'linea', x: number, y: number, r: number, dur: number, m: Movimiento | null, o: { ang?: number; largo?: number; tiron?: number; k: string; cada?: number }) =>
+      this.campos.push({ id: this.seq++, lado: l, forma, x: clamp(x, 0, ARENA.w), y: clamp(y, 0, ARENA.h), r, ang: o.ang, largo: o.largo, hasta: this.t + dur, dur,
+        mov: m, cada: o.cada ?? 0.5, prox: this.t + (o.cada ?? 0.5), tiron: o.tiron ?? 0, k: o.k });
+    const curar = (f: number) => {
+      const n = Math.min(Math.round(u.mhp * f), u.mhp - u.hp);
+      u.hp += n;
+      if (n > 0) this.fx.push({ k: 'cura', lado: l, x: r1(u.x), y: r1(u.y), n });
+    };
+    const vivo = () => !this.terminado && u.hp > 0 && this.activa(l) === u;
+    const cerca = (x: number, y: number, d: number) => {
+      const a = Math.random() * Math.PI * 2, r = Math.random() * d;
+      return { x: x + Math.cos(a) * r, y: y + Math.sin(a) * r };
+    };
+    // pose de lanzamiento: invulnerable durante la preparación
+    u.invulnHasta = this.t + 0.6;
+    u.accionHasta = this.t + 0.55;
+    u.anim = 'mov'; u.animHasta = this.t + 0.6;
+    this.fx.push({ k: 'especial', lado: l, id: sp.id, el: sp.elemento, x: r1(u.x), y: r1(u.y), ang: r2(ang) });
+    const ox = u.x, oy = u.y;
+    const dx = Math.cos(ang), dy = Math.sin(ang);
+    switch (sp.id) {
+      // ------------------------------------------------ una por elemento
+      case 'supernova':
+        campo('circulo', ox, oy, 280, 0.75, null, { tiron: 170, k: 'atraer' });
+        aviso('circulo', ox, oy, 180, 0.75, mov(1, { estado: 'quemadura', probEstado: 1, empuje: 120 }));
+        this.programar(0.75, () => {
+          for (let i = 0; i < 8; i++) {
+            const a = (i / 8) * Math.PI * 2;
+            aviso('circulo', ox + Math.cos(a) * 240, oy + Math.sin(a) * 240, 58, 0.35, mov(0.55, { estado: 'quemadura', probEstado: 0.5 }));
+          }
+        });
+        this.programar(1.1, () => campo('circulo', ox, oy, 150, 3, mov(0.12, { estado: 'quemadura', probEstado: 0.3 }), { k: 'lava' }));
+        break;
+      case 'maremoto':
+        [-0.42, 0, 0.42].forEach((d, i) => this.programar(i * 0.22, () =>
+          aviso('linea', ox, oy, 60, 0.5, mov(0.8, { tipo: 'rayo', empuje: 220 }), { ang: ang + d, largo: 440 })));
+        this.programar(0.95, () => {
+          const r = rival();
+          const p = Math.hypot(r.x - ox, r.y - oy) < 480 ? r : { x: ox + dx * 360, y: oy + dy * 360 };
+          campo('circulo', p.x, p.y, 115, 3, mov(0.1, { estado: 'lento', probEstado: 1 }), { tiron: 150, k: 'remolino' });
+        });
+        break;
+      case 'jardin_espinoso': {
+        const aR = Math.atan2(r0.y - oy, r0.x - ox);
+        for (let i = 1; i <= 6; i++) aviso('circulo', ox + Math.cos(aR) * 72 * i, oy + Math.sin(aR) * 72 * i, 50, 0.3 + i * 0.12, mov(0.45, { estado: 'veneno', probEstado: 0.5, empuje: 30 }));
+        this.programar(1.1, () => { const r = rival(); campo('circulo', r.x, r.y, 135, 3.5, mov(0.1, { estado: 'veneno', probEstado: 0.4 }), { k: 'espinas' }); });
+        curar(0.2);
         break;
       }
-      case 'electrico':
-        for (let k = 0; k < 5; k++) {
-          const a = Math.random() * Math.PI * 2, d = k === 0 ? 0 : 40 + Math.random() * 50;
-          aviso('circulo', objX + Math.cos(a) * d, objY + Math.sin(a) * d, 58, 0.55 + k * 0.32, mov({ estado: 'paralisis', probEstado: 0.45 }));
+      case 'tormenta':
+        for (let i = 0; i < 6; i++) {
+          this.programar(i * 0.34, () => {
+            if (!vivo()) return;
+            const p = cerca(rival().x, rival().y, i === 5 ? 0 : 30);
+            aviso('circulo', p.x, p.y, i === 5 ? 90 : 60, 0.5, mov(i === 5 ? 2.2 : 1, { estado: 'paralisis', probEstado: i === 5 ? 1 : 0.25 }));
+          });
         }
         break;
-      case 'roca': aviso('circulo', objX, objY, 115, 1.15, mov({ estado: 'paralisis', probEstado: 1, empuje: 80 })); break;
-      case 'viento': {
+      case 'meteoro':
+        for (let i = 0; i < 5; i++) { const p = cerca(r0.x, r0.y, 140); aviso('circulo', p.x, p.y, 55, 0.6 + i * 0.15, mov(0.7)); }
+        this.programar(0.9, () => { const r = rival(); aviso('circulo', r.x, r.y, 120, 0.9, mov(2.4, { estado: 'paralisis', probEstado: 1, empuje: 100 })); });
+        break;
+      case 'huracan': {
         const dur = 0.3, largo = 320;
-        u.dash = { vx: Math.cos(ang) * largo / dur, vy: Math.sin(ang) * largo / dur, hasta: this.t + dur, mov: mov({ tipo: 'embestida', radio: 34, poder: poder * 0.5 }), golpeados: new Set(),
-          alLlegar: () => aviso('circulo', u.x, u.y, 135, 0.35, mov({ estado: 'lento', probEstado: 1, empuje: 160 })) };
+        u.dash = { vx: dx * largo / dur, vy: dy * largo / dur, hasta: this.t + dur, mov: mov(0.6, { tipo: 'embestida', radio: 34 }), golpeados: new Set(),
+          alLlegar: () => {
+            aviso('circulo', u.x, u.y, 140, 0.35, mov(0.8));
+            campo('circulo', u.x, u.y, 140, 3, mov(0.12, { estado: 'lento', probEstado: 1 }), { tiron: 190, k: 'huracan' });
+          } };
         u.invulnHasta = this.t + dur + 0.2;
         u.anim = 'dash'; u.animHasta = this.t + dur;
         this.fx.push({ k: 'dash', lado: l, x: r1(u.x), y: r1(u.y), ang: r2(ang), id: sp.id, el: sp.elemento });
         break;
       }
-      case 'sombra': {
-        // desaparece y reaparece detrás del rival
-        u.invulnHasta = this.t + 0.9;
-        const detras = Math.atan2(rival.y - u.y, rival.x - u.x);
-        this.programar(0.3, () => {
-          if (this.terminado || u.hp <= 0) return;
-          const r = moverEnArena(rival.x, rival.y, Math.cos(detras) * 45, Math.sin(detras) * 45, this.obstaculos);
-          u.x = r.x; u.y = r.y;
-          u.fa = detras + Math.PI;
+      case 'eclipse': {
+        u.invulnHasta = this.t + 1.2;
+        this.programar(0.35, () => {
+          if (!vivo()) return;
+          const r = rival();
+          const a = Math.atan2(r.y - u.y, r.x - u.x);
+          const p = moverEnArena(r.x, r.y, Math.cos(a) * 48, Math.sin(a) * 48, this.obstaculos);
+          u.x = p.x; u.y = p.y; u.fa = a + Math.PI;
           this.fx.push({ k: 'cambio', lado: l, esp: u.esp, x: r1(u.x), y: r1(u.y), silencioso: true });
-          aviso('circulo', rival.x, rival.y, 80, 0.15, mov({ estado: 'veneno', probEstado: 1, empuje: 90 }));
+          for (let j = 0; j < 3; j++) {
+            this.programar(0.05 + j * 0.2, () => {
+              if (!vivo()) return;
+              const r2_ = rival();
+              u.anim = 'basico'; u.animHasta = this.t + 0.15;
+              aviso('circulo', r2_.x, r2_.y, 75, 0.1, mov(j === 2 ? 1.5 : 0.8, j === 2 ? { estado: 'veneno', probEstado: 1, empuje: 90 } : {}));
+            });
+          }
         });
+        break;
+      }
+      case 'ventisca_glacial':
+        for (let w = 0; w < 3; w++) {
+          this.programar(w * 0.3, () => {
+            for (let i = 1; i <= 5; i++) {
+              const lat = (i % 2 ? 1 : -1) * (w % 2 ? -36 : 36);
+              aviso('circulo', ox + dx * 75 * i - dy * lat, oy + dy * 75 * i + dx * lat, 46, 0.45, mov(0.45, { estado: 'lento', probEstado: 0.6 }));
+            }
+          });
+        }
+        this.programar(1.2, () => campo('linea', ox, oy, 60, 3, mov(0.06, { estado: 'lento', probEstado: 1 }), { ang, largo: 400, k: 'hielo' }));
+        break;
+      case 'prisma_solar':
+        for (let i = 0; i < 7; i++) aviso('linea', ox, oy, 24, 0.5, mov(0.7), { ang: ang + (i / 7) * Math.PI * 2, largo: 320 });
+        this.programar(0.65, () => {
+          if (!vivo()) return;
+          const r = rival();
+          aviso('linea', u.x, u.y, 46, 0.55, mov(2.2, { estado: 'paralisis', probEstado: 0.5 }), { ang: Math.atan2(r.y - u.y, r.x - u.x), largo: 540 });
+        });
+        break;
+      // ------------------------------------------------ legendarios
+      case 'avalancha_andina': {
+        const roca = mov(0.75, { tipo: 'proyectil', empuje: 80, estado: 'lento', probEstado: 0.3, atraviesa: true });
+        for (let i = 0; i < 7; i++) this.programar(i * 0.12, () => { if (vivo()) this.disparar(l, u, roca, ang + (Math.random() - 0.5) * 0.6, 520, 24, 380, 1, true); });
+        break;
+      }
+      case 'corona_nevada':
+        for (let i = 0; i < 10; i++) {
+          const a = (i / 10) * Math.PI * 2;
+          aviso('circulo', ox + Math.cos(a) * 150, oy + Math.sin(a) * 150, 55, 0.45, mov(0.6, { estado: 'paralisis', probEstado: 0.6 }));
+        }
+        aviso('circulo', ox, oy, 120, 0.45, mov(0.8, { estado: 'lento', probEstado: 1 }));
+        campo('circulo', ox, oy, 190, 3, mov(0.05, { estado: 'lento', probEstado: 1 }), { k: 'hielo' });
+        u.escudo = Math.round(u.mhp * 0.35);
+        u.escudoHasta = this.t + 6;
+        break;
+      case 'furia_volcanica':
+        for (let i = 0; i < 7; i++) {
+          const p = i < 3 ? cerca(r0.x, r0.y, 40) : cerca(r0.x, r0.y, 250);
+          const dur = 0.7 + i * 0.12;
+          aviso('circulo', p.x, p.y, 70, dur, mov(0.75, { estado: 'quemadura', probEstado: 0.6 }));
+          this.programar(dur, () => campo('circulo', p.x, p.y, 60, 3, mov(0.08, { estado: 'quemadura', probEstado: 0.3 }), { k: 'lava' }));
+        }
+        break;
+      case 'rio_de_lava':
+        aviso('linea', ox, oy, 45, 0.4, mov(1, { tipo: 'rayo', estado: 'quemadura', probEstado: 1 }), { ang, largo: 540 });
+        this.programar(0.4, () => campo('linea', ox, oy, 45, 4, mov(0.18, { estado: 'quemadura', probEstado: 0.5 }), { ang, largo: 540, k: 'lava', cada: 0.4 }));
+        break;
+      case 'sol_naciente':
+        aviso('circulo', ox, oy, 170, 0.6, mov(1, { estado: 'quemadura', probEstado: 0.5, empuje: 100 }));
+        this.programar(0.7, () => aviso('circulo', ox, oy, 290, 0.45, mov(0.9, { empuje: 60 })));
+        curar(0.25);
+        break;
+      case 'rayo_de_inti':
+        u.accionHasta = this.t + 0.9;
+        aviso('linea', ox, oy, 62, 0.9, mov(1, { tipo: 'rayo', estado: 'quemadura', probEstado: 1, empuje: 160 }), { ang, largo: 950 });
+        break;
+      case 'vuelo_del_condor': {
+        u.invulnHasta = this.t + 1.45;
+        u.accionHasta = this.t + 1.4;
+        u.vueloHasta = this.t + 1.3;
+        u.anim = 'vuelo'; u.animHasta = this.t + 1.3;
+        this.programar(0.8, () => {
+          if (!vivo()) return;
+          const r = rival();
+          const p = { x: r.x, y: r.y };
+          aviso('circulo', p.x, p.y, 110, 0.5, mov(1, { empuje: 160 }));
+          this.programar(0.48, () => { if (vivo()) { const q = moverEnArena(p.x, p.y, 0, 0, this.obstaculos); u.x = q.x; u.y = q.y; } });
+        });
+        break;
+      }
+      case 'alas_de_tormenta': {
+        const pluma = mov(1, { tipo: 'proyectil', estado: 'veneno', probEstado: 0.3 });
+        for (let i = 0; i < 12; i++) this.disparar(l, u, pluma, ang + (i / 12) * Math.PI * 2, 380, 12, 520, 1);
+        this.programar(0.3, () => { const r = rival(); campo('circulo', r.x, r.y, 150, 2.5, mov(0.13, { estado: 'lento', probEstado: 1 }), { tiron: 210, k: 'torbellino' }); });
+        break;
+      }
+      case 'arcoiris':
+        for (let i = 0; i < 7; i++) this.programar(i * 0.15, () => {
+          if (vivo()) aviso('linea', u.x, u.y, 30, 0.4, mov(0.8), { ang: ang - 0.6 + i * 0.2, largo: 440 });
+        });
+        break;
+      case 'diluvio': {
+        const r = rival();
+        campo('circulo', r.x, r.y, 200, 4, mov(0.12, { estado: 'lento', probEstado: 1 }), { k: 'lluvia' });
+        curar(0.2);
         break;
       }
     }
@@ -253,6 +402,32 @@ export class Batalla {
   private pendientes: { t: number; fn: () => void }[] = [];
   private programar(seg: number, fn: () => void) {
     this.pendientes.push({ t: this.t + seg, fn });
+  }
+
+  /** Campos en el suelo: dañan cada cierto tiempo y algunos atraen al rival hacia su centro. */
+  private tickCampos() {
+    this.campos = this.campos.filter((c) => this.t < c.hasta);
+    for (const c of this.campos) {
+      const rl = (c.lado === 0 ? 1 : 0) as 0 | 1;
+      const def = this.activa(rl);
+      if (def.hp <= 0) continue;
+      let dentro: boolean, cx = c.x, cy = c.y;
+      if (c.forma === 'circulo') dentro = Math.hypot(def.x - c.x, def.y - c.y) <= c.r + RADIO_PRIMAL;
+      else {
+        const ux = Math.cos(c.ang!), uy = Math.sin(c.ang!);
+        const along = (def.x - c.x) * ux + (def.y - c.y) * uy, across = Math.abs(-(def.x - c.x) * uy + (def.y - c.y) * ux);
+        dentro = along >= 0 && along <= c.largo! && across <= c.r + RADIO_PRIMAL;
+        cx = c.x + ux * along; cy = c.y + uy * along;
+      }
+      if (c.tiron && this.t >= def.invulnHasta) {
+        const d = Math.hypot(cx - def.x, cy - def.y);
+        if (d < c.r * 1.5 && d > 8) this.moverUnidad(def, ((cx - def.x) / d) * c.tiron * TICK, ((cy - def.y) / d) * c.tiron * TICK);
+      }
+      if (c.mov && dentro && this.t >= c.prox) {
+        c.prox = this.t + c.cada;
+        this.danar(c.lado, this.activa(c.lado), c.mov, 1, true);
+      }
+    }
   }
 
   /** Golpe básico: combo de 3. Cuerpo a cuerpo (zarpazos) o a distancia (disparos). */
@@ -267,8 +442,9 @@ export class Batalla {
     if (fin) u.enlaceHasta = this.t + 0.9;
     u.accionHasta = this.t + (fin ? 0.3 : 0.18);
     u.anim = 'basico'; u.animHasta = this.t + 0.22;
+    const hb = habDe(u.esp).basico;
     const falso: Movimiento = { id: 'basico', nombre: 'Básico', elemento: el, tipo: 'proyectil', desc: '', poder: fin ? 0.55 : 0.3, enfriamiento: 0, alcance: 0,
-      estado: esp.habilidad === 'estatica' ? 'paralisis' : undefined, probEstado: esp.habilidad === 'estatica' ? 0.15 : 0, empuje: fin ? 50 : 10 };
+      estado: hb?.estado, probEstado: hb?.prob ?? 0, empuje: fin ? 50 : 10 };
     if (tipo === 'cuerpo') {
       // zarpazo en arco delante del Primal; el tercero avanza y empuja
       if (fin) u.dash = { vx: Math.cos(ang) * 260, vy: Math.sin(ang) * 260, hasta: this.t + 0.12, golpeados: new Set() };
@@ -288,7 +464,7 @@ export class Batalla {
   private usar(l: 0 | 1, u: Unidad, mov: Movimiento, ang: number, tx: number, ty: number, mult: number) {
     switch (mov.tipo) {
       case 'proyectil':
-        this.disparar(l, u, mov, ang, mov.alcance, mov.radio ?? 10, mov.velocidad ?? 400, mult, mov.id === 'cuchilla_aire');
+        this.disparar(l, u, mov, ang, mov.alcance, mov.radio ?? 10, mov.velocidad ?? 400, mult, !!mov.atraviesa);
         break;
       case 'rafaga': {
         const n = mov.cantidad ?? 3;
@@ -298,7 +474,7 @@ export class Batalla {
       case 'embestida': {
         const dur = 0.22;
         u.dash = { vx: Math.cos(ang) * mov.alcance / dur, vy: Math.sin(ang) * mov.alcance / dur, hasta: this.t + dur, mov, golpeados: new Set() };
-        if (mov.id === 'paso_sombrio') u.invulnHasta = this.t + dur + 0.05;
+        if (mov.intangible) u.invulnHasta = this.t + dur + 0.05;
         u.anim = 'dash'; u.animHasta = this.t + dur;
         this.fx.push({ k: 'dash', lado: l, x: r1(u.x), y: r1(u.y), ang: r2(ang), id: mov.id, el: mov.elemento });
         u.accionHasta = this.t + dur;
@@ -332,7 +508,7 @@ export class Batalla {
         break;
       }
       case 'mejora':
-        if (mov.id === 'aceleron') u.mejoraVelHasta = this.t + (mov.duracion ?? 5);
+        if (mov.mejora === 'vel') u.mejoraVelHasta = this.t + (mov.duracion ?? 5);
         else u.mejoraDanoHasta = this.t + (mov.duracion ?? 6);
         break;
     }
@@ -355,6 +531,7 @@ export class Batalla {
     nuevo.x = viejo.x; nuevo.y = viejo.y; nuevo.fa = viejo.fa;
     viejo.dash = null;
     L.activo = slot;
+    L.carga = Math.min(L.carga, cargaMax(nuevo.esp));
     L.cambioListo = this.t + L.mods.esperaCambio;
     nuevo.invulnHasta = this.t + 0.6;
     nuevo.anim = 'cambio'; nuevo.animHasta = this.t + 0.4;
@@ -363,33 +540,33 @@ export class Batalla {
   }
 
   // ---------------------------------------------------------------- daño
-  private danar(l: 0 | 1, atacante: Unidad, mov: Movimiento, mult: number) {
+  /** campo = daño de un campo en el suelo (no cuenta para el combo ni carga la barra). */
+  private danar(l: 0 | 1, atacante: Unidad, mov: Movimiento, mult: number, campo = false) {
     const def = this.activa(l === 0 ? 1 : 0);
-    const dl = l === 0 ? 1 : 0;
+    const dl = (l === 0 ? 1 : 0) as 0 | 1;
     if (def.hp <= 0 || this.t < def.invulnHasta) return;
-    const espDef = ESPECIES[def.esp];
-    if (espDef.habilidad === 'sombra_esquiva' && Math.random() < 0.15) {
+    const hDef = habDe(def.esp), hAt = habDe(atacante.esp);
+    if (!campo && hDef.esquiva && Math.random() < hDef.esquiva) {
       this.fx.push({ k: 'esquiva', lado: dl, x: r1(def.x), y: r1(def.y) });
       return;
     }
-    const espAt = ESPECIES[atacante.esp];
-    const ef = efectividad(mov.elemento, espDef.elemento);
-    const stab = mov.elemento === espAt.elemento ? 1.2 : 1;
+    const ef = efectividad(mov.elemento, tipos(def.esp));
+    const stab = tipos(atacante.esp).includes(mov.elemento) ? 1.2 : 1;
     let dano = (atacante.ataque * mov.poder * 0.6 * (100 / (100 + def.defensa * 1.6))) * ef * stab * mult;
     // habilidades
-    const bajo = atacante.hp < atacante.mhp * 0.35;
-    const potenciado: Record<string, Elemento> = { brasa_interior: 'fuego', marea: 'agua', espesura: 'planta' };
-    if (bajo && potenciado[espAt.habilidad] === mov.elemento) dano *= 1.3;
-    if (espAt.habilidad === 'furia_tormenta') dano *= 1.12;
+    if (hAt.pinch === mov.elemento && atacante.hp < atacante.mhp * 0.35) dano *= 1.3;
+    dano *= hAt.dano ?? 1;
     if (this.t < atacante.mejoraDanoHasta) dano *= 1.35;
-    // combo del atacante: +10% cada 5 golpes seguidos (máx. +30%)
     const La = this.lados[l];
-    La.combo = this.t < La.comboHasta ? La.combo + 1 : 1;
-    La.comboHasta = this.t + 1.8;
-    dano *= 1 + Math.min(0.3, Math.floor(La.combo / 5) * 0.1);
-    if (La.combo >= 2) this.fx.push({ k: 'combo', lado: l, n: La.combo });
-    if (espDef.habilidad === 'roca_solida') dano *= 0.85;
-    const crit = Math.random() < 0.08;
+    if (!campo) {
+      // combo del atacante: +10% cada 5 golpes seguidos (máx. +30%)
+      La.combo = this.t < La.comboHasta ? La.combo + 1 : 1;
+      La.comboHasta = this.t + 1.8;
+      dano *= 1 + Math.min(0.3, Math.floor(La.combo / 5) * 0.1);
+      if (La.combo >= 2) this.fx.push({ k: 'combo', lado: l, n: La.combo });
+    }
+    dano *= hDef.defensa ?? 1;
+    const crit = !campo && Math.random() < (hAt.critico ?? 0.08);
     if (crit) dano *= 1.5;
     dano = Math.max(1, Math.round(dano * (0.92 + Math.random() * 0.16)));
     if (def.escudo > 0 && this.t < def.escudoHasta) {
@@ -398,10 +575,18 @@ export class Batalla {
       dano -= a;
     }
     def.hp = Math.max(0, def.hp - dano);
-    def.anim = 'golpe'; def.animHasta = this.t + 0.18;
+    if (!campo) { def.anim = 'golpe'; def.animHasta = this.t + 0.18; }
+    // robo de vida
+    if (hAt.robo && dano > 0 && atacante.hp > 0) {
+      const c = Math.min(atacante.mhp - atacante.hp, Math.round(dano * hAt.robo));
+      if (c > 0) { atacante.hp += c; this.fx.push({ k: 'cura', lado: l, x: r1(atacante.x), y: r1(atacante.y), n: c }); }
+    }
     // la barra especial se llena golpeando (más) y recibiendo golpes (menos)
-    if (!ESPECIALES_IDS.has(mov.id)) La.carga = Math.min(CARGA_MAX, La.carga + (mov.id === 'basico' ? 3.5 : 7) + (crit ? 3 : 0));
-    this.lados[dl].carga = Math.min(CARGA_MAX, this.lados[dl].carga + 4);
+    if (!campo && !ESPECIALES_IDS.has(mov.id)) {
+      const gana = ((mov.id === 'basico' ? 3.5 : 7) + (crit ? 3 : 0)) * (hAt.carga ?? 1);
+      La.carga = Math.min(cargaMax(atacante.esp), La.carga + gana);
+    }
+    if (!campo) this.lados[dl].carga = Math.min(cargaMax(def.esp), this.lados[dl].carga + 4 * (hDef.carga ?? 1));
     this.fx.push({ k: 'dano', lado: dl, x: r1(def.x), y: r1(def.y), n: dano, ef, crit: crit || undefined });
     // estados
     if (mov.estado && Math.random() < (mov.probEstado ?? 0)) this.aplicarEstado(dl, def, mov.estado);
@@ -410,13 +595,13 @@ export class Batalla {
       const a = Math.atan2(def.y - atacante.y, def.x - atacante.x);
       this.moverUnidad(def, Math.cos(a) * mov.empuje * 0.5, Math.sin(a) * mov.empuje * 0.5);
     }
-    if (def.hp <= 0) this.caer(dl as 0 | 1);
+    if (def.hp <= 0) this.caer(dl);
   }
 
   private aplicarEstado(l: 0 | 1, u: Unidad, e: Estado) {
     if (e === 'quemadura') u.quemaduraHasta = this.t + 3;
     if (e === 'veneno') u.venenoHasta = this.t + 4;
-    if (e === 'paralisis') u.paralisisHasta = this.t + 0.9;
+    if (e === 'paralisis') { if (this.t < u.paralisisHasta + 1.2) return; u.paralisisHasta = this.t + 0.9; } // no se encadena
     if (e === 'lento') u.lentoHasta = this.t + 2.5;
     this.fx.push({ k: 'estado', lado: l, x: r1(u.x), y: r1(u.y), estado: e });
   }
@@ -435,6 +620,7 @@ export class Batalla {
     const pos = { x: u.x, y: u.y };
     L.activo = siguiente;
     const n = L.unidades[siguiente];
+    L.carga = Math.min(L.carga, cargaMax(n.esp));
     n.x = pos.x; n.y = pos.y;
     n.invulnHasta = this.t + 1.2;
     n.anim = 'cambio'; n.animHasta = this.t + 0.4;
@@ -471,6 +657,7 @@ export class Batalla {
     for (const p of listos) p.fn();
     this.tickProyectiles();
     this.tickAvisos();
+    this.tickCampos();
     // separa a los dos Primales activos si se solapan
     const a = this.activa(0), b = this.activa(1);
     const d = Math.hypot(a.x - b.x, a.y - b.y);
@@ -507,7 +694,17 @@ export class Batalla {
         if (u.hp <= 0) return this.caer(l);
       }
     }
+    const regen = habDe(u.esp).regen;
+    if (regen) {
+      u.tickRegen += TICK;
+      if (u.tickRegen >= 2) {
+        u.tickRegen = 0;
+        const n = Math.min(u.mhp - u.hp, Math.max(1, Math.round(u.mhp * regen)));
+        if (n > 0) { u.hp += n; this.fx.push({ k: 'cura', lado: l, x: r1(u.x), y: r1(u.y), n }); }
+      }
+    }
     if (u.escudo > 0 && this.t > u.escudoHasta) u.escudo = 0;
+    if (this.t < u.vueloHasta) return; // en el aire
     // embestidas y esquivas
     if (u.dash) {
       if (this.t >= u.dash.hasta) { const f = u.dash.alLlegar; u.dash = null; f?.(); }
@@ -591,16 +788,20 @@ export class Batalla {
       id: a.id, forma: a.forma, x: r1(a.x), y: r1(a.y), r: a.r, ang: a.ang !== undefined ? r2(a.ang) : undefined, largo: a.largo,
       t: r2(a.hasta - this.t), dur: a.dur, el: a.mov.elemento, lado: a.lado,
     }));
+    const cp: CampoSnap[] = this.campos.map((c) => ({
+      id: c.id, k: c.k, forma: c.forma, x: r1(c.x), y: r1(c.y), r: c.r, ang: c.ang !== undefined ? r2(c.ang) : undefined, largo: c.largo,
+      t: r2(c.hasta - this.t), dur: c.dur, el: c.mov?.elemento ?? 'fuego', lado: c.lado, tiron: c.tiron > 0 || undefined,
+    }));
     const eq = ([0, 1] as const).map((l) => {
       const L = this.lados[l];
       return { hp: L.unidades.map((x) => x.hp), mhp: L.unidades.map((x) => x.mhp), esp: L.unidades.map((x) => x.esp), activo: L.activo, cambioListo: r2(Math.max(0, L.cambioListo - this.t)),
         carga: Math.floor(L.carga), combo: this.t < L.comboHasta ? L.combo : 0 };
     }) as Snapshot['eq'];
-    return { t: Date.now(), ack: this.lados[paraLado].seq || ack, tiempo: Math.ceil(this.restante), u, pj, av, eq, cds: this.activa(paraLado).cds.map(r2) };
+    return { t: Date.now(), ack: this.lados[paraLado].seq || ack, tiempo: Math.ceil(this.restante), u, pj, av, cp, eq, cds: this.activa(paraLado).cds.map(r2) };
   }
 }
 
-const ESPECIALES_IDS = new Set(Object.values(ESPECIALES).map((e) => e.id));
+const ESPECIALES_IDS = new Set([...Object.values(ESPECIALES), ...Object.values(ESPECIALES_LEGENDARIOS).flat()].map((e) => e.id));
 
 function angDif(a: number, b: number) {
   let d = Math.abs(a - b) % (Math.PI * 2);

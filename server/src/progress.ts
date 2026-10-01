@@ -1,8 +1,8 @@
 // Progreso de un Domador: perfil, recompensas, evolución, medallas, habilidades y capturas.
 
 import {
-  BONO_MEDALLA_XP, ESPECIES, ESPERA_CAMBIO, HABILIDADES_DOMADOR, INICIALES, NIVEL_MAX_DOMADOR, NIVEL_MAX_PRIMAL,
-  RECOMPENSAS, TAM_EQUIPO, medallasDe, puntosHabilidad, xpDomador, xpPrimal, type FinBatalla, type Perfil, type PrimalGuardado,
+  BONO_MEDALLA_XP, ESPECIES, ESPERA_CAMBIO, HABILIDADES_DOMADOR, INICIALES, MAX_LEGENDARIOS, NIVEL_MAX_DOMADOR, NIVEL_MAX_PRIMAL, NUM_INICIALES,
+  RECOMPENSAS, TAM_EQUIPO, esLegendario, legendarioDelDia, medallasDe, puntosHabilidad, xpDomador, xpPrimal, type FinBatalla, type Perfil, type PrimalGuardado,
 } from '../../shared/src';
 import type { Domador } from './db';
 import type { Mods } from './battle/engine';
@@ -32,20 +32,34 @@ export function mods(d: Domador): Mods {
   };
 }
 
-export function elegirInicial(d: Domador, esp: string): string | null {
-  if (d.primales.length) return 'Ya elegiste a tu Primal inicial.';
-  if (!INICIALES.includes(esp)) return 'Ese Primal no es inicial.';
-  const p: PrimalGuardado = { uid: nuevoUid(), esp, nivel: 5, xp: 0 };
-  d.primales.push(p);
-  d.equipo = [p.uid];
-  d.capturados = [esp];
+/** Cuentas de versiones anteriores: quita Primales que ya no existen y ajusta el equipo a 3. */
+export function migrar(d: Domador) {
+  d.primales = d.primales.filter((p) => ESPECIES[p.esp]);
+  d.capturados = d.capturados.filter((e) => ESPECIES[e]);
+  d.equipo = d.equipo.filter((u) => d.primales.some((p) => p.uid === u));
+  let leg = 0;
+  d.equipo = d.equipo.filter((u) => !esLegendario(d.primales.find((p) => p.uid === u)!.esp) || ++leg <= MAX_LEGENDARIOS).slice(0, TAM_EQUIPO);
+  if (!d.equipo.length && d.primales.length) d.equipo = d.primales.slice(0, TAM_EQUIPO).map((p) => p.uid);
+}
+
+/** Al empezar se eligen 3 Primales comunes distintos de la lista de iniciales. */
+export function elegirIniciales(d: Domador, esps: string[]): string | null {
+  if (d.primales.length) return 'Ya elegiste a tus Primales iniciales.';
+  const unicos = [...new Set(esps)];
+  if (unicos.length !== NUM_INICIALES || unicos.some((e) => !INICIALES.includes(e))) return `Elige ${NUM_INICIALES} Primales iniciales distintos.`;
+  for (const esp of unicos) d.primales.push({ uid: nuevoUid(), esp, nivel: 5, xp: 0 });
+  d.equipo = d.primales.map((p) => p.uid);
+  d.capturados = [...unicos];
   return null;
 }
 
 export function ponerEquipo(d: Domador, uids: string[]): string | null {
   const unicos = [...new Set(uids)].filter((u) => d.primales.some((p) => p.uid === u));
   if (!unicos.length) return 'Tu equipo necesita al menos un Primal.';
-  d.equipo = unicos.slice(0, TAM_EQUIPO);
+  if (unicos.length > TAM_EQUIPO) return `Tu equipo está lleno (${TAM_EQUIPO}). Quita uno primero.`;
+  const leg = unicos.filter((u) => esLegendario(d.primales.find((p) => p.uid === u)!.esp)).length;
+  if (leg > MAX_LEGENDARIOS) return 'Solo puedes llevar un legendario por batalla.';
+  d.equipo = unicos;
   return null;
 }
 
@@ -118,7 +132,8 @@ export function recompensar(d: Domador, gano: boolean, empate: boolean, modo: 'l
   if (capturado) {
     const p: PrimalGuardado = { uid: nuevoUid(), esp: capturado, nivel: ESPECIES[capturado].captura.nivelSalvaje, xp: 0 };
     d.primales.push(p);
-    if (d.equipo.length < TAM_EQUIPO) d.equipo.push(p.uid);
+    const hayLeg = d.equipo.some((u) => esLegendario(d.primales.find((x) => x.uid === u)?.esp ?? ''));
+    if (d.equipo.length < TAM_EQUIPO && !(esLegendario(capturado) && hayLeg)) d.equipo.push(p.uid);
     if (!d.capturados.includes(capturado)) d.capturados.push(capturado);
   }
   const nuevas = medallasDe(d.nivel).map((m) => m.id).filter((m) => !antes.includes(m));
@@ -132,7 +147,8 @@ export function recompensar(d: Domador, gano: boolean, empate: boolean, modo: 'l
 export function puedeCapturar(d: Domador, esp: string): string | null {
   const e = ESPECIES[esp];
   if (!e) return 'Primal desconocido.';
-  if (e.inicial && d.primales.length === 0) return 'Primero elige tu Primal inicial.';
+  if (d.primales.length === 0) return 'Primero elige tus Primales iniciales.';
+  if (e.rareza === 'legendario' && legendarioDelDia().id !== esp) return 'Este legendario no aparece hoy. Vuelve otro día.';
   if (d.nivel < e.captura.nivel) return `Necesitas ser Domador de nivel ${e.captura.nivel}.`;
   if (d.monedas < costoCaptura(d, esp)) return `Necesitas ${costoCaptura(d, esp)} monedas.`;
   if (!d.equipo.length) return 'Necesitas un equipo.';

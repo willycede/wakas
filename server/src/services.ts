@@ -1,6 +1,7 @@
 // Servicios compartidos: almacenamiento y caché de Domadores.
 
 import { crearStore, type Domador } from './db';
+import { migrar } from './progress';
 
 export const store = crearStore();
 
@@ -10,7 +11,7 @@ class Domadores {
     let d = this.cache.get(id);
     if (!d) {
       d = (await store.domador(id)) ?? undefined;
-      if (d) this.cache.set(id, d);
+      if (d) { migrar(d); this.cache.set(id, d); }
     }
     return d ?? null;
   }

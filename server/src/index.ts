@@ -8,10 +8,10 @@ import { randomBytes, scrypt as scryptCb, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { Server, matchMaker } from 'colyseus';
 import { WebSocketTransport } from '@colyseus/ws-transport';
-import { ESPECIES, ligaDe } from '../../shared/src';
+import { ESPECIES, RAREZAS, TAM_EQUIPO, ligaDe, type Especie } from '../../shared/src';
 import { BatallaRoom, type OpcionesBatalla, type Participante } from './battle/room';
 import type { Domador } from './db';
-import { costoCaptura, elegirInicial, perfil, ponerEquipo, puedeCapturar, subirHabilidad } from './progress';
+import { costoCaptura, elegirIniciales, perfil, ponerEquipo, puedeCapturar, subirHabilidad } from './progress';
 import { domadores, store } from './services';
 
 const scrypt = promisify(scryptCb) as (pw: string, salt: Buffer, len: number) => Promise<Buffer>;
@@ -47,10 +47,22 @@ function participante(d: Domador): Participante {
 function rivalIA(d: Domador): Participante {
   const yo = participante(d);
   const nivelMedio = Math.round(yo.equipo.reduce((s, e) => s + e.nivel, 0) / Math.max(1, yo.equipo.length));
-  const pool = Object.values(ESPECIES).filter((e) => e.etapa === 1 || nivelMedio >= 18 || (e.etapa === 2 && nivelMedio >= 12));
-  const n = Math.min(6, Math.max(1, yo.equipo.length));
+  // especies que "existen" a ese nivel, con rareza más alta cuantos más trofeos
+  const pEpico = Math.min(0.2, 0.02 + d.trofeos / 20000), pRaro = Math.min(0.4, 0.15 + d.trofeos / 10000);
+  const pool = Object.values(ESPECIES).filter((e) => e.rareza !== 'legendario' && nivelMinimo(e) <= nivelMedio + 2);
+  const sortear = () => {
+    const x = Math.random();
+    const r = x < pEpico ? 'epico' : x < pEpico + pRaro ? 'raro' : 'comun';
+    const de = pool.filter((e) => e.rareza === r);
+    const lista = de.length ? de : pool;
+    return lista[Math.floor(Math.random() * lista.length)];
+  };
+  const n = Math.min(TAM_EQUIPO, Math.max(1, yo.equipo.length));
+  const usados = new Set<string>();
   const equipo = Array.from({ length: n }, (_, i) => {
-    const e = pool[Math.floor(Math.random() * pool.length)];
+    let e = sortear();
+    for (let k = 0; k < 5 && usados.has(e.id); k++) e = sortear();
+    usados.add(e.id);
     return { uid: 'ia' + i, esp: e.id, nivel: Math.max(1, nivelMedio + Math.floor(Math.random() * 3) - 1) };
   });
   const nombres = ['Rival Kai', 'Domadora Ren', 'Rival Iker', 'Domadora Luma', 'Rival Taro', 'Domadora Nia'];
@@ -58,6 +70,14 @@ function rivalIA(d: Domador): Participante {
   return { id: null, nombre: nombres[Math.floor(Math.random() * nombres.length)], trofeos: Math.max(0, d.trofeos + Math.floor(Math.random() * 80) - 40), equipo,
     ia: Math.min(0.95, 0.18 + d.trofeos / 6000 + Math.random() * 0.08) };
   void liga;
+}
+
+/** Nivel desde el que puede aparecer una especie (por su evolución o su rareza). */
+function nivelMinimo(e: Especie) {
+  const padre = Object.values(ESPECIES).find((x) => x.evoluciona?.a === e.id);
+  if (padre) return padre.evoluciona!.nivel;
+  if (e.etapa === 0) return e.rareza === 'epico' ? 18 : 10;
+  return e.rareza === 'epico' ? 12 : e.rareza === 'raro' ? 5 : 1;
 }
 
 // ------------------------------------------------------------------ cola de la Liga
@@ -142,7 +162,7 @@ async function main() {
     await domadores.guardar(d);
     res.json(perfil(d));
   };
-  app.post('/api/inicial', accion((d, b) => elegirInicial(d, String(b.especie))));
+  app.post('/api/inicial', accion((d, b) => elegirIniciales(d, Array.isArray(b.especies) ? b.especies.map(String) : [])));
   app.post('/api/equipo', accion((d, b) => ponerEquipo(d, Array.isArray(b.equipo) ? b.equipo.map(String) : [])));
   app.post('/api/habilidad', accion((d, b) => subirHabilidad(d, String(b.id))));
 
@@ -152,7 +172,7 @@ async function main() {
   app.post('/api/buscar', async (req, res) => {
     const d = await auth(req);
     if (!d) return res.status(401).json({ error: 'Sesión no válida.' });
-    if (!d.equipo.length) return res.status(400).json({ error: 'Primero elige tu Primal inicial.' });
+    if (!d.equipo.length) return res.status(400).json({ error: 'Primero elige tus Primales iniciales.' });
     const prev = cola.findIndex((x) => x.d.id === d.id);
     if (prev >= 0) cola.splice(prev, 1)[0].resolver({ error: 'Búsqueda reemplazada.' });
     const r = await new Promise<{ roomId: string } | { error: string }>((resolver) => cola.push({ d, desde: Date.now(), resolver }));
@@ -177,8 +197,8 @@ async function main() {
     d.monedas -= costo;
     await domadores.guardar(d);
     const e = ESPECIES[esp];
-    // el salvaje es fuerte: más vida y buena IA
-    const salvaje: Participante = { id: null, nombre: `${e.nombre} salvaje`, trofeos: 0, equipo: [{ uid: 'salvaje', esp, nivel: e.captura.nivelSalvaje + 2 }], ia: 0.75 };
+    // el salvaje es más listo cuanto más raro (los legendarios pelean con todo)
+    const salvaje: Participante = { id: null, nombre: e.nombre, trofeos: d.trofeos, equipo: [{ uid: 'salvaje', esp, nivel: e.captura.nivelSalvaje + 2 }], ia: RAREZAS[e.rareza].ia };
     const roomId = await crearBatalla({ modo: 'captura', lados: [participante(d), salvaje], especieSalvaje: esp, costo });
     res.json({ roomId, perfil: perfil(d) });
   });
@@ -198,7 +218,7 @@ async function main() {
         if (ESPECIES[esp]) {
           const p = { uid: Math.random().toString(36).slice(2), esp, nivel: Number(b.nivelPrimal) || 10, xp: 0 };
           d.primales.push(p);
-          if (d.equipo.length < 6) d.equipo.push(p.uid);
+          if (d.equipo.length < TAM_EQUIPO) d.equipo.push(p.uid);
         }
       }
       await domadores.guardar(d);

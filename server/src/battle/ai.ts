@@ -2,7 +2,7 @@
 // Se mueve a su distancia ideal, rodea al rival, esquiva los avisos, usa sus movimientos
 // cuando están listos y cambia de Primal si el suyo va perdiendo por elemento.
 
-import { ARENA, ESPECIES, MOVIMIENTOS, efectividad } from '../../../shared/src';
+import { ARENA, CARGA_MAX, ESPECIES, MOVIMIENTOS, efectividad, especialesDe, tipos } from '../../../shared/src';
 import type { Batalla } from './engine';
 
 export class IA {
@@ -48,9 +48,9 @@ export class IA {
     // cambio de Primal si está en desventaja clara y tiene uno mejor
     const L = b.lados[this.lado];
     if (b.t > L.cambioListo && Math.random() < 0.02 * this.nivel) {
-      const ef = efectividad(ESPECIES[rival.esp].elemento, esp.elemento);
+      const ef = efectividad(ESPECIES[rival.esp].elemento, tipos(yo.esp));
       if (ef > 1 || yo.hp < yo.mhp * 0.25) {
-        const mejor = L.unidades.findIndex((u, i) => i !== L.activo && u.hp > u.mhp * 0.4 && efectividad(ESPECIES[rival.esp].elemento, ESPECIES[u.esp].elemento) <= 1);
+        const mejor = L.unidades.findIndex((u, i) => i !== L.activo && u.hp > u.mhp * 0.4 && efectividad(ESPECIES[rival.esp].elemento, tipos(u.esp)) <= 1);
         if (mejor >= 0) return b.cambiar(this.lado, mejor);
       }
     }
@@ -71,7 +71,7 @@ export class IA {
     }
     if (opciones.length && Math.random() < 0.2 + this.nivel * 0.4) return b.accion(this.lado, opciones[Math.floor(Math.random() * opciones.length)], { x: tx, y: ty });
     const alcanceBasico = esp.basico === 'cuerpo' ? 75 : 320;
-    if (L.carga >= 100 && d < 300 && Math.random() < 0.3 + this.nivel * 0.5) return b.accion(this.lado, 6);
+    if (L.carga >= CARGA_MAX && d < 340 && Math.random() < 0.3 + this.nivel * 0.5) return b.accion(this.lado, especialesDe(yo.esp).length > 1 && Math.random() < 0.5 ? 7 : 6);
     if (d < alcanceBasico && yo.cds[0] <= 0) b.accion(this.lado, 0, { x: tx, y: ty });
     void ang;
   }

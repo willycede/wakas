@@ -6,7 +6,7 @@
 
 import Phaser from 'phaser';
 import {
-  ARENA, CARGA_MAX, ELEMENTOS, ESPECIES, MOVIMIENTOS, TICK_MS, moverEnArena, statsPrimal, velocidadMover,
+  ARENA, CARGA_MAX, ELEMENTOS, EMOTES, ESPECIES, FRASES, MOVIMIENTOS, TICK_MS, especialesDe, moverEnArena, statsPrimal, tipos, velocidadMover,
   type Fx, type InicioBatalla, type Movimiento, type Snapshot, type UnidadSnap,
 } from '../../shared/src';
 import animMeta from '../../assets/criaturas/sprites/anim/animaciones.json';
@@ -14,7 +14,8 @@ import { spriteUrl, V } from './api';
 import type { Conexion } from './net';
 import * as FX from './efectos';
 import { icono } from './iconos';
-import { descEspecial, descMov, nombreElemento, nombreEspecial, nombreEspecialId, nombreMov, t } from './i18n';
+import { descEspecial, descMov, nombreArena, nombreElemento, nombreEspecial, nombreEspecialId, nombreMov, t } from './i18n';
+import { dibujarEstadio, type Estadio } from './arenas';
 import { esc } from './menu';
 
 const INTERP = 100;
@@ -30,7 +31,7 @@ const ANIM = animMeta as unknown as Record<string, AnimMeta>;
 interface Vista {
   spr: Phaser.GameObjects.Sprite; sombra: Phaser.GameObjects.Ellipse; anillo: Phaser.GameObjects.Ellipse;
   esp: string; x: number; y: number; flip: number; inclina: number;
-  anim: string; bloqueo: number; ultAn: string; estocada: number; estAng: number; golpe: number; polvo: number; mira: number;
+  anim: string; bloqueo: number; ultAn: string; estocada: number; estAng: number; golpe: number; polvo: number; mira: number; vuelo: number;
 }
 
 export class BatallaScene extends Phaser.Scene {
@@ -42,6 +43,9 @@ export class BatallaScene extends Phaser.Scene {
   gAvisos!: Phaser.GameObjects.Graphics;
   gApunte!: Phaser.GameObjects.Graphics;
   proys = new Map<number, FX.VistaProyectil>();
+  campos = new Map<number, FX.VistaCampo>();
+  estadio: Estadio | null = null;
+  silenciado = false;
   keys!: Record<string, Phaser.Input.Keyboard.Key>;
   joy = { x: 0, y: 0, activo: false };
   seq = 0;
@@ -75,6 +79,7 @@ export class BatallaScene extends Phaser.Scene {
     this.offset = null;
     this.vistas = [null, null];
     this.proys.clear();
+    this.campos.clear();
     this.fin = false;
     this.ultimo = null;
     this.pend = [];
@@ -111,10 +116,10 @@ export class BatallaScene extends Phaser.Scene {
       g.destroy();
     }
     FX.crearTexturas(this);
-    this.dibujarArena();
+    this.estadio = dibujarEstadio(this, this.init0.liga, this.init0.obstaculos);
     this.gAvisos = this.add.graphics().setDepth(1);
     this.gApunte = this.add.graphics().setDepth(4000);
-    this.keys = this.input.keyboard!.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,SHIFT,ONE,TWO,THREE,FOUR,Q,E,F,R') as any;
+    this.keys = this.input.keyboard!.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,SHIFT,ONE,TWO,THREE,FOUR,Q,E,F,R,T,C') as any;
     this.input.mouse?.disableContextMenu();
     this.game.canvas.style.cursor = 'crosshair';
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
@@ -150,6 +155,8 @@ export class BatallaScene extends Phaser.Scene {
     this.keys.SHIFT.on('down', () => this.accion(5));
     this.keys.F.on('down', () => this.accion(5));
     this.keys.R.on('down', () => this.accion(6));
+    this.keys.T.on('down', () => this.accion(7));
+    this.keys.C.on('down', () => this.panelEmotes());
     this.keys.Q.on('down', () => this.cambiarRel(-1));
     this.keys.E.on('down', () => this.cambiarRel(1));
     this.scale.on('resize', this.ajustar, this);
@@ -158,49 +165,38 @@ export class BatallaScene extends Phaser.Scene {
     this.net.on('fx', (list: Fx[]) => list.forEach((f) => this.onFx(f)));
     this.net.on('cuenta', (m: { ms: number }) => this.cuenta(m.ms));
     this.net.on('fin', (r) => { this.fin = true; this.time.delayedCall(900, () => this.onFin(r)); });
+    this.net.on('emote', (m: { lado: 0 | 1; id: string }) => this.mostrarEmote(m.lado, m.id));
     this.armarHud();
+    this.intro();
   }
 
   private esTactil() {
     return matchMedia('(pointer: coarse)').matches;
   }
 
-  private ajustar() {
+  private zoomJuego() {
     const w = this.scale.width, h = this.scale.height;
-    const z = Math.min(w / (ARENA.w + 40), h / (ARENA.h + 170));
-    this.cameras.main.setZoom(z);
-    this.cameras.main.centerOn(ARENA.w / 2, ARENA.h / 2 + 10);
+    return Math.min(w / (ARENA.w + 80), h / (ARENA.h + 240));
   }
 
-  // ---------------------------------------------------------------- arena
-  private dibujarArena() {
-    const g = this.add.graphics().setDepth(0);
-    // césped en franjas y bordes de piedra
-    const W = ARENA.w, H = ARENA.h;
-    g.fillStyle(0x2a5a3a).fillRoundedRect(-30, -30, W + 60, H + 60, 30);
-    for (let i = 0; i < 12; i++) g.fillStyle(i % 2 ? 0x4c9a4c : 0x55a655).fillRect((W / 12) * i, 0, W / 12 + 1, H);
-    // pixeles de hierba
-    const rnd = new Phaser.Math.RandomDataGenerator(['arena']);
-    for (let i = 0; i < 500; i++) g.fillStyle(rnd.pick([0x6cc26a, 0x3f8a45, 0x7ad478]), 0.8).fillRect(rnd.between(0, W), rnd.between(0, H), 4, 4);
-    g.lineStyle(6, 0xf4f0e0, 0.9).strokeRect(0, 0, W, H);
-    g.lineStyle(4, 0xf4f0e0, 0.7).lineBetween(W / 2, 0, W / 2, H).strokeCircle(W / 2, H / 2, 90);
-    g.fillStyle(0xf4f0e0, 0.9).fillCircle(W / 2, H / 2, 8);
-    g.lineStyle(4, 0x4aa8ff, 0.5).strokeRect(20, H / 2 - 120, 120, 240);
-    g.lineStyle(4, 0xff6a6a, 0.5).strokeRect(W - 140, H / 2 - 120, 120, 240);
-    g.lineStyle(14, 0x8a7a6a, 1).strokeRoundedRect(-20, -20, W + 40, H + 40, 22);
-    // obstáculos: rocas en pixel art simple
-    for (const o of this.init0.obstaculos) {
-      const r = this.add.graphics().setDepth(o.y);
-      r.fillStyle(0x000000, 0.25).fillEllipse(o.x + 4, o.y + o.r * 0.6, o.r * 2.2, o.r * 0.9);
-      r.fillStyle(0x6e6a7a).fillCircle(o.x, o.y, o.r);
-      r.fillStyle(0x908ca0).fillCircle(o.x - o.r * 0.25, o.y - o.r * 0.25, o.r * 0.65);
-      r.fillStyle(0xb8b4c4).fillCircle(o.x - o.r * 0.4, o.y - o.r * 0.4, o.r * 0.25);
-      r.lineStyle(3, 0x2a2436).strokeCircle(o.x, o.y, o.r);
-    }
+  private ajustar() {
+    this.cameras.main.setZoom(this.zoomJuego());
+    this.cameras.main.centerOn(ARENA.w / 2, ARENA.h / 2 - 15);
   }
 
-  private escala(esp: string) {
-    return ESPECIES[esp].etapa === 3 ? 1.6 : ESPECIES[esp].etapa === 2 ? 1.45 : 1.35;
+  /** Entrada: la cámara empieza lejos mostrando el estadio entero y baja hasta el campo. */
+  private intro() {
+    const cam = this.cameras.main;
+    const z = this.zoomJuego();
+    cam.setZoom(z * 0.42);
+    cam.centerOn(ARENA.w / 2, ARENA.h / 2 - 260);
+    cam.zoomTo(z, 2300, 'Sine.easeInOut');
+    cam.pan(ARENA.w / 2, ARENA.h / 2 - 15, 2300, 'Sine.easeInOut');
+    $('bh-banner').innerHTML = `<div class="banner arena"><small>${t('misc.arena')}</small>${nombreArena(this.init0.liga)}</div>`;
+  }
+
+  private escala(_esp: string) {
+    return 1.3; // el tamaño ya viene en el sprite (pequeño, mediano, grande, enorme)
   }
 
   private vista(l: 0 | 1, esp: string): Vista {
@@ -215,7 +211,7 @@ export class BatallaScene extends Phaser.Scene {
     const anillo = this.add.ellipse(0, 0, ancho + 8, (ancho + 8) * 0.36).setStrokeStyle(3, soy ? 0x4aa8ff : 0xff5a6a, 0.9);
     const spr = m ? this.add.sprite(0, 0, 'pa_' + esp, 0).setOrigin(0.5, m.pies / m.h) : this.add.sprite(0, 0, 'p_' + esp).setOrigin(0.5, 0.92);
     spr.setScale(sc);
-    const nv: Vista = { spr, sombra, anillo, esp, x: 0, y: 0, flip: l === 0 ? 1 : -1, inclina: 0, anim: '', bloqueo: 0, ultAn: '', estocada: 0, estAng: 0, golpe: 0, polvo: 0, mira: l === 0 ? 1 : -1 };
+    const nv: Vista = { spr, sombra, anillo, esp, x: 0, y: 0, flip: l === 0 ? 1 : -1, inclina: 0, anim: '', bloqueo: 0, ultAn: '', estocada: 0, estAng: 0, golpe: 0, polvo: 0, mira: l === 0 ? 1 : -1, vuelo: 0 };
     this.vistas[l] = nv;
     this.reproducir(nv, 'idle');
     return nv;
@@ -249,7 +245,7 @@ export class BatallaScene extends Phaser.Scene {
     this.pend = this.pend.filter((p) => p.s > s.ack);
     const cambio = !antes || antes.u[this.init0.lado].esp !== me.esp;
     // embestidas, esquivas y entradas a la arena: manda el servidor
-    if (cambio || me.an === 'dash' || me.an === 'caido') {
+    if (cambio || me.an === 'dash' || me.an === 'caido' || me.an === 'vuelo') {
       this.pred = { x: me.x, y: me.y };
       this.prevPred = { ...this.pred };
       this.err = { x: 0, y: 0 };
@@ -309,7 +305,7 @@ export class BatallaScene extends Phaser.Scene {
     this.pend.push(inp);
     if (this.pend.length > 40) this.pend.shift();
     this.prevPred = { ...this.pred };
-    if (me && (d.x || d.y) && me.an !== 'caido' && me.an !== 'dash') {
+    if (me && (d.x || d.y) && me.an !== 'caido' && me.an !== 'dash' && me.an !== 'vuelo') {
       const v = velocidadMover(me.esp, statsPrimal(ESPECIES[me.esp], me.nv).velocidad, me.st);
       this.pred = moverEnArena(this.pred.x, this.pred.y, d.x * v * TICK, d.y * v * TICK, this.init0.obstaculos);
     }
@@ -385,6 +381,8 @@ export class BatallaScene extends Phaser.Scene {
         if (s.an === 'basico' || s.an === 'mov') { this.reproducir(v, 'attack', true); v.bloqueo = now + 300; v.estocada = 1; v.estAng = s.fa; }
         if (s.an === 'golpe') { this.reproducir(v, 'hurt', true); v.bloqueo = now + 170; v.golpe = 1; }
         if (s.an === 'cambio') { v.spr.setScale(0.1); }
+        if (s.an === 'vuelo') v.vuelo = now;
+        if (v.ultAn === 'vuelo') { this.cameras.main.shake(260, 0.012); this.estadio?.vitorear(); }
         v.ultAn = s.an;
       }
       if (s.an === 'caido') this.reproducir(v, 'faint');
@@ -404,7 +402,9 @@ export class BatallaScene extends Phaser.Scene {
       const ox = Math.cos(v.estAng) * lunge - Math.cos(s.fa) * v.golpe * 5;
       const oy = Math.sin(v.estAng) * lunge * 0.6 - Math.sin(s.fa) * v.golpe * 3;
       const sc = this.escala(s.esp);
-      const salto = s.an === 'dash' ? -6 : 0;
+      // en el aire: sube fuera de la pantalla y la sombra se encoge
+      const alto = s.an === 'vuelo' ? Math.min(1, (now - v.vuelo) / 320) * 300 : 0;
+      const salto = (s.an === 'dash' ? -6 : 0) - alto;
       const cur = Math.abs(v.spr.scaleY) / sc;
       const crece = cur < 0.99 ? Math.min(1, cur + delta / 220) : 1; // aparece al entrar a la arena
       v.spr.setPosition(x + ox, y + oy + salto).setDepth(y + 10);
@@ -414,7 +414,7 @@ export class BatallaScene extends Phaser.Scene {
       if (v.golpe > 0.6) v.spr.setTintFill(0xffffff);
       else if (this.cargando(l)) v.spr.setTint(Phaser.Display.Color.Interpolate.ColorWithColor(Phaser.Display.Color.ValueToColor(0xffffff), Phaser.Display.Color.ValueToColor(FX.colorEl(ESPECIES[s.esp].elemento)), 100, 50 + Math.sin(now / 50) * 50).color);
       else if (s.st & 1) v.spr.setTint(0xffb090); else if (s.st & 8) v.spr.setTint(0xd8a0ff); else if (s.st & 2) v.spr.setTint(0xfff08a); else if (s.st & 4) v.spr.setTint(0xa0c8ff); else v.spr.clearTint();
-      const somb = 1 - (salto ? 0.25 : 0);
+      const somb = alto ? Math.max(0.25, 1 - alto / 300) : 1 - (salto ? 0.25 : 0);
       v.sombra.setPosition(x + ox, y + 3).setDepth(y - 1).setScale(somb);
       v.anillo.setPosition(x + ox, y + 3).setDepth(y - 1);
       if (s.sh > 0) v.anillo.setStrokeStyle(4, 0xa0dcff, 1); else v.anillo.setStrokeStyle(3, l === this.init0.lado ? 0x4aa8ff : 0xff5a6a, 0.9);
@@ -427,7 +427,23 @@ export class BatallaScene extends Phaser.Scene {
     }
     this.dibujarAvisos();
     this.dibujarProyectiles();
+    this.dibujarCampos();
     this.dibujarApunte();
+    this.estadio?.animar(now);
+  }
+
+  private dibujarCampos() {
+    const s = this.ultimo;
+    if (!s) return;
+    const dt = (Date.now() + (this.offset ?? 0) - s.t) / 1000;
+    const vivos = new Set<number>();
+    for (const c of s.cp ?? []) {
+      vivos.add(c.id);
+      let v = this.campos.get(c.id);
+      if (!v) { v = FX.crearCampo(this, c); this.campos.set(c.id, v); }
+      FX.dibujarCampo(v, { ...c, t: c.t - dt }, this.time.now);
+    }
+    for (const [id, v] of this.campos) if (!vivos.has(id)) { FX.borrarCampo(this, v); this.campos.delete(id); }
   }
 
   /** Flecha de dirección bajo el Primal propio y vista previa del movimiento bajo el cursor. */
@@ -607,6 +623,7 @@ export class BatallaScene extends Phaser.Scene {
         break;
       }
       case 'caido':
+        this.estadio?.vitorear();
         this.etiqueta(f.x, f.y - 100, t('hud.fainted', { n: ESPECIES[f.esp].nombre }), '#ff8a9a');
         this.cameras.main.shake(250, 0.008);
         break;
@@ -659,7 +676,8 @@ export class BatallaScene extends Phaser.Scene {
     // pantalla: destello del color del elemento, zoom breve y temblor
     const c = FX.colorEl(f.el);
     const cam = this.cameras.main;
-    cam.flash(220, (c >> 16) & 255, (c >> 8) & 255, c & 255);
+    const k = f.el === 'luz' || f.el === 'electrico' ? 0.45 : 0.8; // los colores claros deslumbran: menos destello
+    cam.flash(200, ((c >> 16) & 255) * k, ((c >> 8) & 255) * k, (c & 255) * k);
     const z = cam.zoom;
     this.tweens.add({ targets: cam, zoom: z * 1.06, duration: 160, yoyo: true, ease: 'Sine.easeInOut', onComplete: () => cam.setZoom(z) });
     cam.shake(260, 0.006);
@@ -671,6 +689,61 @@ export class BatallaScene extends Phaser.Scene {
     const luz = this.add.rectangle(f.x, f.y - 120, 46, 260, c, 0.35).setDepth(f.y + 20).setBlendMode(Phaser.BlendModes.ADD);
     this.tweens.add({ targets: luz, scaleX: 0, alpha: 0, duration: 450, ease: 'Cubic.easeIn', onComplete: () => luz.destroy() });
     FX.estallido(this, f.x, f.y - 20, f.el, 16, 1.4);
+    this.estadio?.vitorear();
+    const tonos: Record<string, [number, number, number]> = {
+      eclipse: [0x05020f, 0.6, 2200], tormenta: [0x0a0c20, 0.5, 2400], diluvio: [0x0a1a30, 0.4, 4000], alas_de_tormenta: [0x0a0618, 0.45, 2000],
+      sol_naciente: [0xffb040, 0.12, 1200], rayo_de_inti: [0xff9a30, 0.14, 1400], supernova: [0xff6020, 0.12, 1100], corona_nevada: [0x6ab0e0, 0.14, 1600],
+      ventisca_glacial: [0x6ab0e0, 0.12, 1600], furia_volcanica: [0x3a0a00, 0.35, 2200], rio_de_lava: [0x3a0a00, 0.3, 2000],
+    };
+    const tn = tonos[f.id];
+    if (tn) this.velo(tn[0], tn[1], tn[2]);
+    if (f.id === 'arcoiris') this.arcoiris(f.x, f.y);
+  }
+
+  /** Velo de color sobre toda la pantalla (oscurece para tormentas y eclipses, ilumina para el sol). */
+  private velo(color: number, alpha: number, ms: number) {
+    const cam = this.cameras.main;
+    const r = this.add.rectangle(0, 0, cam.width * 4, cam.height * 4, color, 0).setScrollFactor(0).setDepth(4500).setOrigin(0.25);
+    this.tweens.add({ targets: r, fillAlpha: alpha, duration: 250, yoyo: true, hold: ms - 500, onComplete: () => r.destroy() });
+  }
+
+  private arcoiris(x: number, y: number) {
+    const colores = [0xff4040, 0xff9a30, 0xffe040, 0x50e060, 0x40a0ff, 0x6a50ff, 0xc060ff];
+    colores.forEach((c, i) => {
+      const a = this.add.ellipse(x, y - 30, 120 + i * 30, 70 + i * 18).setStrokeStyle(6, c, 0.85).setDepth(4400).setBlendMode('ADD').setScale(0.2);
+      this.tweens.add({ targets: a, scale: 2.4, alpha: 0, delay: i * 70, duration: 900, ease: 'Cubic.easeOut', onComplete: () => a.destroy() });
+    });
+  }
+
+  // ---------------------------------------------------------------- emotes
+  private panelEmotes(abrir?: boolean) {
+    const p = $('bh-emotes');
+    const vis = abrir ?? p.classList.contains('hidden');
+    p.classList.toggle('hidden', !vis);
+    if (!vis) return;
+    p.innerHTML = `<div class="em-grid">${EMOTES.map((id) => `<button class="em" data-em="${id}"><img src="emotes/${id}.png" alt="" onerror="this.replaceWith(document.createTextNode('${id}'))"></button>`).join('')}</div>
+      <div class="em-frases">${FRASES.map((id) => `<button class="fr" data-em="${id}">${t(`fr.${id}` as Parameters<typeof t>[0])}</button>`).join('')}</div>
+      <button class="em-mute ${this.silenciado ? 'on' : ''}">${icono('silencio')}${this.silenciado ? t('hud.unmute') : t('hud.mute')}</button>`;
+    p.querySelectorAll<HTMLElement>('[data-em]').forEach((b) => (b.onpointerdown = (ev) => {
+      ev.stopPropagation();
+      this.net.send('emote', { id: b.dataset.em });
+      this.panelEmotes(false);
+    }));
+    p.querySelector<HTMLElement>('.em-mute')!.onpointerdown = (ev) => { ev.stopPropagation(); this.silenciado = !this.silenciado; this.panelEmotes(true); };
+  }
+
+  private mostrarEmote(lado: 0 | 1, id: string) {
+    const mio = lado === this.init0.lado;
+    if (!mio && this.silenciado) return;
+    const esFrase = (FRASES as readonly string[]).includes(id);
+    const el = document.createElement('div');
+    el.className = `emote-burbuja ${mio ? 'me' : 'foe'} ${esFrase ? 'frase' : ''}`;
+    el.innerHTML = esFrase ? t(`fr.${id}` as Parameters<typeof t>[0]) : `<img src="emotes/${id}.png" alt="">`;
+    const cont = $(mio ? 'bh-me' : 'bh-foe');
+    cont.parentElement!.querySelectorAll(`.emote-burbuja.${mio ? 'me' : 'foe'}`).forEach((x) => x.remove());
+    cont.parentElement!.appendChild(el);
+    setTimeout(() => el.classList.add('fuera'), 2200);
+    setTimeout(() => el.remove(), 2600);
   }
 
   private comboN = 0;
@@ -707,6 +780,9 @@ export class BatallaScene extends Phaser.Scene {
     if (tactil) this.armarJoystick();
     $('bh-center').textContent = '';
     $('bh-banner').innerHTML = '';
+    $('bh-emote-btn').innerHTML = icono('emote');
+    $('bh-emote-btn').onpointerdown = (ev) => { ev.stopPropagation(); this.panelEmotes(); };
+    $('bh-emotes').classList.add('hidden');
     $('bh-combo').classList.remove('on');
   }
 
@@ -748,7 +824,7 @@ export class BatallaScene extends Phaser.Scene {
         .map((k) => `<span class="st-chip" style="background:${ST_COLOR[k]}">${t(`st.${k}` as Parameters<typeof t>[0])}</span>`).join('');
       const nombre = this.init0.rivalIA && l === foe && this.init0.modo === 'captura' ? t('misc.vsAI') : this.init0.nombres[l];
       return `<div class="bh-row"><span class="bh-name">${esc(nombre)}</span><span class="bh-tro">${icono('trofeo')}${this.init0.trofeos[l]}</span></div>
-        <div class="bh-mon"><span class="el" style="--c:${ELEMENTOS[e.elemento].color}">${icono(e.elemento)}</span><b>${e.nombre}</b><span class="lv">${t('misc.level', { n: u.nv })}</span>${est}<span class="hpn">${u.hp}/${u.mhp}</span></div>
+        <div class="bh-mon">${tipos(u.esp).map((x) => `<span class="el" style="--c:${ELEMENTOS[x].color}">${icono(x)}</span>`).join('')}<b>${e.nombre}</b><span class="lv">${t('misc.level', { n: u.nv })}</span>${est}<span class="hpn">${u.hp}/${u.mhp}</span></div>
         <div class="hpbar"><div class="lag" style="width:${pct}%"></div><div class="fill ${cls}" style="width:${pct}%"></div>${u.sh ? `<span class="shield" style="width:${Math.min(100, (u.sh / u.mhp) * 100)}%"></span>` : ''}</div>
         <div class="team-dots">${dots}</div>`;
     };
@@ -776,19 +852,19 @@ export class BatallaScene extends Phaser.Scene {
       this.hudEsp = u.esp;
       const btn = (i: number, cls: string, ico: string, lbl: string, key: string, color: string, extra = '') =>
         `<div class="ab ${cls}" data-i="${i}" style="--c:${color}">${extra}<span class="ico">${ico}</span><span class="lbl">${esc(lbl)}</span><span class="key">${key}</span><span class="cdo"></span></div>`;
-      const elC = ELEMENTOS[e.elemento].color;
+      const sps = especialesDe(u.esp);
       $('bh-moves').innerHTML =
         btn(0, 'basic', icono(e.basico === 'cuerpo' ? 'golpe' : 'orbe'), t('hud.basic'), t('key.space'), '#b4a8e8') +
         e.movimientos.map((id, k) => { const m = MOVIMIENTOS[id]; return btn(k + 1, 'm', icono(m.tipo), nombreMov(id), String(k + 1), ELEMENTOS[m.elemento].color); }).join('') +
         btn(5, 'dodge', icono('esquiva'), t('hud.dodge'), 'Shift', '#5a8ae0') +
-        btn(6, 'sp', icono(e.elemento), nombreEspecial(e.elemento), 'R', elC, '<span class="ring"></span>');
+        sps.map((sp, k) => btn(6 + k, 'sp', icono(sp.elemento), nombreEspecial(u.esp, k), k ? 'T' : 'R', ELEMENTOS[sp.elemento].color, '<span class="ring"></span>')).join('');
       $('bh-moves').querySelectorAll<HTMLElement>('.ab').forEach((el) => {
         const i = Number(el.dataset.i);
         el.onpointerdown = (ev) => { ev.preventDefault(); ev.stopPropagation(); this.accion(i); };
         el.onpointerenter = (ev) => {
           if (ev.pointerType !== 'mouse') return;
           if (i >= 1 && i <= 4) this.vistaPrevia = i;
-          this.mostrarTip(el, i, e.movimientos[i - 1], e.elemento);
+          this.mostrarTip(el, i, e.movimientos[i - 1], u.esp);
         };
         el.onpointerleave = () => { if (this.vistaPrevia === i) this.vistaPrevia = null; el.querySelector('.tip')?.remove(); };
       });
@@ -797,8 +873,9 @@ export class BatallaScene extends Phaser.Scene {
     $('bh-moves').querySelectorAll<HTMLElement>('.ab').forEach((el) => {
       const i = Number(el.dataset.i);
       const o = el.querySelector<HTMLElement>('.cdo')!;
-      if (i === 6) {
+      if (i === 6 || i === 7) {
         const p = Math.min(100, (eq.carga / CARGA_MAX) * 100);
+        el.classList.toggle('doble', eq.carga >= CARGA_MAX * 2);
         el.style.setProperty('--p', `${p}%`);
         const lleno = p >= 100;
         if (lleno && this.cargaPrev < CARGA_MAX) this.destello(el);
@@ -848,14 +925,14 @@ export class BatallaScene extends Phaser.Scene {
   }
 
   /** Ficha del botón bajo el ratón: nombre, descripción y datos. */
-  private mostrarTip(el: HTMLElement, i: number, movId: string | undefined, elemento: string) {
+  private mostrarTip(el: HTMLElement, i: number, movId: string | undefined, esp: string) {
     el.querySelector('.tip')?.remove();
     let html = '';
     if (i >= 1 && i <= 4 && movId) {
       const m = MOVIMIENTOS[movId];
       html = `<b>${esc(nombreMov(movId))}</b>${esc(descMov(movId))}<div class="meta"><span class="el" style="--c:${ELEMENTOS[m.elemento].color}">${icono(m.elemento)}${nombreElemento(m.elemento)}</span><span class="el" style="--c:#8a7cff">${icono('reloj')}${m.enfriamiento}s</span></div>`;
-    } else if (i === 6) {
-      html = `<b>${esc(nombreEspecial(elemento))}</b>${esc(descEspecial(elemento))}<div class="meta"><span class="el" style="--c:#ffc940">${icono('especial')}${t('hud.special')}</span></div>`;
+    } else if (i === 6 || i === 7) {
+      html = `<b>${esc(nombreEspecial(esp, i - 6))}</b>${esc(descEspecial(esp, i - 6))}<div class="meta"><span class="el" style="--c:#ffc940">${icono('especial')}${t('hud.special')}</span></div>`;
     } else return;
     const tip = document.createElement('div');
     tip.className = 'tip';
@@ -864,6 +941,8 @@ export class BatallaScene extends Phaser.Scene {
   }
 
   cerrar() {
+    $('bh-emotes').classList.add('hidden');
+    document.querySelectorAll('.emote-burbuja').forEach((x) => x.remove());
     $('battle-hud').classList.add('hidden');
     this.hudEsp = '';
   }

@@ -23,7 +23,20 @@ RAW = os.path.join(HERE, 'originales')
 OUT = os.path.join(HERE, 'sprites')
 API = 'https://stablehorde.net/api/v2'
 HEADERS = {'apikey': '0000000000', 'Content-Type': 'application/json', 'Client-Agent': 'primal-clash:0.1:anon'}
-MODEL = 'Flux.1-Schnell fp8 (Compact)'
+# Modelo de IA: FLUX es el mejor pero en el servicio gratuito tiene muy pocos servidores; los SDXL
+# suelen estar libres. Se elige con la variable MODELO (por defecto el rápido).
+MODELOS = {
+    'flux': ('Flux.1-Schnell fp8 (Compact)', {'steps': 4, 'cfg_scale': 1, 'sampler_name': 'k_euler', 'width': 768, 'height': 768}),
+    'aam': ('AAM XL', {'steps': 24, 'cfg_scale': 6, 'sampler_name': 'k_euler_a', 'width': 1024, 'height': 1024}),
+    'dreamshaper': ('DreamShaper XL', {'steps': 8, 'cfg_scale': 2, 'sampler_name': 'k_dpmpp_sde', 'width': 1024, 'height': 1024}),
+    'juggernaut': ('Juggernaut XL', {'steps': 28, 'cfg_scale': 6, 'sampler_name': 'k_dpmpp_2m', 'width': 1024, 'height': 1024}),
+}
+MODEL, MODEL_PARAMS = MODELOS.get(os.environ.get('MODELO', 'hf'), MODELOS['flux'])
+# 'hf' (por defecto): el espacio público de FLUX.1-schnell en Hugging Face. Rápido (segundos) y
+# de la mejor calidad, pero con cupo diario; si se agota, usa MODELO=flux (Stable Horde, lento).
+HF = 'https://black-forest-labs-flux-1-schnell.hf.space'
+USAR_HF = os.environ.get('MODELO', 'hf') == 'hf'
+NEGATIVE = 'text, watermark, signature, multiple creatures, human, cropped, blurry, photo, realistic, 3d render, frame, border'
 
 # Estilo común: todas las criaturas se piden igual para que el juego se vea coherente
 STYLE = ('pixel art game sprite of one {desc}, original creature design for a monster battle game, '
@@ -31,17 +44,44 @@ STYLE = ('pixel art game sprite of one {desc}, original creature design for a mo
          'flat shading with a limited palette, bold dark outline, centered, plain white background, no text')
 
 # Tamaño final del sprite (alto en píxeles de arte) según la talla de la criatura
-SIZES = {'pequeño': 48, 'mediano': 64, 'grande': 84}
+SIZES = {'pequeño': 48, 'mediano': 64, 'grande': 84, 'enorme': 100}
 
 
 def load_db():
     return json.load(open(os.path.join(HERE, 'criaturas.json'), encoding='utf-8'))
 
 
+def generate_hf(cid, desc, seed):
+    body = json.dumps({'data': [STYLE.format(desc=desc), int(seed), False, 768, 768, 4]}).encode()
+    req = urllib.request.Request(HF + '/gradio_api/call/infer', data=body, headers={'Content-Type': 'application/json'})
+    ev = json.loads(urllib.request.urlopen(req, timeout=60).read())['event_id']
+    with urllib.request.urlopen(HF + '/gradio_api/call/infer/' + ev, timeout=300) as r:
+        txt = r.read().decode()
+    data = None
+    for line in txt.splitlines():
+        if line.startswith('data:') and 'url' in line:
+            data = json.loads(line[5:])
+    if 'event: error' in txt or not data:
+        raise RuntimeError('Hugging Face sin respuesta (¿cupo agotado?): ' + txt[-200:])
+    os.makedirs(RAW, exist_ok=True)
+    path = os.path.join(RAW, cid + '.webp')
+    urllib.request.urlretrieve(data[0]['url'], path)
+    print(cid, 'generado (hf)', flush=True)
+    return path
+
+
 def generate(cid, desc, seed):
-    body = {'prompt': STYLE.format(desc=desc),
-            'params': {'width': 768, 'height': 768, 'steps': 4, 'cfg_scale': 1, 'sampler_name': 'k_euler', 'seed': str(seed), 'n': 1},
-            'models': [MODEL], 'nsfw': False, 'censor_nsfw': True, 'r2': True}
+    if USAR_HF:
+        return generate_hf(cid, desc, seed)
+    return generate_horde(cid, desc, seed)
+
+
+def generate_horde(cid, desc, seed):
+    model, params = MODELOS['flux']
+    prompt = STYLE.format(desc=desc)
+    body = {'prompt': prompt,
+            'params': {**params, 'seed': str(seed), 'n': 1},
+            'models': [model], 'nsfw': False, 'censor_nsfw': True, 'r2': True}
     req = urllib.request.Request(API + '/generate/async', data=json.dumps(body).encode(), headers=HEADERS)
     jid = json.loads(urllib.request.urlopen(req, timeout=60).read())['id']
     print(cid, 'en cola', jid, flush=True)
@@ -78,7 +118,16 @@ def detect_block(rgb):
     return int(vals[counts.argmax()])
 
 
-def process(cid, size_name):
+def mira_izquierda(alpha):
+    """La cabeza suele ser la parte alta y delantera: si la masa de arriba está a la izquierda del
+    centro, la criatura mira a la izquierda."""
+    ys, xs = np.nonzero(alpha)
+    y0, y1 = ys.min(), ys.max()
+    alto = ys <= y0 + (y1 - y0) * 0.45
+    return xs[alto].mean() < xs.mean() - (xs.max() - xs.min()) * 0.03
+
+
+def process(cid, size_name, voltear=None):
     import cv2
     src = Image.open(os.path.join(RAW, cid + '.webp')).convert('RGB')
     rgb = np.array(src)
@@ -115,6 +164,10 @@ def process(cid, size_name):
     ys, xs = np.nonzero(alpha)
     x0, x1, y0, y1 = xs.min(), xs.max() + 1, ys.min(), ys.max() + 1
     crop = np.dstack([rgb, alpha])[y0:y1, x0:x1]
+    # todas las criaturas deben mirar a la derecha (el juego las gira al moverse)
+    if voltear if voltear is not None else mira_izquierda(crop[..., 3] > 0):
+        crop = crop[:, ::-1].copy()
+        print(cid, 'volteado para mirar a la derecha', flush=True)
     # a la cuadrícula de pixel art: alto final según la talla, cada bloque = el color más común
     target_h = SIZES.get(size_name, 64)
     ch, cw = crop.shape[:2]
@@ -156,18 +209,47 @@ if __name__ == '__main__':
     args = sys.argv[1:]
     if args[:1] == ['--procesar']:
         for cid in args[1:]:
-            process(cid, db[cid]['talla'])
+            process(cid, db[cid]['talla'], db[cid].get('voltear'))
         sys.exit()
     todo = args or [k for k in db if not os.path.exists(os.path.join(OUT, k + '.png'))]
-    from concurrent.futures import ThreadPoolExecutor
+    # Cola compartida: un trabajador usa Hugging Face (rápido, espera cuando se agota el cupo) y
+    # dos usan Stable Horde (lento pero constante). Mismo modelo FLUX, mismo estilo.
+    import threading
+    cola = list(todo)
+    lock = threading.Lock()
+    hechos = []
 
-    def job(cid):
-        c = db[cid]
-        try:
-            generate(cid, c['visual'], c.get('semilla', 7))
-            process(cid, c['talla'])
-        except Exception as e:
-            print(cid, 'ERROR', e, flush=True)
+    def siguiente():
+        with lock:
+            return cola.pop(0) if cola else None
 
-    with ThreadPoolExecutor(2) as ex:
-        list(ex.map(job, todo))
+    def devolver(cid):
+        with lock:
+            cola.insert(0, cid)
+
+    def trabajador(usar_hf):
+        global USAR_HF
+        while True:
+            cid = siguiente()
+            if cid is None:
+                return
+            c = db[cid]
+            try:
+                if usar_hf:
+                    generate_hf(cid, c['visual'], c.get('semilla', 7))
+                else:
+                    generate_horde(cid, c['visual'], c.get('semilla', 7))
+                process(cid, c['talla'], c.get('voltear'))
+                hechos.append(cid)
+                print(f'[{len(hechos)}/{len(todo)}]', flush=True)
+            except Exception as e:
+                print(cid, 'ERROR', 'hf' if usar_hf else 'horde', str(e)[:120], flush=True)
+                devolver(cid)
+                time.sleep(75 if usar_hf else 20)
+
+    modos = [True, False, False] if os.environ.get('MODELO', 'hf') == 'hf' else [False, False]
+    hilos = [threading.Thread(target=trabajador, args=(m,)) for m in modos]
+    for h in hilos:
+        h.start()
+    for h in hilos:
+        h.join()

@@ -1,5 +1,353 @@
 {
- "chispi": {
+ "tunguri": {
+  "w": 101,
+  "h": 66,
+  "pies": 58,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "tungurak": {
+  "w": 80,
+  "h": 82,
+  "pies": 74,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "tungurex": {
+  "w": 103,
+  "h": 102,
+  "pies": 94,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "yakupi": {
+  "w": 76,
+  "h": 66,
+  "pies": 58,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "yakulobo": {
+  "w": 79,
+  "h": 82,
+  "pies": 74,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "yakuaron": {
+  "w": 106,
+  "h": 102,
+  "pies": 94,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "cacaito": {
   "w": 60,
   "h": 66,
   "pies": 58,
@@ -23,7 +371,7 @@
      8,
      9
     ],
-    "fps": 12,
+    "fps": 11,
     "repeat": -1
    },
    "attack": {
@@ -57,8 +405,8 @@
    }
   }
  },
- "llamarak": {
-  "w": 76,
+ "cacaoso": {
+  "w": 91,
   "h": 82,
   "pies": 74,
   "anims": {
@@ -81,7 +429,7 @@
      8,
      9
     ],
-    "fps": 12,
+    "fps": 11,
     "repeat": -1
    },
    "attack": {
@@ -115,8 +463,8 @@
    }
   }
  },
- "infernox": {
-  "w": 97,
+ "cacaotor": {
+  "w": 103,
   "h": 102,
   "pies": 94,
   "anims": {
@@ -139,7 +487,7 @@
      8,
      9
     ],
-    "fps": 12,
+    "fps": 11,
     "repeat": -1
    },
    "attack": {
@@ -173,8 +521,8 @@
    }
   }
  },
- "gotin": {
-  "w": 75,
+ "chispez": {
+  "w": 117,
   "h": 66,
   "pies": 58,
   "anims": {
@@ -197,7 +545,7 @@
      8,
      9
     ],
-    "fps": 12,
+    "fps": 11,
     "repeat": -1
    },
    "attack": {
@@ -231,124 +579,1110 @@
    }
   }
  },
- "marejon": {
+ "anguilampo": {
+  "w": 101,
+  "h": 82,
+  "pies": 74,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "voltanguila": {
+  "w": 109,
+  "h": 102,
+  "pies": 94,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "quindito": {
+  "w": 79,
+  "h": 66,
+  "pies": 58,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "quindazo": {
+  "w": 83,
+  "h": 82,
+  "pies": 74,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "quindestral": {
+  "w": 109,
+  "h": 102,
+  "pies": 94,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "galapito": {
+  "w": 90,
+  "h": 66,
+  "pies": 58,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "galapon": {
+  "w": 96,
+  "h": 82,
+  "pies": 74,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "galapagon": {
+  "w": 129,
+  "h": 102,
+  "pies": 94,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "chusik": {
+  "w": 56,
+  "h": 66,
+  "pies": 58,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "chusikar": {
+  "w": 65,
+  "h": 82,
+  "pies": 74,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "chusikron": {
+  "w": 108,
+  "h": 102,
+  "pies": 94,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "ukumarito": {
+  "w": 64,
+  "h": 66,
+  "pies": 58,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "ukumari": {
+  "w": 72,
+  "h": 82,
+  "pies": 74,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "ukumarasu": {
+  "w": 99,
+  "h": 102,
+  "pies": 94,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "morfito": {
+  "w": 81,
+  "h": 66,
+  "pies": 58,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "crisalux": {
+  "w": 118,
+  "h": 82,
+  "pies": 74,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "morfolux": {
+  "w": 113,
+  "h": 102,
+  "pies": 94,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "llamin": {
+  "w": 55,
+  "h": 66,
+  "pies": 58,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "llamaradon": {
+  "w": 78,
+  "h": 82,
+  "pies": 74,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "fps": 6,
+    "repeat": -1
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 11,
+    "repeat": -1
+   },
+   "attack": {
+    "frames": [
+     10,
+     11,
+     12,
+     13,
+     14
+    ],
+    "fps": 16,
+    "repeat": 0
+   },
+   "hurt": {
+    "frames": [
+     15,
+     16
+    ],
+    "fps": 12,
+    "repeat": 0
+   },
+   "faint": {
+    "frames": [
+     17,
+     18,
+     19,
+     20
+    ],
+    "fps": 8,
+    "repeat": 0
+   }
+  }
+ },
+ "dardin": {
   "w": 71,
-  "h": 82,
-  "pies": 74,
-  "anims": {
-   "idle": {
-    "frames": [
-     0,
-     1,
-     2,
-     3
-    ],
-    "fps": 6,
-    "repeat": -1
-   },
-   "walk": {
-    "frames": [
-     4,
-     5,
-     6,
-     7,
-     8,
-     9
-    ],
-    "fps": 12,
-    "repeat": -1
-   },
-   "attack": {
-    "frames": [
-     10,
-     11,
-     12,
-     13,
-     14
-    ],
-    "fps": 16,
-    "repeat": 0
-   },
-   "hurt": {
-    "frames": [
-     15,
-     16
-    ],
-    "fps": 12,
-    "repeat": 0
-   },
-   "faint": {
-    "frames": [
-     17,
-     18,
-     19,
-     20
-    ],
-    "fps": 8,
-    "repeat": 0
-   }
-  }
- },
- "abisaurio": {
-  "w": 104,
-  "h": 102,
-  "pies": 94,
-  "anims": {
-   "idle": {
-    "frames": [
-     0,
-     1,
-     2,
-     3
-    ],
-    "fps": 6,
-    "repeat": -1
-   },
-   "walk": {
-    "frames": [
-     4,
-     5,
-     6,
-     7,
-     8,
-     9
-    ],
-    "fps": 12,
-    "repeat": -1
-   },
-   "attack": {
-    "frames": [
-     10,
-     11,
-     12,
-     13,
-     14
-    ],
-    "fps": 16,
-    "repeat": 0
-   },
-   "hurt": {
-    "frames": [
-     15,
-     16
-    ],
-    "fps": 12,
-    "repeat": 0
-   },
-   "faint": {
-    "frames": [
-     17,
-     18,
-     19,
-     20
-    ],
-    "fps": 8,
-    "repeat": 0
-   }
-  }
- },
- "brotin": {
-  "w": 61,
   "h": 66,
   "pies": 58,
   "anims": {
@@ -371,7 +1705,7 @@
      8,
      9
     ],
-    "fps": 12,
+    "fps": 11,
     "repeat": -1
    },
    "attack": {
@@ -405,7 +1739,7 @@
    }
   }
  },
- "espinardo": {
+ "dardosa": {
   "w": 87,
   "h": 82,
   "pies": 74,
@@ -429,7 +1763,7 @@
      8,
      9
     ],
-    "fps": 12,
+    "fps": 11,
     "repeat": -1
    },
    "attack": {
@@ -463,66 +1797,8 @@
    }
   }
  },
- "selvagor": {
-  "w": 102,
-  "h": 102,
-  "pies": 94,
-  "anims": {
-   "idle": {
-    "frames": [
-     0,
-     1,
-     2,
-     3
-    ],
-    "fps": 6,
-    "repeat": -1
-   },
-   "walk": {
-    "frames": [
-     4,
-     5,
-     6,
-     7,
-     8,
-     9
-    ],
-    "fps": 12,
-    "repeat": -1
-   },
-   "attack": {
-    "frames": [
-     10,
-     11,
-     12,
-     13,
-     14
-    ],
-    "fps": 16,
-    "repeat": 0
-   },
-   "hurt": {
-    "frames": [
-     15,
-     16
-    ],
-    "fps": 12,
-    "repeat": 0
-   },
-   "faint": {
-    "frames": [
-     17,
-     18,
-     19,
-     20
-    ],
-    "fps": 8,
-    "repeat": 0
-   }
-  }
- },
- "voltiron": {
-  "w": 86,
+ "pinzin": {
+  "w": 62,
   "h": 66,
   "pies": 58,
   "anims": {
@@ -545,7 +1821,7 @@
      8,
      9
     ],
-    "fps": 12,
+    "fps": 11,
     "repeat": -1
    },
    "attack": {
@@ -579,10 +1855,10 @@
    }
   }
  },
- "tormentauro": {
-  "w": 94,
-  "h": 102,
-  "pies": 94,
+ "pinzaglar": {
+  "w": 92,
+  "h": 82,
+  "pies": 74,
   "anims": {
    "idle": {
     "frames": [
@@ -603,7 +1879,7 @@
      8,
      9
     ],
-    "fps": 12,
+    "fps": 11,
     "repeat": -1
    },
    "attack": {
@@ -637,8 +1913,8 @@
    }
   }
  },
- "pedrusco": {
-  "w": 73,
+ "piranin": {
+  "w": 80,
   "h": 66,
   "pies": 58,
   "anims": {
@@ -661,181 +1937,7 @@
      8,
      9
     ],
-    "fps": 12,
-    "repeat": -1
-   },
-   "attack": {
-    "frames": [
-     10,
-     11,
-     12,
-     13,
-     14
-    ],
-    "fps": 16,
-    "repeat": 0
-   },
-   "hurt": {
-    "frames": [
-     15,
-     16
-    ],
-    "fps": 12,
-    "repeat": 0
-   },
-   "faint": {
-    "frames": [
-     17,
-     18,
-     19,
-     20
-    ],
-    "fps": 8,
-    "repeat": 0
-   }
-  }
- },
- "golemon": {
-  "w": 117,
-  "h": 102,
-  "pies": 94,
-  "anims": {
-   "idle": {
-    "frames": [
-     0,
-     1,
-     2,
-     3
-    ],
-    "fps": 6,
-    "repeat": -1
-   },
-   "walk": {
-    "frames": [
-     4,
-     5,
-     6,
-     7,
-     8,
-     9
-    ],
-    "fps": 12,
-    "repeat": -1
-   },
-   "attack": {
-    "frames": [
-     10,
-     11,
-     12,
-     13,
-     14
-    ],
-    "fps": 16,
-    "repeat": 0
-   },
-   "hurt": {
-    "frames": [
-     15,
-     16
-    ],
-    "fps": 12,
-    "repeat": 0
-   },
-   "faint": {
-    "frames": [
-     17,
-     18,
-     19,
-     20
-    ],
-    "fps": 8,
-    "repeat": 0
-   }
-  }
- },
- "cefiro": {
-  "w": 90,
-  "h": 82,
-  "pies": 74,
-  "anims": {
-   "idle": {
-    "frames": [
-     0,
-     1,
-     2,
-     3
-    ],
-    "fps": 6,
-    "repeat": -1
-   },
-   "walk": {
-    "frames": [
-     4,
-     5,
-     6,
-     7,
-     8,
-     9
-    ],
-    "fps": 12,
-    "repeat": -1
-   },
-   "attack": {
-    "frames": [
-     10,
-     11,
-     12,
-     13,
-     14
-    ],
-    "fps": 16,
-    "repeat": 0
-   },
-   "hurt": {
-    "frames": [
-     15,
-     16
-    ],
-    "fps": 12,
-    "repeat": 0
-   },
-   "faint": {
-    "frames": [
-     17,
-     18,
-     19,
-     20
-    ],
-    "fps": 8,
-    "repeat": 0
-   }
-  }
- },
- "umbraz": {
-  "w": 76,
-  "h": 82,
-  "pies": 74,
-  "anims": {
-   "idle": {
-    "frames": [
-     0,
-     1,
-     2,
-     3
-    ],
-    "fps": 6,
-    "repeat": -1
-   },
-   "walk": {
-    "frames": [
-     4,
-     5,
-     6,
-     7,
-     8,
-     9
-    ],
-    "fps": 12,
+    "fps": 11,
     "repeat": -1
    },
    "attack": {

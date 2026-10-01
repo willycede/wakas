@@ -2,7 +2,7 @@
 // Captura: un Domador contra un Primal salvaje (con IA). 20 ticks por segundo.
 
 import { Room, type Client } from 'colyseus';
-import { ARENA, ESPECIES, TICK_MS, type InicioBatalla, type Obstaculo } from '../../../shared/src';
+import { ARENA, EMOTES, ESPECIES, FRASES, TICK_MS, ligaDe, type InicioBatalla, type Obstaculo } from '../../../shared/src';
 import type { Domador } from '../db';
 import { mods, recompensar } from '../progress';
 import { domadores, store } from '../services';
@@ -57,7 +57,17 @@ export class BatallaRoom extends Room {
     this.onMessage('acc', (c, m) => {
       const l = this.clientes.get(c.sessionId);
       if (l === undefined || this.inicio > Date.now()) return;
-      this.b.accion(l, Math.max(0, Math.min(6, Math.floor(num(m.i)))));
+      this.b.accion(l, Math.max(0, Math.min(7, Math.floor(num(m.i)))));
+    });
+    // emotes al rival (como mucho uno cada 1,5 s)
+    const ultEmote = new Map<string, number>();
+    this.onMessage('emote', (c, m) => {
+      const l = this.clientes.get(c.sessionId);
+      const id = String(m?.id ?? '');
+      if (l === undefined || ![...EMOTES, ...FRASES].includes(id as never)) return;
+      if (Date.now() - (ultEmote.get(c.sessionId) ?? 0) < 1500) return;
+      ultEmote.set(c.sessionId, Date.now());
+      this.broadcast('emote', { lado: l, id });
     });
     this.onMessage('cambio', (c, m) => {
       const l = this.clientes.get(c.sessionId);
@@ -67,6 +77,13 @@ export class BatallaRoom extends Room {
       const eq = this.opts.lados[l].equipo[this.b.lados[l].activo];
       if (u && eq) this.uids[l].add(eq.uid);
     });
+    // truco de prueba (solo en local): llena la barra de técnicas especiales
+    if (!process.env.DATABASE_URL && !process.env.RAILWAY_ENVIRONMENT) {
+      this.onMessage('truco_carga', (c) => {
+        const l = this.clientes.get(c.sessionId);
+        if (l !== undefined) this.b.lados[l].carga = 200;
+      });
+    }
     this.onMessage('rendirse', (c) => {
       const l = this.clientes.get(c.sessionId);
       if (l !== undefined && !this.b.terminado) this.b.terminado = { ganador: l === 0 ? 1 : 0, motivo: 'rendicion' };
@@ -96,6 +113,7 @@ export class BatallaRoom extends Room {
       lado: auth.lado, modo: o.modo, rivalIA: o.lados[auth.lado === 0 ? 1 : 0].id === null,
       nombres: [o.lados[0].nombre, o.lados[1].nombre], trofeos: [o.lados[0].trofeos, o.lados[1].trofeos], obstaculos: this.b.obstaculos,
       movimientos: o.lados[auth.lado].equipo.map((e) => ESPECIES[e.esp].movimientos),
+      liga: ligaDe(Math.max(o.lados[0].trofeos, o.lados[1].trofeos)).id,
     };
     c.send('inicio', init);
     // la batalla empieza 3 s después de que estén todos
@@ -134,10 +152,25 @@ export class BatallaRoom extends Room {
       c.send('snap', this.b.snapshot(l, this.acks[l]));
     }
     if (this.b.fx.length) {
+      this.emotesIA();
       this.broadcast('fx', this.b.fx);
       this.b.fx = [];
     }
     if (this.b.terminado) void this.terminar();
+  }
+
+  /** La IA también reacciona con emotes (de vez en cuando, para que se sienta viva). */
+  private ultEmoteIA = 0;
+  private emotesIA() {
+    const ia = this.opts.lados.findIndex((p) => p.ia !== undefined && p.id === null);
+    if (ia < 0 || this.opts.modo === 'captura' || Date.now() - this.ultEmoteIA < 6000) return;
+    for (const f of this.b.fx) {
+      let id: string | null = null;
+      if (f.k === 'caido') id = f.lado === ia ? (Math.random() < 0.4 ? 'llanto' : null) : (Math.random() < 0.5 ? 'risa' : null);
+      else if (f.k === 'especial' && f.lado === ia && Math.random() < 0.3) id = 'fiesta';
+      else if (f.k === 'esquiva' && f.lado === ia && Math.random() < 0.3) id = 'wow';
+      if (id) { this.ultEmoteIA = Date.now(); this.broadcast('emote', { lado: ia, id }); return; }
+    }
   }
 
   private async terminar() {

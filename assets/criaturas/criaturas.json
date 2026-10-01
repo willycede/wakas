@@ -1,17 +1,1753 @@
 {
- "chispi": {"nombre": "Chispi", "talla": "pequeño", "semilla": 3, "visual": "small cute orange fire salamander with a flickering yellow flame crest on its head and a flame-tipped tail"},
- "llamarak": {"nombre": "Llamarak", "talla": "mediano", "semilla": 11, "visual": "bipedal red fire lizard warrior with a blazing flame mane, two small horns and ember scales on its arms"},
- "infernox": {"nombre": "Infernox", "talla": "grande", "semilla": 21, "visual": "large fierce volcanic dragon beast with dark rock plates, glowing magma cracks and flames on its back, powerful legs"},
- "gotin": {"nombre": "Gotín", "talla": "pequeño", "semilla": 5, "visual": "small cute round blue axolotl creature with frilly gills and a floating water bubble on its tail"},
- "marejon": {"nombre": "Marejón", "talla": "mediano", "semilla": 13, "visual": "agile blue otter warrior creature with a wave-shaped fin on its head and water swirling around its paws"},
- "abisaurio": {"nombre": "Abisaurio", "talla": "grande", "semilla": 23, "visual": "large armored sea serpent dinosaur with a teal shell, deep blue scales, glowing cyan spots and water spouts"},
- "brotin": {"nombre": "Brotín", "talla": "pequeño", "semilla": 7, "visual": "small cute green hedgehog creature with leaf-shaped quills and a tiny flower on its back"},
- "espinardo": {"nombre": "Espinardo", "talla": "mediano", "semilla": 15, "visual": "sturdy green thorny boar creature covered in vines and sharp leaf spikes with wooden tusks"},
- "selvagor": {"nombre": "Selvagor", "talla": "grande", "semilla": 25, "visual": "huge ancient forest beast like a giant boar with tree bark armor, moss, glowing flowers and a small tree growing on its back"},
- "voltiron": {"nombre": "Voltirón", "talla": "pequeño", "semilla": 9, "visual": "small blue and yellow electric ferret creature with a zigzag lightning-bolt tail and sparking cheeks"},
- "tormentauro": {"nombre": "Tormentauro", "talla": "grande", "semilla": 27, "visual": "muscular storm bull creature with dark blue fur, horns crackling with lightning and a small thundercloud above its back"},
- "pedrusco": {"nombre": "Pedrusco", "talla": "pequeño", "semilla": 17, "visual": "small sturdy rock crab creature with a gray stone shell and bright purple crystals growing on its back"},
- "golemon": {"nombre": "Golemón", "talla": "grande", "semilla": 29, "visual": "big rock golem gorilla creature made of boulders with glowing purple crystal fists and crystal shoulders"},
- "cefiro": {"nombre": "Céfiro", "talla": "mediano", "semilla": 19, "visual": "swift white and sky blue wind falcon creature with long feathered wings, swirl-shaped tail feathers and a sharp beak"},
- "umbraz": {"nombre": "Umbraz", "talla": "mediano", "semilla": 31, "visual": "mysterious black shadow fox creature with glowing violet eyes and two tails made of purple ghostly flames"}
+ "tunguri": {
+  "nombre": "Tunguri",
+  "tipos": [
+   "fuego"
+  ],
+  "etapa": 1,
+  "evoluciona": "tungurak",
+  "rareza": "comun",
+  "perfil": "rapido",
+  "basico": "cuerpo",
+  "habilidad": "brasa_interior",
+  "talla": "pequeño",
+  "semilla": 15614,
+  "visual": "small cute orange salamander creature with a tiny smoking volcano cone on its back and glowing ember spots",
+  "desc": "Salamandra nacida en las faldas del Tungurahua. El cráter de su lomo humea cuando se emociona.",
+  "desc_en": "A salamander born on the slopes of Tungurahua. The tiny crater on its back smokes when it gets excited."
+ },
+ "tungurak": {
+  "nombre": "Tungurak",
+  "tipos": [
+   "fuego"
+  ],
+  "etapa": 2,
+  "evoluciona": "tungurex",
+  "rareza": "comun",
+  "perfil": "fuerte",
+  "basico": "cuerpo",
+  "habilidad": "brasa_interior",
+  "talla": "mediano",
+  "semilla": 41876,
+  "visual": "bipedal red lizard warrior creature with a volcano-shaped crest spewing small flames, dark ash-gray scales with glowing lava cracks",
+  "desc": "Escupe ceniza cuando se enfada. Sus pasos dejan brasas encendidas.",
+  "desc_en": "It spits ash when angry. Its footsteps leave glowing embers."
+ },
+ "tungurex": {
+  "nombre": "Tungurex",
+  "tipos": [
+   "fuego",
+   "roca"
+  ],
+  "etapa": 3,
+  "evoluciona": null,
+  "rareza": "comun",
+  "perfil": "robusto",
+  "basico": "cuerpo",
+  "habilidad": "brasa_interior",
+  "talla": "grande",
+  "semilla": 65866,
+  "visual": "huge fierce volcano dinosaur creature with an erupting volcano crater on its back, black basalt armor plates and rivers of glowing lava",
+  "desc": "Rey de los volcanes andinos. Cuando ruge, la tierra entera retumba.",
+  "desc_en": "King of the Andean volcanoes. When it roars, the whole land rumbles."
+ },
+ "yakupi": {
+  "nombre": "Yakupi",
+  "tipos": [
+   "agua"
+  ],
+  "etapa": 1,
+  "evoluciona": "yakulobo",
+  "rareza": "comun",
+  "perfil": "equilibrado",
+  "basico": "distancia",
+  "habilidad": "marea",
+  "talla": "pequeño",
+  "semilla": 67086,
+  "visual": "small cute sea lion pup creature with big shiny eyes, light blue fur and a water droplet on its nose",
+  "desc": "Cría de lobo marino de Galápagos. Juega con las olas todo el día.",
+  "desc_en": "A Galápagos sea lion pup. It plays with the waves all day long."
+ },
+ "yakulobo": {
+  "nombre": "Yakulobo",
+  "tipos": [
+   "agua"
+  ],
+  "etapa": 2,
+  "evoluciona": "yakuaron",
+  "rareza": "comun",
+  "perfil": "rapido",
+  "basico": "distancia",
+  "habilidad": "marea",
+  "talla": "mediano",
+  "semilla": 84830,
+  "visual": "agile sea lion creature with a wave-shaped fin crest and swirling water around its flippers, deep blue fur",
+  "desc": "Nada más rápido que una lancha. Dispara chorros con sus aletas.",
+  "desc_en": "It swims faster than a speedboat and fires jets from its flippers."
+ },
+ "yakuaron": {
+  "nombre": "Yakuarón",
+  "tipos": [
+   "agua",
+   "hielo"
+  ],
+  "etapa": 3,
+  "evoluciona": null,
+  "rareza": "comun",
+  "perfil": "tanque",
+  "basico": "distancia",
+  "habilidad": "marea",
+  "talla": "grande",
+  "semilla": 13453,
+  "visual": "massive walrus-like sea lion king creature with icy tusks, frost-covered blue fur and a crown of cold ocean waves",
+  "desc": "Guardián de la fría corriente de Humboldt. Sus colmillos son de hielo eterno.",
+  "desc_en": "Guardian of the cold Humboldt Current. Its tusks are made of everlasting ice."
+ },
+ "cacaito": {
+  "nombre": "Cacaíto",
+  "tipos": [
+   "planta"
+  ],
+  "etapa": 1,
+  "evoluciona": "cacaoso",
+  "rareza": "comun",
+  "perfil": "tanque",
+  "basico": "cuerpo",
+  "habilidad": "espesura",
+  "talla": "pequeño",
+  "semilla": 29267,
+  "visual": "small cute round creature shaped like a yellow cacao pod with a leafy sprout on top, tiny legs and a cheerful face",
+  "desc": "Nace de una mazorca de cacao fino de aroma. Huele a chocolate.",
+  "desc_en": "Born from a fine-aroma cacao pod. It smells like chocolate."
+ },
+ "cacaoso": {
+  "nombre": "Cacaoso",
+  "tipos": [
+   "planta"
+  ],
+  "etapa": 2,
+  "evoluciona": "cacaotor",
+  "rareza": "comun",
+  "perfil": "robusto",
+  "basico": "cuerpo",
+  "habilidad": "espesura",
+  "talla": "mediano",
+  "semilla": 78779,
+  "visual": "sturdy bipedal cacao pod creature with orange-brown husk armor, vine arms and big leaves on its shoulders",
+  "desc": "Protege las plantaciones de la costa. Lanza semillas amargas.",
+  "desc_en": "It protects the coastal plantations and hurls bitter seeds."
+ },
+ "cacaotor": {
+  "nombre": "Cacaotor",
+  "tipos": [
+   "planta",
+   "sombra"
+  ],
+  "etapa": 3,
+  "evoluciona": null,
+  "rareza": "comun",
+  "perfil": "fuerte",
+  "basico": "cuerpo",
+  "habilidad": "espesura",
+  "talla": "grande",
+  "semilla": 81460,
+  "visual": "large powerful dark chocolate golem beast made of cacao pods and twisted roots, with glowing purple eyes and leaf horns",
+  "desc": "Su cuerpo es de cacao negro. Dicen que un bocado da fuerzas para todo un día.",
+  "desc_en": "Its body is made of dark cacao. They say one bite gives strength for a whole day."
+ },
+ "chispez": {
+  "nombre": "Chispez",
+  "tipos": [
+   "electrico"
+  ],
+  "etapa": 1,
+  "evoluciona": "anguilampo",
+  "rareza": "comun",
+  "perfil": "rapido",
+  "basico": "distancia",
+  "habilidad": "estatica",
+  "talla": "pequeño",
+  "semilla": 72950,
+  "visual": "small cute electric eel fish creature with yellow lightning stripes, round head and a sparking tail",
+  "desc": "Pececito del Amazonas que chispea al reír.",
+  "desc_en": "A little Amazon fish that sparks when it laughs."
+ },
+ "anguilampo": {
+  "nombre": "Anguilampo",
+  "tipos": [
+   "electrico"
+  ],
+  "etapa": 2,
+  "evoluciona": "voltanguila",
+  "rareza": "comun",
+  "perfil": "rapido",
+  "basico": "distancia",
+  "habilidad": "estatica",
+  "talla": "mediano",
+  "semilla": 55131,
+  "visual": "long electric eel creature floating in the air, dark green body with glowing yellow electric organs and lightning whiskers",
+  "desc": "Ilumina los ríos de noche. Su descarga ahuyenta a cualquier depredador.",
+  "desc_en": "It lights up the rivers at night. Its shock scares off any predator."
+ },
+ "voltanguila": {
+  "nombre": "Voltanguila",
+  "tipos": [
+   "electrico",
+   "agua"
+  ],
+  "etapa": 3,
+  "evoluciona": null,
+  "rareza": "comun",
+  "perfil": "fuerte",
+  "basico": "distancia",
+  "habilidad": "estatica",
+  "talla": "grande",
+  "semilla": 75048,
+  "visual": "huge serpent-like electric eel dragon with thunder clouds around it, glowing yellow and teal stripes and a crackling lightning crest",
+  "desc": "Señora de las tormentas del río Napo. Su rugido suena a trueno.",
+  "desc_en": "Mistress of the Napo River storms. Its roar sounds like thunder."
+ },
+ "quindito": {
+  "nombre": "Quindito",
+  "tipos": [
+   "viento"
+  ],
+  "etapa": 1,
+  "evoluciona": "quindazo",
+  "rareza": "comun",
+  "perfil": "rapido",
+  "basico": "distancia",
+  "habilidad": "viento_cola",
+  "talla": "pequeño",
+  "semilla": 71803,
+  "visual": "tiny cute hummingbird creature with emerald green feathers, a long thin beak and blurry fast wings",
+  "desc": "Los quindes son los colibríes de Ecuador. Este nunca deja de zumbar.",
+  "desc_en": "Quindes are Ecuador's hummingbirds. This one never stops buzzing."
+ },
+ "quindazo": {
+  "nombre": "Quindazo",
+  "tipos": [
+   "viento"
+  ],
+  "etapa": 2,
+  "evoluciona": "quindestral",
+  "rareza": "comun",
+  "perfil": "rapido",
+  "basico": "distancia",
+  "habilidad": "viento_cola",
+  "talla": "mediano",
+  "semilla": 95754,
+  "visual": "fierce hummingbird warrior creature with iridescent purple and green feathers, a sword-like beak and long tail streamers",
+  "desc": "Su pico es tan afilado como una espada. Vuela hacia atrás para esquivar.",
+  "desc_en": "Its beak is as sharp as a sword. It flies backwards to dodge."
+ },
+ "quindestral": {
+  "nombre": "Quindestral",
+  "tipos": [
+   "viento",
+   "luz"
+  ],
+  "etapa": 3,
+  "evoluciona": null,
+  "rareza": "comun",
+  "perfil": "asesino",
+  "basico": "distancia",
+  "habilidad": "viento_cola",
+  "talla": "grande",
+  "semilla": 64344,
+  "visual": "majestic giant hummingbird creature with glowing golden and emerald plumage, star-shaped tail feathers and radiant light wings",
+  "desc": "Inspirado en la estrella del Chimborazo, un colibrí andino. Sus alas dejan estelas de luz.",
+  "desc_en": "Inspired by the Chimborazo hillstar, an Andean hummingbird. Its wings leave trails of light."
+ },
+ "galapito": {
+  "nombre": "Galapito",
+  "tipos": [
+   "roca"
+  ],
+  "etapa": 1,
+  "evoluciona": "galapon",
+  "rareza": "comun",
+  "perfil": "tanque",
+  "basico": "cuerpo",
+  "habilidad": "roca_solida",
+  "talla": "pequeño",
+  "semilla": 98439,
+  "visual": "small cute baby giant tortoise creature with a rocky saddle-shaped shell and a sleepy face",
+  "desc": "Tortuguita de Galápagos. Puede dormir cien años seguidos.",
+  "desc_en": "A tiny Galápagos tortoise. It can sleep for a hundred years straight."
+ },
+ "galapon": {
+  "nombre": "Galapón",
+  "tipos": [
+   "roca"
+  ],
+  "etapa": 2,
+  "evoluciona": "galapagon",
+  "rareza": "comun",
+  "perfil": "tanque",
+  "basico": "cuerpo",
+  "habilidad": "roca_solida",
+  "talla": "mediano",
+  "semilla": 76877,
+  "visual": "sturdy giant tortoise creature with a boulder shell covered in moss and small cactus, strong stony legs",
+  "desc": "Su caparazón resiste una avalancha. Camina lento pero nunca se detiene.",
+  "desc_en": "Its shell withstands an avalanche. It walks slowly but never stops."
+ },
+ "galapagon": {
+  "nombre": "Galapagón",
+  "tipos": [
+   "roca",
+   "agua"
+  ],
+  "etapa": 3,
+  "evoluciona": null,
+  "rareza": "comun",
+  "perfil": "tanque",
+  "basico": "cuerpo",
+  "habilidad": "roca_solida",
+  "talla": "grande",
+  "semilla": 57816,
+  "visual": "colossal ancient giant tortoise creature with a volcanic island on its shell, small waterfalls and palm trees growing on its back",
+  "desc": "Tan grande que en su caparazón crecen islas. Es el abuelo del archipiélago.",
+  "desc_en": "So big that islands grow on its shell. It is the grandfather of the archipelago."
+ },
+ "chusik": {
+  "nombre": "Chusik",
+  "tipos": [
+   "sombra"
+  ],
+  "etapa": 1,
+  "evoluciona": "chusikar",
+  "rareza": "comun",
+  "perfil": "equilibrado",
+  "basico": "distancia",
+  "habilidad": "sombra_esquiva",
+  "talla": "pequeño",
+  "semilla": 31449,
+  "visual": "small cute round owl chick creature with dark purple feathers and huge glowing yellow eyes",
+  "desc": "Chusik significa lechuza en kichwa. Sus ojos ven en la oscuridad total.",
+  "desc_en": "Chusik means owl in Kichwa. Its eyes see in total darkness."
+ },
+ "chusikar": {
+  "nombre": "Chusikar",
+  "tipos": [
+   "sombra"
+  ],
+  "etapa": 2,
+  "evoluciona": "chusikron",
+  "rareza": "comun",
+  "perfil": "asesino",
+  "basico": "distancia",
+  "habilidad": "sombra_esquiva",
+  "talla": "mediano",
+  "semilla": 333,
+  "visual": "sleek shadow owl creature with midnight blue feathers, sharp claws and a mysterious smoky aura",
+  "desc": "Caza sin hacer ruido. Dicen que trae mensajes de la noche.",
+  "desc_en": "It hunts without a sound. They say it carries messages from the night."
+ },
+ "chusikron": {
+  "nombre": "Chusikrón",
+  "tipos": [
+   "sombra",
+   "viento"
+  ],
+  "etapa": 3,
+  "evoluciona": null,
+  "rareza": "comun",
+  "perfil": "asesino",
+  "basico": "distancia",
+  "habilidad": "sombra_esquiva",
+  "talla": "grande",
+  "semilla": 80505,
+  "visual": "large majestic dark owl lord creature with wings made of starry night sky and a glowing crescent moon on its forehead",
+  "desc": "Cuando abre sus alas, el día se vuelve noche.",
+  "desc_en": "When it opens its wings, day turns into night."
+ },
+ "ukumarito": {
+  "nombre": "Ukumarito",
+  "tipos": [
+   "hielo"
+  ],
+  "etapa": 1,
+  "evoluciona": "ukumari",
+  "rareza": "comun",
+  "perfil": "robusto",
+  "basico": "cuerpo",
+  "habilidad": "corazon_glaciar",
+  "talla": "pequeño",
+  "semilla": 10581,
+  "visual": "small cute spectacled bear cub creature with dark fur, cream spectacle markings around the eyes and frost on its ears",
+  "desc": "Cría de oso de anteojos del páramo. Le encanta la nieve.",
+  "desc_en": "A spectacled bear cub from the páramo. It loves snow."
+ },
+ "ukumari": {
+  "nombre": "Ukumari",
+  "tipos": [
+   "hielo"
+  ],
+  "etapa": 2,
+  "evoluciona": "ukumarasu",
+  "rareza": "comun",
+  "perfil": "robusto",
+  "basico": "cuerpo",
+  "habilidad": "corazon_glaciar",
+  "talla": "mediano",
+  "semilla": 14515,
+  "visual": "strong spectacled bear creature with icy blue-tinted fur, frosty spectacle markings and ice crystal claws",
+  "desc": "Ukumari es el oso de las leyendas andinas. Sus garras congelan lo que tocan.",
+  "desc_en": "Ukumari is the bear of Andean legends. Its claws freeze whatever they touch."
+ },
+ "ukumarasu": {
+  "nombre": "Ukumarasu",
+  "tipos": [
+   "hielo",
+   "roca"
+  ],
+  "etapa": 3,
+  "evoluciona": null,
+  "rareza": "comun",
+  "perfil": "tanque",
+  "basico": "cuerpo",
+  "habilidad": "corazon_glaciar",
+  "talla": "grande",
+  "semilla": 37650,
+  "visual": "huge glacier bear creature with a back covered in ice crystals and snowy mountain peaks, glowing pale blue spectacle markings",
+  "desc": "Duerme bajo los glaciares. Su despertar provoca avalanchas.",
+  "desc_en": "It sleeps beneath the glaciers. Its awakening triggers avalanches."
+ },
+ "morfito": {
+  "nombre": "Morfito",
+  "tipos": [
+   "luz"
+  ],
+  "etapa": 1,
+  "evoluciona": "crisalux",
+  "rareza": "comun",
+  "perfil": "equilibrado",
+  "basico": "distancia",
+  "habilidad": "aurora",
+  "talla": "pequeño",
+  "semilla": 12852,
+  "visual": "small cute fuzzy caterpillar creature with glowing blue spots and tiny antennae tipped with light bulbs",
+  "desc": "Oruga amazónica que brilla en la oscuridad.",
+  "desc_en": "An Amazonian caterpillar that glows in the dark."
+ },
+ "crisalux": {
+  "nombre": "Crisalux",
+  "tipos": [
+   "luz"
+  ],
+  "etapa": 2,
+  "evoluciona": "morfolux",
+  "rareza": "comun",
+  "perfil": "tanque",
+  "basico": "distancia",
+  "habilidad": "aurora",
+  "talla": "mediano",
+  "semilla": 58938,
+  "visual": "glowing crystal chrysalis creature floating in the air, golden shell with light shining through cracks and two small eyes",
+  "desc": "Dentro de su crisálida guarda la luz del sol.",
+  "desc_en": "Inside its chrysalis it keeps the light of the sun."
+ },
+ "morfolux": {
+  "nombre": "Morfolux",
+  "tipos": [
+   "luz",
+   "viento"
+  ],
+  "etapa": 3,
+  "evoluciona": null,
+  "rareza": "comun",
+  "perfil": "rapido",
+  "basico": "distancia",
+  "habilidad": "aurora",
+  "talla": "grande",
+  "semilla": 1506,
+  "visual": "magnificent giant blue morpho butterfly creature with shimmering electric-blue wings radiating light and an elegant body",
+  "desc": "La mariposa morfo azul más grande del Amazonas. Sus alas deslumbran.",
+  "desc_en": "The largest blue morpho of the Amazon. Its wings are dazzling."
+ },
+ "llamin": {
+  "nombre": "Llamín",
+  "tipos": [
+   "fuego"
+  ],
+  "etapa": 1,
+  "evoluciona": "llamaradon",
+  "rareza": "comun",
+  "perfil": "equilibrado",
+  "basico": "distancia",
+  "habilidad": "brasa_interior",
+  "talla": "pequeño",
+  "semilla": 89808,
+  "visual": "small cute fluffy baby llama creature with a little flame on its fluffy head tuft and colorful Andean tassels on its ears",
+  "desc": "Una llamita con llama. Su lana siempre está calentita.",
+  "desc_en": "A little llama with a flame. Its wool is always warm."
+ },
+ "llamaradon": {
+  "nombre": "Llamaradón",
+  "tipos": [
+   "fuego",
+   "viento"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "comun",
+  "perfil": "rapido",
+  "basico": "distancia",
+  "habilidad": "brasa_interior",
+  "talla": "mediano",
+  "semilla": 64263,
+  "visual": "proud adult llama creature with a blazing fire mane, a colorful woven Andean blanket and hot wind swirling around its hooves",
+  "desc": "Escupe fuego en vez de saliva. Corre por los Andes como el viento.",
+  "desc_en": "It spits fire instead of saliva and runs across the Andes like the wind."
+ },
+ "dardin": {
+  "nombre": "Dardín",
+  "tipos": [
+   "planta"
+  ],
+  "etapa": 1,
+  "evoluciona": "dardosa",
+  "rareza": "comun",
+  "perfil": "rapido",
+  "basico": "distancia",
+  "habilidad": "toxico",
+  "talla": "pequeño",
+  "semilla": 89049,
+  "visual": "tiny cute poison dart frog creature, bright blue with black spots and a leaf on its head",
+  "desc": "Ranita venenosa del bosque. Su color avisa: ¡no me toques!",
+  "desc_en": "A tiny poison frog of the forest. Its colors warn: don't touch me!"
+ },
+ "dardosa": {
+  "nombre": "Dardosa",
+  "tipos": [
+   "planta",
+   "sombra"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "comun",
+  "perfil": "asesino",
+  "basico": "distancia",
+  "habilidad": "toxico",
+  "talla": "mediano",
+  "semilla": 41188,
+  "visual": "sleek poison dart frog creature with a vivid red and black pattern, dripping purple venom and a leaf-shaped crest",
+  "desc": "Su piel tiene suficiente veneno para dormir a un jaguar.",
+  "desc_en": "Its skin has enough venom to put a jaguar to sleep."
+ },
+ "pinzin": {
+  "nombre": "Pinzín",
+  "tipos": [
+   "agua"
+  ],
+  "etapa": 1,
+  "evoluciona": "pinzaglar",
+  "rareza": "comun",
+  "perfil": "tanque",
+  "basico": "cuerpo",
+  "habilidad": "roca_solida",
+  "talla": "pequeño",
+  "semilla": 27555,
+  "visual": "small cute red mangrove crab creature with one big claw and a bubbly mouth",
+  "desc": "Vive entre las raíces del manglar. Pellizca a quien se acerca.",
+  "desc_en": "It lives among the mangrove roots and pinches anyone who gets close."
+ },
+ "pinzaglar": {
+  "nombre": "Pinzaglar",
+  "tipos": [
+   "agua",
+   "roca"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "comun",
+  "perfil": "tanque",
+  "basico": "cuerpo",
+  "habilidad": "roca_solida",
+  "talla": "mediano",
+  "semilla": 52065,
+  "visual": "large armored mangrove crab creature with a stone-like shell, mangrove roots growing on its back and two huge claws",
+  "desc": "Sus pinzas parten troncos. Defiende el manglar como una fortaleza.",
+  "desc_en": "Its claws split logs. It defends the mangrove like a fortress."
+ },
+ "piranin": {
+  "nombre": "Pirañín",
+  "tipos": [
+   "agua"
+  ],
+  "etapa": 1,
+  "evoluciona": "piranazo",
+  "rareza": "comun",
+  "perfil": "asesino",
+  "basico": "cuerpo",
+  "habilidad": "instinto_cazador",
+  "talla": "pequeño",
+  "semilla": 32967,
+  "visual": "small cute round piranha fish creature with a sharp-toothed grin, red belly and tiny fins, floating in the air",
+  "desc": "Pequeño pero muy mordelón. Nunca anda solo.",
+  "desc_en": "Small but very bitey. It never travels alone."
+ },
+ "piranazo": {
+  "nombre": "Pirañazo",
+  "tipos": [
+   "agua",
+   "sombra"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "comun",
+  "perfil": "asesino",
+  "basico": "cuerpo",
+  "habilidad": "instinto_cazador",
+  "talla": "mediano",
+  "semilla": 45569,
+  "visual": "fierce large piranha creature with dark scales, glowing red eyes, huge jaws full of teeth and shadowy fins",
+  "desc": "Huele el miedo desde lejos. Su mordida atraviesa armaduras.",
+  "desc_en": "It smells fear from afar. Its bite pierces armor."
+ },
+ "capibin": {
+  "nombre": "Capibín",
+  "tipos": [
+   "agua"
+  ],
+  "etapa": 1,
+  "evoluciona": "capibaron",
+  "rareza": "comun",
+  "perfil": "tanque",
+  "basico": "cuerpo",
+  "habilidad": "fotosintesis",
+  "talla": "pequeño",
+  "semilla": 46746,
+  "visual": "small cute chubby capybara creature with a lily pad on its head and a calm sleepy smile",
+  "desc": "El Primal más tranquilo del río. Todos quieren ser su amigo.",
+  "desc_en": "The calmest Primal in the river. Everyone wants to be its friend."
+ },
+ "capibaron": {
+  "nombre": "Capibarón",
+  "tipos": [
+   "agua"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "comun",
+  "perfil": "tanque",
+  "basico": "cuerpo",
+  "habilidad": "fotosintesis",
+  "talla": "mediano",
+  "semilla": 49329,
+  "visual": "big relaxed capybara creature wearing a crown of water lilies, with small birds resting on its back and a river splash",
+  "desc": "Nada sin prisa y nunca pierde la calma. Hasta los pájaros descansan sobre él.",
+  "desc_en": "It swims at its own pace and never loses its cool. Even birds rest on it."
+ },
+ "pelusin": {
+  "nombre": "Pelusín",
+  "tipos": [
+   "sombra"
+  ],
+  "etapa": 1,
+  "evoluciona": "taranton",
+  "rareza": "comun",
+  "perfil": "equilibrado",
+  "basico": "cuerpo",
+  "habilidad": "toxico",
+  "talla": "pequeño",
+  "semilla": 97776,
+  "visual": "small cute fuzzy tarantula creature with dark purple hair, many shiny eyes and tiny fangs",
+  "desc": "Una tarántula peludita y tímida. Teje telarañas con forma de estrella.",
+  "desc_en": "A shy fuzzy tarantula. It weaves star-shaped webs."
+ },
+ "taranton": {
+  "nombre": "Tarantón",
+  "tipos": [
+   "sombra",
+   "roca"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "comun",
+  "perfil": "robusto",
+  "basico": "cuerpo",
+  "habilidad": "toxico",
+  "talla": "mediano",
+  "semilla": 67317,
+  "visual": "large tarantula creature with rocky armored legs, dark violet fur and glowing purple fangs",
+  "desc": "Vive en las cuevas de la Amazonía. Sus patas son duras como la piedra.",
+  "desc_en": "It lives in Amazon caves. Its legs are as hard as stone."
+ },
+ "piquerito": {
+  "nombre": "Piquerito",
+  "tipos": [
+   "viento"
+  ],
+  "etapa": 1,
+  "evoluciona": "patazul",
+  "rareza": "comun",
+  "perfil": "equilibrado",
+  "basico": "distancia",
+  "habilidad": "viento_cola",
+  "talla": "pequeño",
+  "semilla": 83587,
+  "visual": "small cute seabird chick creature with fluffy white down and very big bright blue feet, blue-footed booby",
+  "desc": "Presume sus patas azules. Baila para hacer amigos.",
+  "desc_en": "It shows off its blue feet and dances to make friends."
+ },
+ "patazul": {
+  "nombre": "Patazul",
+  "tipos": [
+   "viento",
+   "agua"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "comun",
+  "perfil": "rapido",
+  "basico": "distancia",
+  "habilidad": "viento_cola",
+  "talla": "mediano",
+  "semilla": 10004,
+  "visual": "elegant blue-footed booby bird creature with wings spread, white and brown feathers and vivid turquoise feet",
+  "desc": "Se lanza en picada al mar como una flecha. Su baile es famoso en Galápagos.",
+  "desc_en": "It dives into the sea like an arrow. Its dance is famous in Galápagos."
+ },
+ "iguanin": {
+  "nombre": "Iguanín",
+  "tipos": [
+   "fuego"
+  ],
+  "etapa": 1,
+  "evoluciona": "iguanarca",
+  "rareza": "comun",
+  "perfil": "robusto",
+  "basico": "cuerpo",
+  "habilidad": "brasa_interior",
+  "talla": "pequeño",
+  "semilla": 94780,
+  "visual": "small cute yellow land iguana creature with a spiky orange crest and a warm glowing belly",
+  "desc": "Toma el sol sobre rocas volcánicas hasta brillar.",
+  "desc_en": "It sunbathes on volcanic rocks until it glows."
+ },
+ "iguanarca": {
+  "nombre": "Iguanarca",
+  "tipos": [
+   "fuego",
+   "planta"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "comun",
+  "perfil": "robusto",
+  "basico": "cuerpo",
+  "habilidad": "brasa_interior",
+  "talla": "mediano",
+  "semilla": 44617,
+  "visual": "large golden land iguana creature with a crest of flaming cactus spines and prickly pear cactus growing on its back",
+  "desc": "Come cactus y respira fuego. Gobierna las islas secas.",
+  "desc_en": "It eats cactus and breathes fire. It rules the dry islands."
+ },
+ "frailito": {
+  "nombre": "Frailito",
+  "tipos": [
+   "planta"
+  ],
+  "etapa": 1,
+  "evoluciona": "frailejon",
+  "rareza": "comun",
+  "perfil": "tanque",
+  "basico": "cuerpo",
+  "habilidad": "fotosintesis",
+  "talla": "pequeño",
+  "semilla": 11753,
+  "visual": "small cute fuzzy frailejon plant creature with a rosette of silvery hairy leaves on its head and tiny stubby legs",
+  "desc": "Pequeña planta del páramo cubierta de pelusa para no tener frío.",
+  "desc_en": "A small páramo plant covered in fuzz so it never gets cold."
+ },
+ "frailejon": {
+  "nombre": "Frailejón",
+  "tipos": [
+   "planta",
+   "hielo"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "comun",
+  "perfil": "tanque",
+  "basico": "cuerpo",
+  "habilidad": "fotosintesis",
+  "talla": "mediano",
+  "semilla": 73067,
+  "visual": "tall frailejon plant creature with a thick trunk body, a frosty silver leaf crown and yellow flowers, covered in morning frost",
+  "desc": "Guardián del agua del páramo. Atrapa la niebla y la vuelve ríos.",
+  "desc_en": "Guardian of the páramo's water. It catches the mist and turns it into rivers."
+ },
+ "aullin": {
+  "nombre": "Aullín",
+  "tipos": [
+   "electrico"
+  ],
+  "etapa": 1,
+  "evoluciona": "aullatrueno",
+  "rareza": "comun",
+  "perfil": "equilibrado",
+  "basico": "cuerpo",
+  "habilidad": "estatica",
+  "talla": "pequeño",
+  "semilla": 70526,
+  "visual": "small cute howler monkey creature with reddish fur, a curly tail and tiny sparks around its open mouth",
+  "desc": "Su grito se oye a kilómetros. Se carga de electricidad al gritar.",
+  "desc_en": "Its howl can be heard for miles. Howling charges it with electricity."
+ },
+ "aullatrueno": {
+  "nombre": "Aullatrueno",
+  "tipos": [
+   "electrico",
+   "viento"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "comun",
+  "perfil": "fuerte",
+  "basico": "cuerpo",
+  "habilidad": "estatica",
+  "talla": "mediano",
+  "semilla": 38289,
+  "visual": "large howler monkey creature with storm cloud fur, lightning bolts in its mane and a long thunder tail",
+  "desc": "Cuando aúlla, empieza a llover. Es el dueño de las copas de los árboles.",
+  "desc_en": "When it howls, the rain begins. It owns the treetops."
+ },
+ "tucanin": {
+  "nombre": "Tucanín",
+  "tipos": [
+   "viento"
+  ],
+  "etapa": 1,
+  "evoluciona": "tucanazo",
+  "rareza": "comun",
+  "perfil": "equilibrado",
+  "basico": "distancia",
+  "habilidad": "viento_cola",
+  "talla": "pequeño",
+  "semilla": 37697,
+  "visual": "small cute toucan chick creature with a huge colorful orange beak and fluffy black and white feathers",
+  "desc": "Su pico casi no pesa, aunque parezca enorme.",
+  "desc_en": "Its beak weighs almost nothing, even though it looks huge."
+ },
+ "tucanazo": {
+  "nombre": "Tucanazo",
+  "tipos": [
+   "viento",
+   "fuego"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "comun",
+  "perfil": "fuerte",
+  "basico": "distancia",
+  "habilidad": "concentracion",
+  "talla": "mediano",
+  "semilla": 59959,
+  "visual": "large majestic toucan creature with a blazing rainbow beak glowing like fire and black feathers with flame-colored tips",
+  "desc": "Su pico arde con los colores del atardecer amazónico.",
+  "desc_en": "Its beak burns with the colors of the Amazon sunset."
+ },
+ "otoronguito": {
+  "nombre": "Otoronguito",
+  "tipos": [
+   "sombra"
+  ],
+  "etapa": 1,
+  "evoluciona": "otorongo",
+  "rareza": "raro",
+  "perfil": "asesino",
+  "basico": "cuerpo",
+  "habilidad": "instinto_cazador",
+  "talla": "pequeño",
+  "semilla": 18467,
+  "visual": "small cute black jaguar cub creature with faint rosette spots and glowing green eyes",
+  "desc": "Cachorro de otorongo, el jaguar del Amazonas. Juega a cazar sombras.",
+  "desc_en": "A cub of the otorongo, the Amazon jaguar. It plays at hunting shadows."
+ },
+ "otorongo": {
+  "nombre": "Otorongo",
+  "tipos": [
+   "sombra",
+   "planta"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "raro",
+  "perfil": "asesino",
+  "basico": "cuerpo",
+  "habilidad": "instinto_cazador",
+  "talla": "grande",
+  "semilla": 84515,
+  "visual": "powerful black jaguar creature with glowing jungle-green rosettes, vines wrapped around its legs and fierce eyes",
+  "desc": "Rey de la selva. Aparece y desaparece entre las hojas.",
+  "desc_en": "King of the jungle. It appears and vanishes among the leaves."
+ },
+ "amaruto": {
+  "nombre": "Amaruto",
+  "tipos": [
+   "agua"
+  ],
+  "etapa": 1,
+  "evoluciona": "amarusacha",
+  "rareza": "raro",
+  "perfil": "equilibrado",
+  "basico": "cuerpo",
+  "habilidad": "marea",
+  "talla": "pequeño",
+  "semilla": 92272,
+  "visual": "small cute young anaconda snake creature with green and black spotted scales, coiled up with a friendly face",
+  "desc": "Amaru es la serpiente sagrada de los Andes. Esta todavía es pequeña.",
+  "desc_en": "Amaru is the sacred serpent of the Andes. This one is still small."
+ },
+ "amarusacha": {
+  "nombre": "Amarusacha",
+  "tipos": [
+   "agua",
+   "planta"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "raro",
+  "perfil": "tanque",
+  "basico": "cuerpo",
+  "habilidad": "marea",
+  "talla": "grande",
+  "semilla": 93902,
+  "visual": "giant anaconda creature coiled in a river, mossy green scales with water lilies and jungle vines growing on its body",
+  "desc": "La anaconda más grande del río. Sostiene la selva sobre su espalda.",
+  "desc_en": "The largest anaconda in the river. It holds the jungle on its back."
+ },
+ "bufeito": {
+  "nombre": "Bufeíto",
+  "tipos": [
+   "agua"
+  ],
+  "etapa": 1,
+  "evoluciona": "bufeorosa",
+  "rareza": "raro",
+  "perfil": "rapido",
+  "basico": "distancia",
+  "habilidad": "marea",
+  "talla": "pequeño",
+  "semilla": 75685,
+  "visual": "small cute pink river dolphin creature with a long snout, playful smile and bubbles",
+  "desc": "Delfín rosado del Amazonas. Le encanta hacer piruetas.",
+  "desc_en": "A pink Amazon river dolphin. It loves doing flips."
+ },
+ "bufeorosa": {
+  "nombre": "Bufeorosa",
+  "tipos": [
+   "agua",
+   "luz"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "raro",
+  "perfil": "equilibrado",
+  "basico": "distancia",
+  "habilidad": "aurora",
+  "talla": "grande",
+  "semilla": 40502,
+  "visual": "elegant large pink river dolphin creature glowing with mystical light and sparkling water ribbons around it",
+  "desc": "La leyenda dice que de noche se convierte en persona y va a las fiestas.",
+  "desc_en": "Legend says that at night it turns into a person and goes to parties."
+ },
+ "harpin": {
+  "nombre": "Harpín",
+  "tipos": [
+   "viento"
+  ],
+  "etapa": 1,
+  "evoluciona": "harpiandina",
+  "rareza": "raro",
+  "perfil": "fuerte",
+  "basico": "distancia",
+  "habilidad": "instinto_cazador",
+  "talla": "pequeño",
+  "semilla": 3243,
+  "visual": "small cute fluffy harpy eagle chick creature with gray feathers and a double crest",
+  "desc": "Pichón de águila harpía. Ya mira como un cazador.",
+  "desc_en": "A harpy eagle chick. It already has a hunter's stare."
+ },
+ "harpiandina": {
+  "nombre": "Harpiandina",
+  "tipos": [
+   "viento",
+   "planta"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "raro",
+  "perfil": "fuerte",
+  "basico": "distancia",
+  "habilidad": "instinto_cazador",
+  "talla": "grande",
+  "semilla": 93175,
+  "visual": "mighty harpy eagle creature with huge talons, gray and black feathers, a majestic double crest and leaves swirling in the wind",
+  "desc": "El ave más fuerte del bosque. Sus garras son como garfios.",
+  "desc_en": "The strongest bird of the forest. Its talons are like hooks."
+ },
+ "pingui": {
+  "nombre": "Pingüi",
+  "tipos": [
+   "hielo"
+  ],
+  "etapa": 1,
+  "evoluciona": "galapingo",
+  "rareza": "raro",
+  "perfil": "rapido",
+  "basico": "distancia",
+  "habilidad": "corazon_glaciar",
+  "talla": "pequeño",
+  "semilla": 48346,
+  "visual": "small cute Galapagos penguin chick creature, gray and fluffy with a white face stripe and icy blue flippers",
+  "desc": "Uno de los pocos pingüinos que viven en la línea ecuatorial.",
+  "desc_en": "One of the few penguins that live on the Equator."
+ },
+ "galapingo": {
+  "nombre": "Galapingo",
+  "tipos": [
+   "hielo",
+   "agua"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "raro",
+  "perfil": "rapido",
+  "basico": "distancia",
+  "habilidad": "corazon_glaciar",
+  "talla": "mediano",
+  "semilla": 47651,
+  "visual": "sleek penguin warrior creature sliding on ice, black and white with frost patterns and a cold water splash",
+  "desc": "Patina sobre el mar y congela las olas a su paso.",
+  "desc_en": "It skates over the sea, freezing the waves as it goes."
+ },
+ "martillin": {
+  "nombre": "Martillín",
+  "tipos": [
+   "agua"
+  ],
+  "etapa": 1,
+  "evoluciona": "martillazo",
+  "rareza": "raro",
+  "perfil": "fuerte",
+  "basico": "cuerpo",
+  "habilidad": "instinto_cazador",
+  "talla": "pequeño",
+  "semilla": 60434,
+  "visual": "small cute baby hammerhead shark creature with a wide hammer-shaped head and tiny fins, floating in the air",
+  "desc": "Tiburón martillo bebé. Se golpea la cabeza con todo, pero no le duele.",
+  "desc_en": "A baby hammerhead shark. It bumps its head on everything, but it doesn't hurt."
+ },
+ "martillazo": {
+  "nombre": "Martillazo",
+  "tipos": [
+   "agua",
+   "roca"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "raro",
+  "perfil": "fuerte",
+  "basico": "cuerpo",
+  "habilidad": "roca_solida",
+  "talla": "grande",
+  "semilla": 55341,
+  "visual": "huge hammerhead shark creature with a stone-armored hammer head, gray-blue body and a powerful tail, ocean splashes",
+  "desc": "Patrulla las aguas de Galápagos. Su cabeza parte rocas.",
+  "desc_en": "It patrols the waters of Galápagos. Its head smashes rocks."
+ },
+ "atuk": {
+  "nombre": "Atuk",
+  "tipos": [
+   "hielo"
+  ],
+  "etapa": 1,
+  "evoluciona": "atukrasu",
+  "rareza": "raro",
+  "perfil": "rapido",
+  "basico": "cuerpo",
+  "habilidad": "escarcha",
+  "talla": "pequeño",
+  "semilla": 11887,
+  "visual": "small cute Andean fox kit creature with gray-red fur, a bushy tail with a frosty tip and big ears",
+  "desc": "Atuk significa zorro en kichwa. Es travieso y muy listo.",
+  "desc_en": "Atuk means fox in Kichwa. It is mischievous and very clever."
+ },
+ "atukrasu": {
+  "nombre": "Atukrasu",
+  "tipos": [
+   "hielo",
+   "sombra"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "raro",
+  "perfil": "asesino",
+  "basico": "cuerpo",
+  "habilidad": "escarcha",
+  "talla": "mediano",
+  "semilla": 52269,
+  "visual": "sleek páramo fox creature with frosty silver fur, dark shadowy tail tips and glowing icy eyes, snowflakes swirling",
+  "desc": "El zorro fantasma del páramo. Deja huellas de escarcha.",
+  "desc_en": "The ghost fox of the páramo. It leaves frosty footprints."
+ },
+ "pumita": {
+  "nombre": "Pumita",
+  "tipos": [
+   "roca"
+  ],
+  "etapa": 1,
+  "evoluciona": "pumarumi",
+  "rareza": "raro",
+  "perfil": "asesino",
+  "basico": "cuerpo",
+  "habilidad": "instinto_cazador",
+  "talla": "pequeño",
+  "semilla": 76772,
+  "visual": "small cute puma cub creature with tan fur, stone pebbles on its paws and curious eyes",
+  "desc": "Cachorro de puma que juega entre las piedras.",
+  "desc_en": "A puma cub that plays among the rocks."
+ },
+ "pumarumi": {
+  "nombre": "Pumarumi",
+  "tipos": [
+   "roca",
+   "viento"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "raro",
+  "perfil": "asesino",
+  "basico": "cuerpo",
+  "habilidad": "instinto_cazador",
+  "talla": "grande",
+  "semilla": 72673,
+  "visual": "powerful mountain puma creature with stone armor plates like Inca walls on its shoulders and wind swirling around its tail",
+  "desc": "Rumi significa piedra. Su armadura recuerda a los muros incas.",
+  "desc_en": "Rumi means stone. Its armor recalls the Inca walls."
+ },
+ "tapirin": {
+  "nombre": "Tapirín",
+  "tipos": [
+   "planta"
+  ],
+  "etapa": 1,
+  "evoluciona": "tapiramo",
+  "rareza": "raro",
+  "perfil": "tanque",
+  "basico": "cuerpo",
+  "habilidad": "fotosintesis",
+  "talla": "pequeño",
+  "semilla": 65334,
+  "visual": "small cute mountain tapir calf creature with striped and spotted fur, a short trunk and leaves on its back",
+  "desc": "Cría de tapir de montaña. Sus rayas desaparecen al crecer.",
+  "desc_en": "A mountain tapir calf. Its stripes fade as it grows."
+ },
+ "tapiramo": {
+  "nombre": "Tapiramo",
+  "tipos": [
+   "planta",
+   "roca"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "raro",
+  "perfil": "tanque",
+  "basico": "cuerpo",
+  "habilidad": "fotosintesis",
+  "talla": "grande",
+  "semilla": 15264,
+  "visual": "large woolly mountain tapir creature with mossy stone armor, a flexible trunk and ferns growing on its back",
+  "desc": "Siembra el bosque nublado con cada paso.",
+  "desc_en": "It plants the cloud forest with every step."
+ },
+ "vicunin": {
+  "nombre": "Vicuñín",
+  "tipos": [
+   "hielo"
+  ],
+  "etapa": 1,
+  "evoluciona": "vicunieve",
+  "rareza": "raro",
+  "perfil": "rapido",
+  "basico": "distancia",
+  "habilidad": "viento_cola",
+  "talla": "pequeño",
+  "semilla": 55764,
+  "visual": "small cute fluffy vicuna creature with golden wool, a long neck and a frosty white bib",
+  "desc": "Su lana es la más fina del mundo.",
+  "desc_en": "Its wool is the finest in the world."
+ },
+ "vicunieve": {
+  "nombre": "Vicuñieve",
+  "tipos": [
+   "hielo",
+   "viento"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "raro",
+  "perfil": "rapido",
+  "basico": "distancia",
+  "habilidad": "escarcha",
+  "talla": "mediano",
+  "semilla": 66370,
+  "visual": "graceful vicuna creature running, golden and white wool with ice crystals and a cold wind trailing behind it",
+  "desc": "Corre por las faldas del Chimborazo a la velocidad del viento.",
+  "desc_en": "It runs along the slopes of Chimborazo as fast as the wind."
+ },
+ "fragatin": {
+  "nombre": "Fragatín",
+  "tipos": [
+   "viento"
+  ],
+  "etapa": 1,
+  "evoluciona": "fragatormenta",
+  "rareza": "raro",
+  "perfil": "rapido",
+  "basico": "distancia",
+  "habilidad": "viento_cola",
+  "talla": "pequeño",
+  "semilla": 98324,
+  "visual": "small cute frigatebird chick creature with black feathers and a tiny red throat pouch",
+  "desc": "Infla su buche rojo para presumir.",
+  "desc_en": "It puffs up its red pouch to show off."
+ },
+ "fragatormenta": {
+  "nombre": "Fragatormenta",
+  "tipos": [
+   "viento",
+   "electrico"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "raro",
+  "perfil": "rapido",
+  "basico": "distancia",
+  "habilidad": "furia_tormenta",
+  "talla": "grande",
+  "semilla": 78665,
+  "visual": "large frigatebird creature with long sharp black wings crackling with lightning and a huge inflated glowing red pouch",
+  "desc": "Roba la comida a otras aves en pleno vuelo, y también los rayos.",
+  "desc_en": "It steals food from other birds in mid-flight, and lightning too."
+ },
+ "cuernin": {
+  "nombre": "Cuernín",
+  "tipos": [
+   "roca"
+  ],
+  "etapa": 1,
+  "evoluciona": "hercularmor",
+  "rareza": "raro",
+  "perfil": "robusto",
+  "basico": "cuerpo",
+  "habilidad": "roca_solida",
+  "talla": "pequeño",
+  "semilla": 64361,
+  "visual": "small cute beetle larva creature with a tiny horn, a brown shell and stubby legs",
+  "desc": "Larva de escarabajo. Ya es fortísima.",
+  "desc_en": "A beetle larva. It is already super strong."
+ },
+ "hercularmor": {
+  "nombre": "Hercularmor",
+  "tipos": [
+   "roca",
+   "electrico"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "raro",
+  "perfil": "robusto",
+  "basico": "cuerpo",
+  "habilidad": "roca_solida",
+  "talla": "grande",
+  "semilla": 52187,
+  "visual": "giant hercules beetle creature with a long shiny horn, metallic olive armor shell and electric sparks between its horn tips",
+  "desc": "Levanta cien veces su peso. Su cuerno conduce la electricidad.",
+  "desc_en": "It lifts a hundred times its weight. Its horn conducts electricity."
+ },
+ "cristalin": {
+  "nombre": "Cristalín",
+  "tipos": [
+   "luz"
+  ],
+  "etapa": 1,
+  "evoluciona": "ranacristal",
+  "rareza": "raro",
+  "perfil": "equilibrado",
+  "basico": "distancia",
+  "habilidad": "aurora",
+  "talla": "pequeño",
+  "semilla": 68768,
+  "visual": "small cute glass frog creature with transparent lime-green skin showing a glowing heart and big golden eyes",
+  "desc": "Rana de cristal: se le ve el corazón brillar.",
+  "desc_en": "A glass frog: you can see its heart glowing."
+ },
+ "ranacristal": {
+  "nombre": "Ranacristal",
+  "tipos": [
+   "luz",
+   "agua"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "raro",
+  "perfil": "equilibrado",
+  "basico": "distancia",
+  "habilidad": "aurora",
+  "talla": "mediano",
+  "semilla": 33901,
+  "visual": "elegant glass frog creature with a crystal-clear body refracting rainbow light, water droplets and a leaf perch",
+  "desc": "Su cuerpo de cristal separa la luz como un prisma.",
+  "desc_en": "Its crystal body splits light like a prism."
+ },
+ "caimancito": {
+  "nombre": "Caimancito",
+  "tipos": [
+   "agua"
+  ],
+  "etapa": 1,
+  "evoluciona": "caimanegro",
+  "rareza": "raro",
+  "perfil": "robusto",
+  "basico": "cuerpo",
+  "habilidad": "instinto_cazador",
+  "talla": "pequeño",
+  "semilla": 55046,
+  "visual": "small cute baby black caiman creature with dark scales, yellow eyes and a toothy smile",
+  "desc": "Cría de caimán negro. Se esconde con solo los ojos fuera del agua.",
+  "desc_en": "A black caiman hatchling. It hides with only its eyes above the water."
+ },
+ "caimanegro": {
+  "nombre": "Caimanegro",
+  "tipos": [
+   "agua",
+   "sombra"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "raro",
+  "perfil": "robusto",
+  "basico": "cuerpo",
+  "habilidad": "instinto_cazador",
+  "talla": "grande",
+  "semilla": 73925,
+  "visual": "huge black caiman creature with dark armored scales, glowing yellow eyes and shadowy swamp water around it",
+  "desc": "El gran cazador de las lagunas amazónicas.",
+  "desc_en": "The great hunter of the Amazon lagoons."
+ },
+ "ayahuma": {
+  "nombre": "Aya Huma",
+  "tipos": [
+   "sombra",
+   "fuego"
+  ],
+  "etapa": 0,
+  "evoluciona": null,
+  "rareza": "epico",
+  "perfil": "fuerte",
+  "basico": "cuerpo",
+  "habilidad": "vampiro",
+  "talla": "grande",
+  "semilla": 62809,
+  "visual": "fearsome Diablo Huma mask spirit creature with a two-faced colorful mask, horns, long colorful ribbons and a fiery dark aura, Andean festival dancer",
+  "desc": "Espíritu del baile del Inti Raymi. Tiene dos caras: una mira al pasado y otra al futuro.",
+  "desc_en": "The spirit of the Inti Raymi dance. It has two faces: one looks to the past, the other to the future."
+ },
+ "cotopaxin": {
+  "nombre": "Cotopaxín",
+  "tipos": [
+   "fuego"
+  ],
+  "etapa": 1,
+  "evoluciona": "cotopaxor",
+  "rareza": "epico",
+  "perfil": "equilibrado",
+  "basico": "distancia",
+  "habilidad": "concentracion",
+  "talla": "mediano",
+  "semilla": 67234,
+  "visual": "cute small volcano creature shaped like a perfect snow-capped cone with a glowing lava heart and little feet",
+  "desc": "Un volcancito con gorro de nieve. Hierve por dentro.",
+  "desc_en": "A little volcano wearing a snow cap. It boils inside."
+ },
+ "cotopaxor": {
+  "nombre": "Cotopaxor",
+  "tipos": [
+   "fuego",
+   "hielo"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "epico",
+  "perfil": "robusto",
+  "basico": "distancia",
+  "habilidad": "concentracion",
+  "talla": "grande",
+  "semilla": 67894,
+  "visual": "colossal volcano titan creature with a perfect snow-capped cone head erupting fire, lava rivers and glaciers on its body",
+  "desc": "El volcán nevado más famoso cobra vida. Fuego y hielo en un solo cuerpo.",
+  "desc_en": "The most famous snowy volcano comes to life. Fire and ice in a single body."
+ },
+ "quiloton": {
+  "nombre": "Quilotón",
+  "tipos": [
+   "agua",
+   "sombra"
+  ],
+  "etapa": 0,
+  "evoluciona": null,
+  "rareza": "epico",
+  "perfil": "tanque",
+  "basico": "distancia",
+  "habilidad": "marea",
+  "talla": "grande",
+  "semilla": 3327,
+  "visual": "mysterious turquoise crater lake spirit creature, a round serpent coiled like a lagoon with an emerald water body and volcanic rim armor",
+  "desc": "Duerme en el fondo de la laguna del Quilotoa. Su color cambia con el sol.",
+  "desc_en": "It sleeps at the bottom of the Quilotoa lagoon. Its color changes with the sun."
+ },
+ "tunda": {
+  "nombre": "Tunda",
+  "tipos": [
+   "sombra",
+   "planta"
+  ],
+  "etapa": 0,
+  "evoluciona": null,
+  "rareza": "epico",
+  "perfil": "asesino",
+  "basico": "cuerpo",
+  "habilidad": "sombra_esquiva",
+  "talla": "grande",
+  "semilla": 75435,
+  "visual": "eerie jungle forest spirit creature with a twisted wooden body, mossy hair, one leg like a tree root and glowing eyes",
+  "desc": "Espíritu de las leyendas de Esmeraldas. Confunde a quien se pierde en el bosque.",
+  "desc_en": "A spirit from the legends of Esmeraldas. It confuses anyone lost in the forest."
+ },
+ "gallofierro": {
+  "nombre": "Gallofierro",
+  "tipos": [
+   "roca",
+   "luz"
+  ],
+  "etapa": 0,
+  "evoluciona": null,
+  "rareza": "epico",
+  "perfil": "fuerte",
+  "basico": "cuerpo",
+  "habilidad": "roca_solida",
+  "talla": "mediano",
+  "semilla": 29429,
+  "visual": "proud iron rooster creature made of wrought iron and gold, a weathervane tail and a glowing sunrise crest",
+  "desc": "El gallo de hierro de la catedral de Cuenca. Cuando canta, sale el sol.",
+  "desc_en": "The iron rooster of Cuenca's cathedral. When it crows, the sun rises."
+ },
+ "iguamarina": {
+  "nombre": "Iguamarina",
+  "tipos": [
+   "agua"
+  ],
+  "etapa": 1,
+  "evoluciona": "draconarina",
+  "rareza": "epico",
+  "perfil": "equilibrado",
+  "basico": "cuerpo",
+  "habilidad": "marea",
+  "talla": "mediano",
+  "semilla": 16909,
+  "visual": "marine iguana creature with black spiky scales, a salty white crest and sea spray",
+  "desc": "Iguana marina que estornuda sal. Bucea entre corales.",
+  "desc_en": "A marine iguana that sneezes salt. It dives among corals."
+ },
+ "draconarina": {
+  "nombre": "Draconarina",
+  "tipos": [
+   "agua",
+   "fuego"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "epico",
+  "perfil": "fuerte",
+  "basico": "cuerpo",
+  "habilidad": "marea",
+  "talla": "grande",
+  "semilla": 6408,
+  "visual": "huge sea dragon iguana creature with black volcanic scales, a steaming red crest, ocean waves and fire around it",
+  "desc": "Mitad dragón, mitad iguana marina. Hace hervir el mar.",
+  "desc_en": "Half dragon, half marine iguana. It makes the sea boil."
+ },
+ "lumbron": {
+  "nombre": "Lumbrón",
+  "tipos": [
+   "luz"
+  ],
+  "etapa": 1,
+  "evoluciona": "lumbrestrella",
+  "rareza": "epico",
+  "perfil": "equilibrado",
+  "basico": "distancia",
+  "habilidad": "aurora",
+  "talla": "mediano",
+  "semilla": 92362,
+  "visual": "glowing firefly beetle creature with a big bright yellow-green lantern abdomen and sparkles",
+  "desc": "Luciérnaga gigante que guía a los viajeros perdidos.",
+  "desc_en": "A giant firefly that guides lost travelers."
+ },
+ "lumbrestrella": {
+  "nombre": "Lumbrestrella",
+  "tipos": [
+   "luz",
+   "electrico"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "epico",
+  "perfil": "rapido",
+  "basico": "distancia",
+  "habilidad": "aurora",
+  "talla": "grande",
+  "semilla": 68580,
+  "visual": "majestic star firefly creature with crystal wings, a radiant star-shaped lantern and electric light trails",
+  "desc": "Su luz se ve desde el espacio. Dicen que es una estrella que bajó.",
+  "desc_en": "Its light can be seen from space. They say it is a star that came down."
+ },
+ "rayuku": {
+  "nombre": "Rayuku",
+  "tipos": [
+   "electrico",
+   "viento"
+  ],
+  "etapa": 0,
+  "evoluciona": null,
+  "rareza": "epico",
+  "perfil": "rapido",
+  "basico": "distancia",
+  "habilidad": "furia_tormenta",
+  "talla": "grande",
+  "semilla": 87882,
+  "visual": "thunderbird creature with wings made of storm clouds, lightning feathers and glowing yellow eyes",
+  "desc": "Ave del trueno de los Andes. Sus alas traen las tormentas.",
+  "desc_en": "The thunderbird of the Andes. Its wings bring the storms."
+ },
+ "rasuwawa": {
+  "nombre": "Rasuwawa",
+  "tipos": [
+   "hielo"
+  ],
+  "etapa": 1,
+  "evoluciona": "rasuruna",
+  "rareza": "epico",
+  "perfil": "robusto",
+  "basico": "cuerpo",
+  "habilidad": "corazon_glaciar",
+  "talla": "mediano",
+  "semilla": 13445,
+  "visual": "small yeti-like snow creature with fluffy white fur, an icy blue face and a woven Andean hat",
+  "desc": "Wawa significa bebé. Este pequeño vive en la nieve eterna.",
+  "desc_en": "Wawa means baby. This little one lives in the everlasting snow."
+ },
+ "rasuruna": {
+  "nombre": "Rasuruna",
+  "tipos": [
+   "hielo",
+   "luz"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "epico",
+  "perfil": "robusto",
+  "basico": "cuerpo",
+  "habilidad": "corazon_glaciar",
+  "talla": "grande",
+  "semilla": 94019,
+  "visual": "giant snow guardian creature with glacier ice armor shining in the sunlight, white fur, an Andean poncho and a glowing crystal staff",
+  "desc": "Rasu es nieve y runa es gente: el guardián de los glaciares.",
+  "desc_en": "Rasu means snow and runa means people: the guardian of the glaciers."
+ },
+ "jorobin": {
+  "nombre": "Jorobín",
+  "tipos": [
+   "agua"
+  ],
+  "etapa": 1,
+  "evoluciona": "jorobalena",
+  "rareza": "epico",
+  "perfil": "tanque",
+  "basico": "distancia",
+  "habilidad": "marea",
+  "talla": "mediano",
+  "semilla": 81568,
+  "visual": "cute baby humpback whale creature with long white flippers, a bumpy head and a happy water spout",
+  "desc": "Ballenato que llega a Puerto López cada año.",
+  "desc_en": "A whale calf that arrives at Puerto López every year."
+ },
+ "jorobalena": {
+  "nombre": "Jorobalena",
+  "tipos": [
+   "agua",
+   "viento"
+  ],
+  "etapa": 2,
+  "evoluciona": null,
+  "rareza": "epico",
+  "perfil": "tanque",
+  "basico": "distancia",
+  "habilidad": "marea",
+  "talla": "grande",
+  "semilla": 56284,
+  "visual": "huge majestic humpback whale creature leaping, long flippers like wings, barnacles and a powerful blowhole spout",
+  "desc": "Su canto se escucha a cientos de kilómetros. Salta como si volara.",
+  "desc_en": "Its song can be heard hundreds of miles away. It leaps as if it could fly."
+ },
+ "sacharuna": {
+  "nombre": "Sacharuna",
+  "tipos": [
+   "planta",
+   "roca"
+  ],
+  "etapa": 0,
+  "evoluciona": null,
+  "rareza": "epico",
+  "perfil": "tanque",
+  "basico": "cuerpo",
+  "habilidad": "fotosintesis",
+  "talla": "grande",
+  "semilla": 61610,
+  "visual": "ancient jungle giant creature made of trees, stones and roots, with a mossy face, glowing seeds and birds nesting on its shoulders",
+  "desc": "El hombre de la selva. Cuida a los animales del bosque.",
+  "desc_en": "The wild man of the jungle. It protects the forest animals."
+ },
+ "sangayon": {
+  "nombre": "Sangayón",
+  "tipos": [
+   "fuego",
+   "roca"
+  ],
+  "etapa": 0,
+  "evoluciona": null,
+  "rareza": "epico",
+  "perfil": "fuerte",
+  "basico": "cuerpo",
+  "habilidad": "brasa_interior",
+  "talla": "grande",
+  "semilla": 18667,
+  "visual": "furious volcano beast creature with an always-erupting crater on its back, a black rock body and a constant ash cloud",
+  "desc": "El volcán Sangay nunca descansa, y él tampoco.",
+  "desc_en": "Sangay volcano never rests, and neither does it."
+ },
+ "chimbila": {
+  "nombre": "Chimbilá",
+  "tipos": [
+   "sombra",
+   "viento"
+  ],
+  "etapa": 0,
+  "evoluciona": null,
+  "rareza": "epico",
+  "perfil": "asesino",
+  "basico": "distancia",
+  "habilidad": "vampiro",
+  "talla": "mediano",
+  "semilla": 63192,
+  "visual": "mysterious vampire bat creature with large purple membranous wings, glowing red eyes and a smoky shadow trail",
+  "desc": "Murciélago de las cuevas de Jumandy. Solo sale con luna nueva.",
+  "desc_en": "A bat from the Jumandy caves. It only comes out under a new moon."
+ },
+ "taitachimbo": {
+  "nombre": "Taitachimbo",
+  "tipos": [
+   "roca",
+   "hielo"
+  ],
+  "etapa": 0,
+  "evoluciona": null,
+  "rareza": "legendario",
+  "perfil": "tanque",
+  "basico": "cuerpo",
+  "habilidad": "taita",
+  "talla": "enorme",
+  "semilla": 30006,
+  "visual": "colossal ancient mountain titan creature with a body like a snow-capped mountain, a glacier beard, wise glowing eyes and a stone crown, legendary",
+  "desc": "Taita Chimborazo, el padre de las montañas. Su cumbre es el punto de la Tierra más cercano al sol.",
+  "desc_en": "Taita Chimborazo, father of the mountains. Its summit is the point on Earth closest to the sun."
+ },
+ "mamatungura": {
+  "nombre": "Mamatungura",
+  "tipos": [
+   "fuego",
+   "roca"
+  ],
+  "etapa": 0,
+  "evoluciona": null,
+  "rareza": "legendario",
+  "perfil": "fuerte",
+  "basico": "cuerpo",
+  "habilidad": "mama_volcan",
+  "talla": "enorme",
+  "semilla": 15993,
+  "visual": "majestic legendary volcano goddess creature, a giant lava dragon with a flowing ash-cloud mane, molten gold veins and an erupting crown",
+  "desc": "Mama Tungurahua, la volcana de fuego. Su enojo ilumina la noche.",
+  "desc_en": "Mama Tungurahua, the mother volcano of fire. Her anger lights up the night."
+ },
+ "inti": {
+  "nombre": "Inti",
+  "tipos": [
+   "luz",
+   "fuego"
+  ],
+  "etapa": 0,
+  "evoluciona": null,
+  "rareza": "legendario",
+  "perfil": "equilibrado",
+  "basico": "distancia",
+  "habilidad": "sol_eterno",
+  "talla": "enorme",
+  "semilla": 82139,
+  "visual": "radiant legendary sun god creature, a golden lion-like beast with a blazing sun disk mane of rays, ancient Andean gold ornaments and a fiery aura",
+  "desc": "El dios Sol de los Andes. Cada junio se le celebra en el Inti Raymi.",
+  "desc_en": "The Sun god of the Andes. Every June it is celebrated in the Inti Raymi."
+ },
+ "apukuntur": {
+  "nombre": "Apukuntur",
+  "tipos": [
+   "viento",
+   "sombra"
+  ],
+  "etapa": 0,
+  "evoluciona": null,
+  "rareza": "legendario",
+  "perfil": "asesino",
+  "basico": "distancia",
+  "habilidad": "rey_andes",
+  "talla": "enorme",
+  "semilla": 91844,
+  "visual": "colossal legendary Andean condor king creature with enormous black wings with white edges, a white feather collar, a dark storm aura and a golden crown",
+  "desc": "Apu Kuntur, el gran cóndor. Lleva las almas hasta lo alto de las montañas.",
+  "desc_en": "Apu Kuntur, the great condor. It carries souls to the top of the mountains."
+ },
+ "cuichi": {
+  "nombre": "Cuichi",
+  "tipos": [
+   "agua",
+   "luz"
+  ],
+  "etapa": 0,
+  "evoluciona": null,
+  "rareza": "legendario",
+  "perfil": "rapido",
+  "basico": "distancia",
+  "habilidad": "arcoiris",
+  "talla": "enorme",
+  "semilla": 59874,
+  "visual": "mythical legendary rainbow serpent creature with shimmering seven-color scales, water flowing around its long body and a glowing crystal horn",
+  "desc": "El espíritu del arcoíris de los Andes. Aparece después de la lluvia.",
+  "desc_en": "The rainbow spirit of the Andes. It appears after the rain."
+ }
 }

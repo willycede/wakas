@@ -1,6 +1,6 @@
 // Movimiento en la arena: lo usan el servidor y la predicción del cliente (deben coincidir).
 
-import { ESPECIES } from './data';
+import { ESPECIES, HABILIDADES } from './data';
 import { ARENA, RADIO_PRIMAL, type Obstaculo } from './protocol';
 
 export function moverEnArena(x: number, y: number, dx: number, dy: number, obs: Obstaculo[]): { x: number; y: number } {
@@ -24,9 +24,7 @@ export const ST = { quemadura: 1, paralisis: 2, lento: 4, veneno: 8, invulnerabl
 export function velocidadMover(esp: string, base: number, st: number): number {
   if (st & ST.paralisis) return 0;
   let v = base;
-  const h = ESPECIES[esp]?.habilidad;
-  if (h === 'viento_cola') v *= 1.2;
-  if (h === 'furia_tormenta') v *= 1.1;
+  v *= HABILIDADES[ESPECIES[esp]?.habilidad]?.vel ?? 1;
   if (st & ST.rapido) v *= 1.4;
   if (st & ST.lento) v *= 0.6;
   if (st & ST.frenado) v *= 0.35; // al atacar se frena

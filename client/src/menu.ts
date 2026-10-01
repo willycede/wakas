@@ -1,12 +1,12 @@
 // Menús fuera de la batalla: Liga, equipo, capturas, Domador (medallas y habilidades) y ranking.
 
 import {
-  ELEMENTOS, ESPECIES, HABILIDADES_DOMADOR, INICIALES, LIGAS, MEDALLAS, MOVIMIENTOS, TAM_EQUIPO,
-  ligaDe, xpPrimal, type Especie, type Perfil,
+  ELEMENTOS, ESPECIES, HABILIDADES_DOMADOR, INICIALES, LIGAS, MEDALLAS, MOVIMIENTOS, NUM_INICIALES, RAREZAS, TAM_EQUIPO,
+  legendarioDelDia, ligaDe, tipos, xpPrimal, type Especie, type Perfil, type Rareza,
 } from '../../shared/src';
 import { api, spriteUrl } from './api';
 import { emblemaLiga, icono } from './iconos';
-import { descEspecie, descHab, habDomador, medalla, nombreElemento, nombreHab, nombreLiga, nombreMov, t, tError } from './i18n';
+import { descEspecial, descEspecie, descHab, habDomador, medalla, nombreElemento, nombreEspecial, nombreHab, nombreLiga, nombreMov, nombreRareza, t, tError } from './i18n';
 
 const $ = (id: string) => document.getElementById(id)!;
 export const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
@@ -23,6 +23,18 @@ export function toast(text: string, error = false) {
 export function elTag(elemento: string) {
   return `<span class="el" style="--c:${ELEMENTOS[elemento as keyof typeof ELEMENTOS].color}">${icono(elemento)}${nombreElemento(elemento)}</span>`;
 }
+
+/** Etiquetas de los tipos de una especie (uno o dos). */
+export function tiposTag(esp: string) {
+  return tipos(esp).map(elTag).join('');
+}
+
+export function rarezaTag(esp: string) {
+  const r = ESPECIES[esp].rareza;
+  return `<span class="rar ${r}" style="--c:${RAREZAS[r].color}">${icono(r === 'legendario' ? 'corona' : 'gema')}${nombreRareza(r)}</span>`;
+}
+
+const horas = (ms: number) => { const h = Math.floor(ms / 3_600_000), m = Math.floor((ms % 3_600_000) / 60_000); return `${h} h ${String(m).padStart(2, '0')} min`; };
 
 export function chipMov(id: string) {
   const m = MOVIMIENTOS[id];
@@ -45,6 +57,7 @@ export class Menu {
   tab: Tab = 'batalla';
   onBatalla: (roomId: string) => void = () => {};
   private buscando = false;
+  private filtro: Rareza | 'todos' = 'todos';
 
   constructor() {
     document.querySelectorAll<HTMLButtonElement>('#tabs button').forEach((b) => (b.onclick = () => this.show(b.dataset.tab as Tab)));
@@ -124,16 +137,16 @@ export class Menu {
       const e = ESPECIES[x.esp];
       const enEquipo = p.equipo.includes(x.uid);
       const evo = e.evoluciona ? t('team.evolves', { l: e.evoluciona.nivel, n: ESPECIES[e.evoluciona.a].nombre }) : t('team.final');
-      return `<div class="card ${enEquipo ? 'on' : ''}" style="--c:${colorDe(x.esp)}" data-poner="${x.uid}" title="${esc(descEspecie(x.esp))}">
+      return `<div class="card ${enEquipo ? 'on' : ''} r-${e.rareza}" style="--c:${colorDe(x.esp)}" data-poner="${x.uid}" title="${esc(descEspecie(x.esp))}">
         ${enEquipo ? `<span class="tag">${t('team.inTeam')}</span>` : ''}
-        <div class="top">${elTag(e.elemento)}<span class="lv">${t('misc.level', { n: x.nivel })}</span></div>
+        <div class="top"><span class="tipos">${tiposTag(x.esp)}</span><span class="lv">${t('misc.level', { n: x.nivel })}</span></div>
         <div class="stage"><img class="sprite" src="${spriteUrl(x.esp)}" alt=""></div>
-        <div class="name">${e.nombre}</div>
+        <div class="name">${e.nombre}</div>${rarezaTag(x.esp)}
         <div class="lvbar"><div style="width:${(x.xp / xpPrimal(x.nivel)) * 100}%"></div></div>
         ${stats(e)}
         <div class="ability" title="${esc(descHab(e.habilidad))}">${icono('estrella')}${esc(nombreHab(e.habilidad))}</div>
         <div class="mv-chips">${e.movimientos.map(chipMov).join('')}</div>
-        <div class="evo-line">${evo}</div>
+        ${e.rareza === 'legendario' ? `<div class="evo-line leg">${icono('especial')} ${esc(nombreEspecial(x.esp, 0))} · ${esc(nombreEspecial(x.esp, 1))}</div>` : `<div class="evo-line">${evo}</div>`}
       </div>`;
     }).join('');
     return `<div class="page">
@@ -147,30 +160,62 @@ export class Menu {
   // ---------------------------------------------------------------- capturar
   private capturar() {
     const p = this.perfil;
-    const lista = Object.values(ESPECIES).sort((a, b) => a.captura.nivel - b.captura.nivel);
-    const cards = lista.map((e) => {
+    const hoy = legendarioDelDia();
+    const manana = legendarioDelDia(Date.now() + hoy.terminaEn + 1000);
+    const costoDe = (e: Especie) => Math.round(e.captura.monedas * (1 - (p.habilidades.capturador ?? 0) * 0.08));
+    const tarjeta = (e: Especie) => {
       const tengo = p.primales.some((x) => x.esp === e.id);
       const visto = p.capturados.includes(e.id);
-      const costo = Math.round(e.captura.monedas * (1 - (p.habilidades.capturador ?? 0) * 0.08));
+      const costo = costoDe(e);
       const okNivel = p.nivel >= e.captura.nivel;
       const okMonedas = p.monedas >= costo;
       const conocido = visto || okNivel || tengo;
-      return `<div class="card ${conocido ? '' : 'locked'}" style="--c:${conocido ? ELEMENTOS[e.elemento].color : '#555'}" title="${conocido ? esc(descEspecie(e.id)) : ''}">
+      const hoyNo = e.rareza === 'legendario' && e.id !== hoy.id;
+      const puede = okNivel && okMonedas && !hoyNo;
+      return `<div class="card ${conocido ? '' : 'locked'} r-${e.rareza}" style="--c:${conocido ? ELEMENTOS[e.elemento].color : '#555'}" title="${conocido ? esc(descEspecie(e.id)) : ''}">
         ${tengo ? `<span class="tag owned">${t('capture.owned')}</span>` : ''}
-        <div class="top">${conocido ? elTag(e.elemento) : `<span class="el" style="--c:#777">${icono('candado')}${t('capture.locked')}</span>`}<span class="lv">${t('capture.wild', { n: e.captura.nivelSalvaje })}</span></div>
-        <div class="stage"><img class="sprite" src="${spriteUrl(e.id)}" alt=""></div>
-        <div class="name">${conocido ? e.nombre : '???'}</div>
+        <div class="top">${conocido ? `<span class="tipos">${tiposTag(e.id)}</span>` : `<span class="el" style="--c:#777">${icono('candado')}${t('capture.locked')}</span>`}<span class="lv">${t('capture.wild', { n: e.captura.nivelSalvaje })}</span></div>
+        <div class="stage"><img class="sprite" src="${spriteUrl(e.id)}" alt="" loading="lazy"></div>
+        <div class="name">${conocido ? e.nombre : '???'}</div>${rarezaTag(e.id)}
         <div class="reqs">
           <span class="req ${okNivel ? 'ok' : 'no'}">${icono(okNivel ? 'check' : 'candado')}${t('capture.req', { n: e.captura.nivel })}</span>
           <span class="req ${okMonedas ? 'ok' : 'no'}">${icono('moneda')}${costo.toLocaleString()}</span>
         </div>
-        <button class="btn ${okNivel && okMonedas ? 'primary' : ''}" data-capturar="${e.id}" ${okNivel && okMonedas ? '' : 'disabled'}>${icono('espadas')}${t('capture.go')}</button>
+        <button class="btn ${puede ? 'primary' : ''}" data-capturar="${e.id}" ${puede ? '' : 'disabled'}>${hoyNo ? t('capture.legendLocked') : `${icono('espadas')}${t('capture.go')}`}</button>
       </div>`;
+    };
+    // el legendario del día va arriba, en grande
+    const leg = ESPECIES[hoy.id];
+    const costoLeg = costoDe(leg);
+    const puedeLeg = p.nivel >= leg.captura.nivel && p.monedas >= costoLeg;
+    const destacado = `<div class="leg-hoy" style="--c:${ELEMENTOS[leg.elemento].color}">
+      <div class="leg-arte"><img src="${spriteUrl(leg.id)}" alt=""></div>
+      <div class="leg-info">
+        <div class="leg-kicker">${icono('corona')}${t('capture.legendTitle')}</div>
+        <h3>${leg.nombre}</h3>
+        <div class="tipos">${tiposTag(leg.id)}</div>
+        <p>${esc(descEspecie(leg.id))}</p>
+        <div class="leg-sp">${[0, 1].map((k) => `<span title="${esc(descEspecial(leg.id, k))}">${icono('especial')}${esc(nombreEspecial(leg.id, k))}</span>`).join('')}</div>
+        <div class="reqs">
+          <span class="req ${p.nivel >= leg.captura.nivel ? 'ok' : 'no'}">${icono(p.nivel >= leg.captura.nivel ? 'check' : 'candado')}${t('capture.req', { n: leg.captura.nivel })}</span>
+          <span class="req ${p.monedas >= costoLeg ? 'ok' : 'no'}">${icono('moneda')}${costoLeg.toLocaleString()}</span>
+          <span class="req">${icono('reloj')}${t('capture.legendHint', { t: horas(hoy.terminaEn) })}</span>
+        </div>
+        <div class="leg-acciones"><button class="btn ${puedeLeg ? 'primary' : ''}" data-capturar="${leg.id}" ${puedeLeg ? '' : 'disabled'}>${icono('espadas')}${t('capture.go')}</button>
+          <small class="muted">${t('capture.legendNext', { n: ESPECIES[manana.id].nombre })}</small></div>
+      </div></div>`;
+    const orden = (e: Especie) => RAREZAS[e.rareza].orden * 100 + e.captura.nivel;
+    const lista = Object.values(ESPECIES).filter((e) => this.filtro === 'todos' || e.rareza === this.filtro).sort((a, b) => orden(a) - orden(b));
+    const filtros = (['todos', 'comun', 'raro', 'epico', 'legendario'] as const).map((f) => {
+      const n = f === 'todos' ? Object.keys(ESPECIES).length : Object.values(ESPECIES).filter((e) => e.rareza === f).length;
+      return `<button class="chip ${this.filtro === f ? 'on' : ''}" data-filtro="${f}" style="${f !== 'todos' ? `--c:${RAREZAS[f].color}` : ''}">${f === 'todos' ? t('capture.all') : nombreRareza(f)} <b>${n}</b></button>`;
     }).join('');
     return `<div class="page">
-      <div class="page-head"><h2>${t('capture.title')}</h2></div>
+      <div class="page-head"><h2>${t('capture.title')}</h2><span class="count">${p.capturados.length}/${Object.keys(ESPECIES).length}</span></div>
       <p class="muted">${t('capture.hint')}</p>
-      <div class="grid">${cards}</div></div>`;
+      ${destacado}
+      <div class="chips">${filtros}</div>
+      <div class="grid">${lista.map(tarjeta).join('')}</div></div>`;
   }
 
   // ---------------------------------------------------------------- Domador
@@ -226,6 +271,7 @@ export class Menu {
     body.querySelectorAll<HTMLElement>('[data-poner]').forEach((el) => (el.onclick = () => this.cambiarEquipo(el.dataset.poner!, true)));
     body.querySelectorAll<HTMLElement>('[data-quitar]').forEach((el) => (el.onclick = () => this.cambiarEquipo(el.dataset.quitar!, false)));
     body.querySelectorAll<HTMLButtonElement>('[data-capturar]').forEach((b) => (b.onclick = () => void this.retar(b.dataset.capturar!)));
+    body.querySelectorAll<HTMLButtonElement>('[data-filtro]').forEach((b) => (b.onclick = () => { this.filtro = b.dataset.filtro as Rareza | 'todos'; this.show('capturar'); }));
     body.querySelectorAll<HTMLButtonElement>('[data-hab]').forEach((b) => (b.onclick = async () => {
       try { this.setPerfil(await api.habilidad(b.dataset.hab!)); this.show('domador'); } catch (e: any) { toast(e.message, true); }
     }));
@@ -235,7 +281,7 @@ export class Menu {
     let eq = [...this.perfil.equipo];
     if (poner) {
       if (eq.includes(uid)) eq = [uid, ...eq.filter((u) => u !== uid)]; // lo pone al frente
-      else if (eq.length >= TAM_EQUIPO) return toast('Tu equipo está lleno (6). Quita uno primero.', true);
+      else if (eq.length >= TAM_EQUIPO) return toast(`Tu equipo está lleno (${TAM_EQUIPO}). Quita uno primero.`, true);
       else eq.push(uid);
     } else {
       if (eq.length <= 1) return toast('Tu equipo necesita al menos un Primal.', true);
@@ -268,22 +314,32 @@ export class Menu {
   }
 }
 
-/** Pantalla de elegir el Primal inicial. Devuelve una función para repintarla (cambio de idioma). */
+/** Pantalla de elegir los 3 Primales iniciales. Devuelve una función para repintarla (cambio de idioma). */
 export function pantallaInicial(onElegido: (p: Perfil) => void): () => void {
-  let sel = '';
+  const sel: string[] = [];
   $('starter').classList.remove('hidden');
   const pintar = () => {
     $('starter-list').innerHTML = INICIALES.map((id) => {
       const e = ESPECIES[id];
-      return `<div class="starter ${sel === id ? 'sel' : ''}" style="--c:${ELEMENTOS[e.elemento].color}" data-id="${id}">
+      const k = sel.indexOf(id);
+      const final = ESPECIES[ESPECIES[e.evoluciona!.a].evoluciona?.a ?? e.evoluciona!.a];
+      return `<div class="starter ${k >= 0 ? 'sel' : ''}" style="--c:${ELEMENTOS[e.elemento].color}" data-id="${id}">
+        ${k >= 0 ? `<span class="pick-n">${k + 1}</span>` : ''}
         <div class="stage"><img class="sprite" src="${spriteUrl(id)}" alt=""></div>
         <h3>${e.nombre}</h3>${elTag(e.elemento)}<p>${esc(descEspecie(id))}</p>
-        <div class="mv-chips">${e.movimientos.map(chipMov).join('')}</div></div>`;
+        <div class="evo-chain"><img src="${spriteUrl(e.evoluciona!.a)}" alt="" title="${ESPECIES[e.evoluciona!.a].nombre}"><img src="${spriteUrl(final.id)}" alt="" title="${final.nombre}"></div></div>`;
     }).join('');
     const b = $('btn-starter') as HTMLButtonElement;
-    b.disabled = !sel;
-    b.textContent = sel ? t('starter.confirm', { n: ESPECIES[sel].nombre }) : t('starter.pick');
-    document.querySelectorAll<HTMLElement>('.starter').forEach((el) => (el.onclick = () => { sel = el.dataset.id!; pintar(); }));
+    const faltan = NUM_INICIALES - sel.length;
+    b.disabled = faltan > 0;
+    b.textContent = faltan > 0 ? t('starter.pick', { n: faltan }) : t('starter.confirm');
+    document.querySelectorAll<HTMLElement>('.starter').forEach((el) => (el.onclick = () => {
+      const id = el.dataset.id!;
+      const k = sel.indexOf(id);
+      if (k >= 0) sel.splice(k, 1);
+      else if (sel.length < NUM_INICIALES) sel.push(id);
+      pintar();
+    }));
   };
   pintar();
   $('btn-starter').onclick = async () => {

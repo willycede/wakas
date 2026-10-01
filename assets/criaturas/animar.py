@@ -2,8 +2,8 @@
 
 Se deforma el dibujo fila por fila con desplazamientos enteros (así sigue siendo pixel art nítido):
   - idle (4):    respiración: el cuerpo se estira y encoge apoyado en los pies.
-  - walk (6):    las patas (franja baja) se balancean adelante/atrás, el cuerpo sube y baja,
-                 la cabeza va un poco por delante.
+  - walk (6):    se detectan las patas y cada una gira desde la cadera alternándose (una avanza
+                 levantando el pie mientras la otra empuja), el cuerpo bota y la cabeza se retrasa.
   - attack (5):  anticipación (se encoge hacia atrás), golpe (se estira hacia delante),
                  pausa, recuperación.
   - hurt (2):    sacudida hacia atrás.
@@ -24,7 +24,7 @@ SRC = os.path.join(HERE, 'sprites')
 OUT = os.path.join(HERE, 'sprites', 'anim')
 PAD = 8  # margen alrededor del sprite para estirarlo sin cortarlo
 
-ANIMS = [('idle', 4, 6, -1), ('walk', 6, 12, -1), ('attack', 5, 16, 0), ('hurt', 2, 12, 0), ('faint', 4, 8, 0)]
+ANIMS = [('idle', 4, 6, -1), ('walk', 6, 11, -1), ('attack', 5, 16, 0), ('hurt', 2, 12, 0), ('faint', 4, 8, 0)]
 
 
 def bbox_rows(a):
@@ -59,6 +59,95 @@ def warp(img, row_dx, scale_y=1.0, scale_x=1.0, dy=0, rot=0.0):
     return out
 
 
+def patas(img):
+    """Separa las patas: componentes de la franja baja de la figura (o mitades si es una sola pieza).
+    Devuelve (fila de la cadera, lista de máscaras booleanas de cada pata)."""
+    import cv2
+    a = img[..., 3] > 0
+    top, bot = bbox_rows(a)
+    hgt = bot - top
+    cadera = int(bot - hgt * 0.3)
+    banda = np.zeros_like(a)
+    banda[cadera:bot + 1] = a[cadera:bot + 1]
+    # las patas se separan mejor un poco más abajo de la cadera
+    corte = int(bot - hgt * 0.16)
+    n, lab = cv2.connectedComponents(banda[corte:].astype(np.uint8), 8)
+    comps = []
+    for i in range(1, n):
+        m = lab == i
+        if m.sum() >= max(3, hgt * 0.15):
+            comps.append(m)
+    mascaras = []
+    if len(comps) >= 2:
+        # cada pata incluye su parte alta (desde la cadera) por columnas
+        for m in comps:
+            cols = np.nonzero(m.any(0))[0]
+            mk = np.zeros_like(a)
+            mk[cadera:bot + 1, cols.min():cols.max() + 1] = banda[cadera:bot + 1, cols.min():cols.max() + 1]
+            mascaras.append(mk)
+    else:
+        # una sola pieza: delante y detrás
+        ys, xs = np.nonzero(banda)
+        if len(xs):
+            mid = int(np.median(xs))
+            m1 = banda.copy(); m1[:, mid:] = False
+            m2 = banda.copy(); m2[:, :mid] = False
+            mascaras = [m1, m2]
+    # ordena de izquierda a derecha y evita solapes
+    mascaras.sort(key=lambda m: np.nonzero(m.any(0))[0].mean())
+    usado = np.zeros_like(a)
+    limpias = []
+    for m in mascaras:
+        m = m & ~usado
+        usado |= m
+        limpias.append(m)
+    return cadera, bot, limpias
+
+
+def paso(img, s, bob, amp, lift, cadera, bot, mascaras, lean):
+    """Un cuadro de caminata: las patas giran desde la cadera alternándose y el cuerpo bota."""
+    h, w = img.shape[:2]
+    H, W = h + 2 * PAD, w + 2 * PAD
+    out = np.zeros((H, W, 4), np.uint8)
+    a = img[..., 3] > 0
+    piernas = np.zeros_like(a)
+    for m in mascaras:
+        piernas |= m
+    alto = max(1, bot - cadera)
+    top, _ = bbox_rows(a)
+    cuerpo_h = max(1, cadera - top)
+
+    def pinta(mask, dxf, dyf):
+        ys, xs = np.nonzero(mask)
+        for y, x in zip(ys, xs):
+            # el desplazamiento se redondea por fila (si no, quedan huecos en las filas a medio píxel)
+            X = x + PAD + int(math.floor(dxf(y) + 0.5))
+            Y = y + PAD + int(math.floor(dyf(y) + 0.5))
+            if 0 <= X < W and 0 <= Y < H:
+                out[Y, X] = img[y, x]
+    # patas de atrás primero (las de fase negativa), luego cuerpo, luego las de delante
+    orden = sorted(range(len(mascaras)), key=lambda i: (s if i % 2 == 0 else -s))
+    fases = {i: (s if i % 2 == 0 else -s) for i in range(len(mascaras))}
+    def pata(i):
+        f = fases[i]
+        k = lambda y: max(0.0, min(1.0, (y - cadera) / alto))
+        pinta(mascaras[i], lambda y: f * amp * k(y), lambda y: bob - max(0.0, f) * lift * k(y))
+    # debajo de todo, las patas en reposo un poco más oscuras: tapan huecos al separarlas
+    ys, xs = np.nonzero(piernas)
+    for y, x in zip(ys, xs):
+        Y = y + PAD + bob
+        if 0 <= Y < H:
+            out[Y, x + PAD] = (img[y, x, :3] * 0.7).astype(np.uint8).tolist() + [255]
+    for i in orden[: len(orden) // 2]:
+        pata(i)
+    # cuerpo: bote + leve balanceo; la cabeza va un poco retrasada (movimiento secundario)
+    pinta(a & ~piernas, lambda y: lean * max(0.0, (cadera - y) / cuerpo_h) - s * 0.6 * max(0.0, (cadera - y) / cuerpo_h - 0.6) * 2,
+          lambda y: bob)
+    for i in orden[len(orden) // 2:]:
+        pata(i)
+    return out
+
+
 def frames_for(img):
     a = img[..., 3] > 0
     top, bot = bbox_rows(a)
@@ -67,19 +156,15 @@ def frames_for(img):
     out = {}
     # reposo: respiración
     out['idle'] = [warp(img, lambda r: 0, scale_y=1 + 0.035 * s, scale_x=1 - 0.02 * s) for s in (0, 0.5, 1, 0.5)]
-    # caminar: patas (rel < 0.3) se balancean; el cuerpo se adelanta un poco; bote
+    # caminar: cada pata gira desde la cadera (una adelante y otra atrás), el pie se levanta al
+    # avanzar, el cuerpo bota en cada apoyo y la cabeza se retrasa un poco
+    cadera, pie, mascaras = patas(img)
     walk = []
     for i in range(6):
         ph = i / 6 * math.tau
-        s = math.sin(ph)
-        bob = -abs(math.cos(ph)) * max(1, amp * 0.6)
-
-        def dx(r, s=s):
-            if r < 0.3:
-                k = (0.3 - r) / 0.3  # más movimiento cuanto más abajo
-                return round(s * amp * 1.4 * k)
-            return round(s * amp * 0.25 * r)  # el cuerpo se balancea poco
-        walk.append(warp(img, dx, dy=round(bob), rot=0.04 if s > 0 else 0.02))
+        s_ = math.sin(ph)
+        bob = -round(abs(math.cos(ph)) * max(1, amp * 0.5))
+        walk.append(paso(img, s_, bob, amp * 1.7, max(1, amp * 1.1), cadera, pie, mascaras, lean=round(amp * 0.25)))
     out['walk'] = walk
     # ataque: anticipación (atrás, encogido), golpe (adelante, estirado), pausa, recuperación
     out['attack'] = [
@@ -120,4 +205,4 @@ def main(ids):
 
 if __name__ == '__main__':
     db = json.load(open(os.path.join(HERE, 'criaturas.json'), encoding='utf-8'))
-    main(sys.argv[1:] or list(db))
+    main(sys.argv[1:] or [k for k in db if os.path.exists(os.path.join(SRC, k + '.png'))])

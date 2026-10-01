@@ -16,6 +16,8 @@ const PALETA: Record<string, [number, number, number]> = {
   roca: [0xe8d8b8, 0xb08a5a, 0x5a4030],
   viento: [0xffffff, 0xbfefff, 0x6ab0d0],
   sombra: [0xe0c0ff, 0x9a5aff, 0x30104a],
+  hielo: [0xffffff, 0xa8e4ff, 0x3a7ac8],
+  luz: [0xffffff, 0xfff0a0, 0xffa83a],
 };
 export const pal = (el: string) => PALETA[el] ?? [0xffffff, 0xdddddd, 0x888888];
 
@@ -57,6 +59,16 @@ export function crearTexturas(scene: Phaser.Scene) {
     }
     g.lineStyle(2, 0xffffff, 1).strokeTriangle(32, 14, 48, 42, 16, 42);
   });
+  hacer('cristal', 12, 20, (g) => {
+    g.fillStyle(0x3a7ac8).fillPoints([{ x: 6, y: 0 }, { x: 12, y: 10 }, { x: 6, y: 20 }, { x: 0, y: 10 }] as any, true);
+    g.fillStyle(0xa8e4ff).fillPoints([{ x: 6, y: 2 }, { x: 10, y: 10 }, { x: 6, y: 18 }, { x: 2, y: 10 }] as any, true);
+    g.fillStyle(0xffffff).fillRect(5, 4, 2, 8);
+  });
+  hacer('destello', 24, 24, (g) => {
+    g.fillStyle(0xffffff, 0.4).fillCircle(12, 12, 7);
+    g.fillStyle(0xffffff).fillPoints([{ x: 12, y: 0 }, { x: 14, y: 10 }, { x: 24, y: 12 }, { x: 14, y: 14 }, { x: 12, y: 24 }, { x: 10, y: 14 }, { x: 0, y: 12 }, { x: 10, y: 10 }] as any, true);
+  });
+  hacer('gota', 4, 12, (g) => { g.fillStyle(0xffffff, 0.8).fillRect(1, 0, 2, 12); });
   hacer('anillo', 64, 64, (g) => { g.lineStyle(6, 0xffffff, 1).strokeCircle(32, 32, 28); });
   hacer('grieta', 64, 64, (g) => {
     g.lineStyle(3, 0xffffff, 1);
@@ -105,11 +117,17 @@ export function crearProyectil(s: Escena, x: number, y: number, el: string, m: s
   if (el === 'roca') tex = 'roca';
   if (el === 'agua') tex = 'burbuja';
   if (el === 'viento') tex = 'media_luna';
+  if (el === 'hielo') tex = 'cristal';
+  if (el === 'luz') tex = 'destello';
+  if (m === 'avalancha_andina') tex = 'roca';
+  if (m === 'alas_de_tormenta') tex = 'media_luna';
   const obj = s.add.image(x, y, tex).setDepth(2000);
   const base = m === 'basico' ? 0.75 : 1;
   if (tex === 'bola') obj.setTint(c1).setScale((r / 7) * base);
   else obj.setScale((r / 8) * base);
-  if (tex === 'media_luna') obj.setTint(c0).setScale((r / 12) * base);
+  if (tex === 'media_luna') obj.setTint(el === 'sombra' ? c1 : c0).setScale((r / 12) * base);
+  if (tex === 'destello') obj.setBlendMode('ADD').setTint(c1).setScale((r / 9) * base);
+  if (m === 'avalancha_andina') obj.setTint(0xeef6ff).setScale(r / 6);
   if (el === 'sombra') obj.setTint(c2);
   // estela de partículas según el elemento
   const conf: Phaser.Types.GameObjects.Particles.ParticleEmitterConfig = {
@@ -129,7 +147,9 @@ export function moverProyectil(v: VistaProyectil, x: number, y: number, vx: numb
   v.obj.setPosition(x, y);
   const ang = Math.atan2(vy, vx);
   if (v.el === 'planta' || v.el === 'roca') v.obj.setRotation(t / 60);
-  else if (v.el === 'viento') v.obj.setRotation(ang);
+  else if (v.el === 'viento' || v.m === 'alas_de_tormenta') v.obj.setRotation(ang);
+  else if (v.el === 'hielo') v.obj.setRotation(ang + Math.PI / 2);
+  else if (v.el === 'luz') v.obj.setRotation(t / 90).setAlpha(0.8 + Math.sin(t / 30) * 0.2);
   else if (v.el === 'agua') v.obj.setScale(v.obj.scaleX, v.obj.scaleX * (1 + Math.sin(t / 60) * 0.12));
   else if (v.el === 'electrico') v.obj.setAlpha(0.7 + Math.random() * 0.3).setRotation(Math.random() * 6);
 }
@@ -275,6 +295,39 @@ export function estalla(s: Escena, f: { id: string; forma: 'circulo' | 'linea'; 
       anillo(s, f.x, f.y, f.r, c1, 380, 1);
       break;
     }
+    case 'hielo': {
+      // picos de hielo que brotan del suelo, escarcha y destellos fríos
+      const n = Math.max(5, Math.round(f.r / 9));
+      for (let i = 0; i < n; i++) {
+        const a = Math.random() * Math.PI * 2, d = Math.random() * f.r * 0.75;
+        const px = f.x + Math.cos(a) * d, py = f.y + Math.sin(a) * d * 0.5;
+        const c = s.add.image(px, py, 'cristal').setOrigin(0.5, 1).setDepth(py + 30).setScale(1.5 + Math.random(), 0.1).setAngle((Math.random() - 0.5) * 30);
+        s.tweens.add({ targets: c, scaleY: 2.4 + Math.random() * 1.5, duration: 110, delay: i * 12, ease: 'Back.easeOut',
+          onComplete: () => s.tweens.add({ targets: c, alpha: 0, delay: 380, duration: 300, onComplete: () => c.destroy() }) });
+      }
+      const esc = s.add.ellipse(f.x, f.y, f.r * 1.9, f.r * 0.9, 0xd8f4ff, 0.45).setDepth(2);
+      s.tweens.add({ targets: esc, alpha: 0, delay: 700, duration: 800, onComplete: () => esc.destroy() });
+      anillo(s, f.x, f.y, f.r, c1, 320, 1);
+      estallido(s, f.x, f.y - 10, f.el, 12, 1.2);
+      cam.shake(160, 0.005);
+      break;
+    }
+    case 'luz': {
+      // columna de luz que cae del cielo, anillo dorado y destellos
+      const ancho = Math.min(f.r, 90);
+      const col = s.add.rectangle(f.x, f.y - 300, ancho * 1.2, 600, c1, 0.4).setOrigin(0.5, 0.5).setDepth(f.y + 55).setBlendMode('ADD');
+      const nucleo = s.add.rectangle(f.x, f.y - 300, ancho * 0.35, 600, 0xffffff, 0.7).setDepth(f.y + 56).setBlendMode('ADD');
+      s.tweens.add({ targets: [col, nucleo], scaleX: 0, alpha: 0, duration: 420, ease: 'Cubic.easeIn', onComplete: () => { col.destroy(); nucleo.destroy(); } });
+      anillo(s, f.x, f.y, f.r, c2, 380, 1.1);
+      anillo(s, f.x, f.y, f.r * 0.6, c0, 300, 1);
+      for (let i = 0; i < 12; i++) {
+        const p = s.add.image(f.x + (Math.random() - 0.5) * f.r * 1.4, f.y + (Math.random() - 0.5) * f.r * 0.6, 'destello').setTint(i % 2 ? c1 : 0xffffff).setDepth(f.y + 57).setBlendMode('ADD').setScale(0.4 + Math.random() * 0.5);
+        s.tweens.add({ targets: p, y: p.y - 40 - Math.random() * 40, angle: 90, alpha: 0, duration: 600 + Math.random() * 300, onComplete: () => p.destroy() });
+      }
+      if (f.r < 120) cam.flash(60, 120, 110, 80);
+      cam.shake(150, 0.005);
+      break;
+    }
     case 'sombra': {
       // círculo de runas malditas y espíritus que suben
       const r = s.add.image(f.x, f.y, 'runa').setTint(c1).setDepth(3).setScale(f.r / 30, f.r / 55).setAlpha(0.9).setBlendMode('ADD');
@@ -323,7 +376,7 @@ function rayo(s: Escena, x: number, y: number, ang: number, largo: number, r: nu
   // partículas a lo largo del rayo
   for (let i = 0; i < 16; i++) {
     const d = Math.random() * largo;
-    const p = s.add.image(x + ux * d, y - 14 + uy * d, el === 'fuego' ? 'humo' : el === 'agua' ? 'burbuja' : el === 'planta' ? 'hoja' : 'px').setDepth(y + 61)
+    const p = s.add.image(x + ux * d, y - 14 + uy * d, el === 'fuego' ? 'humo' : el === 'agua' ? 'burbuja' : el === 'planta' ? 'hoja' : el === 'hielo' ? 'cristal' : el === 'luz' ? 'destello' : 'px').setDepth(y + 61)
       .setTint(el === 'planta' ? 0xffffff : [c0, c1][i % 2]).setScale(el === 'fuego' ? 0.6 : 1.2).setBlendMode(el === 'fuego' ? 'ADD' : 'NORMAL');
     s.tweens.add({ targets: p, x: p.x + (Math.random() - 0.5) * 30 - uy * 10, y: p.y - 20 - Math.random() * 20, alpha: 0, duration: 400 + Math.random() * 200, delay: (d / largo) * 80, onComplete: () => p.destroy() });
   }
@@ -367,4 +420,101 @@ export function impacto(s: Escena, x: number, y: number, el: string, fuerte: boo
     const d = (fuerte ? 40 : 26) + Math.random() * 14;
     s.tweens.add({ targets: p, x: x + Math.cos(a) * d, y: y - 20 + Math.sin(a) * d, alpha: 0, duration: 220, ease: 'Cubic.easeOut', onComplete: () => p.destroy() });
   }
+}
+
+// ------------------------------------------------------------------ campos en el suelo (técnicas especiales)
+export interface VistaCampo { g: Phaser.GameObjects.Graphics; em: Phaser.GameObjects.Particles.ParticleEmitter | null; k: string; el: string; semilla: number }
+type CampoDatos = { k: string; forma: 'circulo' | 'linea'; x: number; y: number; r: number; ang?: number; largo?: number; t: number; dur: number; el: string };
+
+/** Zona de emisión del campo (círculo achatado o franja en línea). */
+function zonaCampo(c: CampoDatos): Phaser.Types.GameObjects.Particles.EmitZoneData {
+  if (c.forma === 'circulo') return { type: 'random', source: new Phaser.Geom.Ellipse(c.x, c.y, c.r * 2, c.r), quantity: 1 } as any;
+  const ux = Math.cos(c.ang ?? 0), uy = Math.sin(c.ang ?? 0);
+  return { type: 'random', source: new Phaser.Geom.Line(c.x, c.y, c.x + ux * (c.largo ?? 200), c.y + uy * (c.largo ?? 200)), quantity: 1 } as any;
+}
+
+export function crearCampo(s: Escena, c: CampoDatos): VistaCampo {
+  const g = s.add.graphics().setDepth(2);
+  const [c0, c1, c2] = pal(c.el);
+  let em: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
+  const base = { emitZone: zonaCampo(c), blendMode: 'ADD' as const };
+  const conf: Record<string, Phaser.Types.GameObjects.Particles.ParticleEmitterConfig> = {
+    lava: { ...base, lifespan: 700, speedY: { min: -60, max: -20 }, speedX: { min: -8, max: 8 }, scale: { start: 0.7, end: 0 }, alpha: { start: 0.9, end: 0 }, tint: [0xfff2a0, 0xff8a2a, 0xc0301a], frequency: 40 },
+    atraer: { ...base, lifespan: 500, speed: { min: 20, max: 60 }, scale: { start: 0.6, end: 0 }, alpha: { start: 0.8, end: 0 }, tint: [c0, c1], frequency: 20 },
+    remolino: { ...base, lifespan: 600, speed: { min: 10, max: 30 }, scale: { start: 0.6, end: 0.1 }, alpha: { start: 0.7, end: 0 }, tint: [0xdff6ff, 0x4aa8ff], frequency: 45, blendMode: 'NORMAL' },
+    espinas: { ...base, lifespan: 900, speedY: { min: -30, max: -10 }, scale: { start: 0.5, end: 0.1 }, alpha: { start: 0.7, end: 0 }, tint: [0xd8a0ff, 0x7ad85a], frequency: 60, blendMode: 'NORMAL' },
+    huracan: { ...base, lifespan: 500, speed: { min: 30, max: 80 }, scale: { start: 1.6, end: 0 }, alpha: { start: 0.8, end: 0 }, tint: [0xffffff, c1], frequency: 15 },
+    torbellino: { ...base, lifespan: 500, speed: { min: 30, max: 80 }, scale: { start: 1.6, end: 0 }, alpha: { start: 0.8, end: 0 }, tint: [0xe0c0ff, 0x9a5aff], frequency: 15, blendMode: 'NORMAL' },
+    hielo: { ...base, lifespan: 800, speedY: { min: -20, max: -5 }, scale: { start: 0.4, end: 0 }, alpha: { start: 1, end: 0 }, tint: [0xffffff, 0xa8e4ff], frequency: 50 },
+    lluvia: { ...base, lifespan: 350, speedY: { min: 380, max: 460 }, scale: 1.2, alpha: { start: 0.8, end: 0.2 }, tint: [0xdff6ff, 0x8fd0ff], frequency: 8, blendMode: 'NORMAL' },
+  };
+  const tex: Record<string, string> = { lava: 'humo', atraer: 'chispa', remolino: 'burbuja', espinas: 'humo', huracan: 'px', torbellino: 'px', hielo: 'destello', lluvia: 'gota' };
+  if (conf[c.k]) {
+    const cf = { ...conf[c.k] };
+    if (c.k === 'lluvia' && c.forma === 'circulo') cf.emitZone = { type: 'random', source: new Phaser.Geom.Rectangle(c.x - c.r, c.y - c.r * 0.5 - 120, c.r * 2, c.r), quantity: 1 } as any;
+    em = s.add.particles(0, 0, tex[c.k] ?? 'px', cf).setDepth(c.y + 30);
+  }
+  void c2;
+  return { g, em, k: c.k, el: c.el, semilla: Math.random() * 100 };
+}
+
+/** Se redibuja cada cuadro: base del campo, borde animado y espiral si atrae. */
+export function dibujarCampo(v: VistaCampo, c: CampoDatos, t: number) {
+  const g = v.g.clear();
+  const [c0, c1, c2] = pal(c.el);
+  const vida = Math.max(0, Math.min(1, c.t / Math.min(0.5, c.dur))); // se desvanece al final
+  const pulso = 0.85 + Math.sin(t / 180 + v.semilla) * 0.15;
+  const colores: Record<string, [number, number, number]> = {
+    lava: [0x3a0a04, 0xff5a1a, 0xffc040], remolino: [0x0a2a5a, 0x3a8aff, 0xdff6ff], espinas: [0x1a3a10, 0x7a3aaa, 0x9ad85a],
+    huracan: [0x2a4a50, c1, 0xffffff], torbellino: [0x1a0a2a, 0x7a4aff, 0xe0c0ff], hielo: [0x9fd8ff, 0xd8f4ff, 0xffffff],
+    lluvia: [0x10304a, 0x4aa8ff, 0xdff6ff], atraer: [0x3a0a04, c1, c0],
+  };
+  const [fondo, borde, brillo] = colores[v.k] ?? [c2, c1, c0];
+  if (c.forma === 'circulo') {
+    g.fillStyle(fondo, 0.35 * vida).fillEllipse(c.x, c.y, c.r * 2, c.r);
+    g.fillStyle(borde, 0.22 * vida * pulso).fillEllipse(c.x, c.y, c.r * 1.6, c.r * 0.8);
+    g.lineStyle(3, brillo, 0.7 * vida).strokeEllipse(c.x, c.y, c.r * 2, c.r);
+    if (v.k === 'remolino' || v.k === 'huracan' || v.k === 'torbellino' || v.k === 'atraer') {
+      // brazos en espiral girando hacia dentro
+      for (let b = 0; b < 3; b++) {
+        g.lineStyle(3, brillo, 0.55 * vida);
+        g.beginPath();
+        for (let i = 0; i <= 24; i++) {
+          const k = i / 24;
+          const a = b * (Math.PI * 2 / 3) + k * 4 - t / 220;
+          const rr = c.r * (1 - k) * 0.95;
+          const px = c.x + Math.cos(a) * rr, py = c.y + Math.sin(a) * rr * 0.5;
+          if (i === 0) g.moveTo(px, py); else g.lineTo(px, py);
+        }
+        g.strokePath();
+      }
+    }
+    if (v.k === 'espinas') {
+      for (let i = 0; i < 9; i++) {
+        const a = (i / 9) * Math.PI * 2 + v.semilla, d = c.r * (0.3 + ((i * 37) % 10) / 15);
+        const px = c.x + Math.cos(a) * d, py = c.y + Math.sin(a) * d * 0.5;
+        g.fillStyle(0x2a5a1a, vida).fillTriangle(px - 5, py, px + 5, py, px, py - 16 * pulso);
+        g.fillStyle(0x9ad85a, vida).fillTriangle(px - 2, py, px + 2, py, px, py - 13 * pulso);
+      }
+    }
+  } else {
+    const ux = Math.cos(c.ang ?? 0), uy = Math.sin(c.ang ?? 0), px = -uy * c.r, py = ux * c.r, L = c.largo ?? 200;
+    const pts = [new Phaser.Math.Vector2(c.x + px, c.y + py), new Phaser.Math.Vector2(c.x + ux * L + px, c.y + uy * L + py),
+      new Phaser.Math.Vector2(c.x + ux * L - px, c.y + uy * L - py), new Phaser.Math.Vector2(c.x - px, c.y - py)];
+    g.fillStyle(fondo, 0.4 * vida).fillPoints(pts, true);
+    // vetas que corren a lo largo del río
+    for (let i = 0; i < 5; i++) {
+      const off = ((t / 6 + i * 70 + v.semilla * 10) % L);
+      const w = (i % 2 ? 0.4 : -0.3) * c.r;
+      g.lineStyle(4, i % 2 ? borde : brillo, 0.6 * vida * pulso);
+      g.lineBetween(c.x + ux * off - uy * w, c.y + uy * off + ux * w, c.x + ux * Math.min(L, off + 50) - uy * w, c.y + uy * Math.min(L, off + 50) + ux * w);
+    }
+    g.lineStyle(2, brillo, 0.6 * vida).strokePoints(pts, true);
+  }
+  if (v.em) v.em.setAlpha(vida);
+}
+
+export function borrarCampo(s: Escena, v: VistaCampo) {
+  v.g.destroy();
+  if (v.em) { v.em.stop(); s.time.delayedCall(900, () => v.em?.destroy()); }
 }

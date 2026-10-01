@@ -1,43 +1,75 @@
-// Datos del juego: elementos, movimientos, habilidades y los 15 Primales.
+// Datos del juego: elementos, movimientos, habilidades, rarezas y técnicas especiales.
+// Las especies están en especies.ts (se genera desde assets/criaturas/criaturas.json).
 // Todo el balance vive aquí (el servidor y el cliente leen lo mismo).
 
-export type Elemento = 'fuego' | 'agua' | 'planta' | 'electrico' | 'roca' | 'viento' | 'sombra';
+import { ESPECIES } from './especies';
 
-export const ELEMENTOS: Record<Elemento, { nombre: string; color: string; icono: string }> = {
-  fuego: { nombre: 'Fuego', color: '#ff7a3c', icono: '🔥' },
-  agua: { nombre: 'Agua', color: '#3fa2ff', icono: '💧' },
-  planta: { nombre: 'Planta', color: '#5fd35f', icono: '🌿' },
-  electrico: { nombre: 'Eléctrico', color: '#ffd23c', icono: '⚡' },
-  roca: { nombre: 'Roca', color: '#c29a6b', icono: '🪨' },
-  viento: { nombre: 'Viento', color: '#a8e6ff', icono: '🌪️' },
-  sombra: { nombre: 'Sombra', color: '#a36bff', icono: '🌑' },
+export { ESPECIES, INICIALES } from './especies';
+
+export type Elemento = 'fuego' | 'agua' | 'planta' | 'electrico' | 'roca' | 'viento' | 'sombra' | 'hielo' | 'luz';
+
+export const ELEMENTOS: Record<Elemento, { nombre: string; color: string }> = {
+  fuego: { nombre: 'Fuego', color: '#ff7a3c' },
+  agua: { nombre: 'Agua', color: '#3fa2ff' },
+  planta: { nombre: 'Planta', color: '#5fd35f' },
+  electrico: { nombre: 'Eléctrico', color: '#ffd23c' },
+  roca: { nombre: 'Roca', color: '#c29a6b' },
+  viento: { nombre: 'Viento', color: '#8ff0d2' },
+  sombra: { nombre: 'Sombra', color: '#a36bff' },
+  hielo: { nombre: 'Hielo', color: '#9fd8ff' },
+  luz: { nombre: 'Luz', color: '#fff0a0' },
 };
 
 /** Ventajas: atacante -> defensores contra los que es fuerte / débil. */
 const FUERTE: Record<Elemento, Elemento[]> = {
-  fuego: ['planta', 'sombra'],
+  fuego: ['planta', 'hielo'],
   agua: ['fuego', 'roca'],
   planta: ['agua', 'roca'],
   electrico: ['agua', 'viento'],
-  roca: ['fuego', 'electrico', 'viento'],
+  roca: ['fuego', 'viento', 'hielo'],
   viento: ['planta'],
   sombra: ['viento', 'sombra'],
+  hielo: ['planta', 'viento'],
+  luz: ['sombra', 'hielo'],
 };
 const DEBIL: Record<Elemento, Elemento[]> = {
-  fuego: ['agua', 'roca'],
+  fuego: ['agua', 'roca', 'fuego'],
   agua: ['planta', 'electrico'],
   planta: ['fuego', 'viento'],
   electrico: ['roca', 'planta'],
   roca: ['agua', 'planta'],
   viento: ['electrico', 'roca'],
-  sombra: ['fuego'],
+  sombra: ['luz'],
+  hielo: ['fuego', 'roca'],
+  luz: ['fuego', 'luz'],
 };
 
-export function efectividad(ataque: Elemento, defensa: Elemento): number {
+function ef1(ataque: Elemento, defensa: Elemento): number {
   if (FUERTE[ataque].includes(defensa)) return 1.5;
   if (DEBIL[ataque].includes(defensa)) return 0.67;
   return 1;
 }
+
+/** Multiplicador por elemento contra uno o dos tipos (se multiplican). */
+export function efectividad(ataque: Elemento, defensa: Elemento | Elemento[]): number {
+  const d = Array.isArray(defensa) ? defensa : [defensa];
+  return Math.max(0.45, Math.min(2.25, d.reduce((m, x) => m * ef1(ataque, x), 1)));
+}
+
+/** Tipos de una especie (uno o dos). */
+export function tipos(esp: string): Elemento[] {
+  const e = ESPECIES[esp];
+  return e.elemento2 ? [e.elemento, e.elemento2] : [e.elemento];
+}
+
+// ------------------------------------------------------------------ rarezas
+export type Rareza = 'comun' | 'raro' | 'epico' | 'legendario';
+export const RAREZAS: Record<Rareza, { nombre: string; color: string; orden: number; ia: number }> = {
+  comun: { nombre: 'Común', color: '#b9c2d0', orden: 0, ia: 0.3 },
+  raro: { nombre: 'Raro', color: '#4da8ff', orden: 1, ia: 0.5 },
+  epico: { nombre: 'Épico', color: '#c06bff', orden: 2, ia: 0.72 },
+  legendario: { nombre: 'Legendario', color: '#ffb020', orden: 3, ia: 0.95 },
+};
 
 // ------------------------------------------------------------------ movimientos
 export type TipoMovimiento = 'proyectil' | 'rafaga' | 'embestida' | 'area' | 'zona' | 'rayo' | 'escudo' | 'curar' | 'mejora';
@@ -61,65 +93,156 @@ export interface Movimiento {
   probEstado?: number;
   empuje?: number;
   duracion?: number; // escudo/mejora
+  atraviesa?: boolean; // el proyectil no se detiene al golpear
+  intangible?: boolean; // embestida invulnerable
+  mejora?: 'vel' | 'dano';
 }
 
+type M = Omit<Movimiento, 'id' | 'elemento'>;
+const mov = (elemento: Elemento, lista: Record<string, M>) =>
+  Object.fromEntries(Object.entries(lista).map(([id, m]) => [id, { id, elemento, ...m }])) as Record<string, Movimiento>;
+
 export const MOVIMIENTOS: Record<string, Movimiento> = {
-  // fuego
-  ascuas: { id: 'ascuas', nombre: 'Ascuas', elemento: 'fuego', tipo: 'rafaga', desc: 'Tres brasas en abanico.', poder: 0.7, enfriamiento: 2.5, alcance: 260, radio: 9, velocidad: 380, cantidad: 3, apertura: 14, estado: 'quemadura', probEstado: 0.25 },
-  llamarada: { id: 'llamarada', nombre: 'Llamarada', elemento: 'fuego', tipo: 'rayo', desc: 'Un chorro de fuego en línea recta.', poder: 1.6, enfriamiento: 6, alcance: 240, radio: 26, preparacion: 0.45, estado: 'quemadura', probEstado: 0.5 },
-  embestida_ignea: { id: 'embestida_ignea', nombre: 'Embestida ígnea', elemento: 'fuego', tipo: 'embestida', desc: 'Se lanza envuelto en llamas.', poder: 1.3, enfriamiento: 5, alcance: 200, radio: 26, estado: 'quemadura', probEstado: 0.35, empuje: 60 },
-  erupcion: { id: 'erupcion', nombre: 'Erupción', elemento: 'fuego', tipo: 'zona', desc: 'El suelo estalla donde apuntas.', poder: 2.2, enfriamiento: 9, alcance: 320, radio: 80, preparacion: 0.9, estado: 'quemadura', probEstado: 0.6 },
-  // agua
-  burbuja: { id: 'burbuja', nombre: 'Burbuja', elemento: 'agua', tipo: 'proyectil', desc: 'Una burbuja que ralentiza.', poder: 0.9, enfriamiento: 2.2, alcance: 280, radio: 13, velocidad: 300, estado: 'lento', probEstado: 0.5 },
-  hidrochorro: { id: 'hidrochorro', nombre: 'Hidrochorro', elemento: 'agua', tipo: 'rayo', desc: 'Chorro a presión que empuja.', poder: 1.5, enfriamiento: 6, alcance: 300, radio: 22, preparacion: 0.4, empuje: 90 },
-  ola: { id: 'ola', nombre: 'Ola', elemento: 'agua', tipo: 'area', desc: 'Una ola a tu alrededor que aparta a todos.', poder: 1.4, enfriamiento: 7, alcance: 120, empuje: 140 },
-  marea_curativa: { id: 'marea_curativa', nombre: 'Marea curativa', elemento: 'agua', tipo: 'curar', desc: 'Recupera parte de la vida.', poder: 0.28, enfriamiento: 14, alcance: 0 },
-  // planta
-  hojas_navaja: { id: 'hojas_navaja', nombre: 'Hojas navaja', elemento: 'planta', tipo: 'rafaga', desc: 'Hojas afiladas en abanico.', poder: 0.75, enfriamiento: 2.6, alcance: 260, radio: 9, velocidad: 420, cantidad: 3, apertura: 12 },
-  esporas: { id: 'esporas', nombre: 'Esporas', elemento: 'planta', tipo: 'zona', desc: 'Nube de esporas venenosas.', poder: 0.8, enfriamiento: 8, alcance: 280, radio: 90, preparacion: 0.6, estado: 'veneno', probEstado: 1 },
-  latigo_cepa: { id: 'latigo_cepa', nombre: 'Látigo cepa', elemento: 'planta', tipo: 'rayo', desc: 'Un latigazo largo y rápido.', poder: 1.35, enfriamiento: 4.5, alcance: 200, radio: 20, preparacion: 0.25, empuje: 50 },
-  raices: { id: 'raices', nombre: 'Raíces', elemento: 'planta', tipo: 'escudo', desc: 'Echa raíces: escudo resistente.', poder: 0.3, enfriamiento: 13, alcance: 0, duracion: 5 },
-  // eléctrico
-  chispazo: { id: 'chispazo', nombre: 'Chispazo', elemento: 'electrico', tipo: 'proyectil', desc: 'Rayo rápido que puede paralizar.', poder: 0.85, enfriamiento: 2, alcance: 320, radio: 10, velocidad: 560, estado: 'paralisis', probEstado: 0.25 },
-  rayo_trueno: { id: 'rayo_trueno', nombre: 'Rayo trueno', elemento: 'electrico', tipo: 'zona', desc: 'Un relámpago cae del cielo.', poder: 2.0, enfriamiento: 8, alcance: 340, radio: 60, preparacion: 0.8, estado: 'paralisis', probEstado: 0.5 },
-  carga_voltio: { id: 'carga_voltio', nombre: 'Carga voltio', elemento: 'electrico', tipo: 'embestida', desc: 'Una carga eléctrica veloz.', poder: 1.2, enfriamiento: 4.5, alcance: 240, radio: 24, estado: 'paralisis', probEstado: 0.3, empuje: 40 },
-  aceleron: { id: 'aceleron', nombre: 'Acelerón', elemento: 'electrico', tipo: 'mejora', desc: '+40% de velocidad por un rato.', poder: 0.4, enfriamiento: 12, alcance: 0, duracion: 5 },
-  // roca
-  lanzarrocas: { id: 'lanzarrocas', nombre: 'Lanzarrocas', elemento: 'roca', tipo: 'proyectil', desc: 'Una roca pesada que aturde.', poder: 1.3, enfriamiento: 3, alcance: 260, radio: 16, velocidad: 280, empuje: 60 },
-  terremoto: { id: 'terremoto', nombre: 'Terremoto', elemento: 'roca', tipo: 'area', desc: 'Sacude el suelo a tu alrededor.', poder: 1.8, enfriamiento: 8, alcance: 140, empuje: 60 },
-  coraza: { id: 'coraza', nombre: 'Coraza', elemento: 'roca', tipo: 'escudo', desc: 'Un escudo de piedra enorme.', poder: 0.4, enfriamiento: 14, alcance: 0, duracion: 5 },
-  avalancha: { id: 'avalancha', nombre: 'Avalancha', elemento: 'roca', tipo: 'zona', desc: 'Rocas caen sobre el objetivo.', poder: 2.1, enfriamiento: 9, alcance: 300, radio: 75, preparacion: 1.0 },
-  // viento
-  cuchilla_aire: { id: 'cuchilla_aire', nombre: 'Cuchilla de aire', elemento: 'viento', tipo: 'proyectil', desc: 'Corta y atraviesa enemigos.', poder: 0.95, enfriamiento: 2.2, alcance: 360, radio: 11, velocidad: 600 },
-  tornado: { id: 'tornado', nombre: 'Tornado', elemento: 'viento', tipo: 'zona', desc: 'Un tornado que ralentiza.', poder: 1.5, enfriamiento: 7, alcance: 320, radio: 70, preparacion: 0.6, estado: 'lento', probEstado: 1 },
-  vuelo_raudo: { id: 'vuelo_raudo', nombre: 'Vuelo raudo', elemento: 'viento', tipo: 'embestida', desc: 'Un vuelo rasante muy largo.', poder: 1.1, enfriamiento: 4, alcance: 300, radio: 22 },
-  vendaval: { id: 'vendaval', nombre: 'Vendaval', elemento: 'viento', tipo: 'area', desc: 'Una ráfaga que lo aparta todo.', poder: 1.1, enfriamiento: 6, alcance: 130, empuje: 180 },
-  // sombra
-  bola_sombra: { id: 'bola_sombra', nombre: 'Bola sombra', elemento: 'sombra', tipo: 'proyectil', desc: 'Una esfera de oscuridad.', poder: 1.1, enfriamiento: 2.6, alcance: 300, radio: 13, velocidad: 380 },
-  paso_sombrio: { id: 'paso_sombrio', nombre: 'Paso sombrío', elemento: 'sombra', tipo: 'embestida', desc: 'Atraviesa al rival siendo intocable.', poder: 1.2, enfriamiento: 5, alcance: 220, radio: 24 },
-  maldicion: { id: 'maldicion', nombre: 'Maldición', elemento: 'sombra', tipo: 'zona', desc: 'Un círculo maldito que envenena.', poder: 1.3, enfriamiento: 8, alcance: 300, radio: 80, preparacion: 0.7, estado: 'veneno', probEstado: 1 },
-  aullido: { id: 'aullido', nombre: 'Aullido', elemento: 'sombra', tipo: 'mejora', desc: '+35% de daño por un rato.', poder: 0.35, enfriamiento: 12, alcance: 0, duracion: 6 },
+  ...mov('fuego', {
+    ascuas: { nombre: 'Ascuas', tipo: 'rafaga', desc: 'Tres brasas en abanico.', poder: 0.7, enfriamiento: 2.5, alcance: 260, radio: 9, velocidad: 380, cantidad: 3, apertura: 14, estado: 'quemadura', probEstado: 0.25 },
+    bola_fuego: { nombre: 'Bola de fuego', tipo: 'proyectil', desc: 'Una bola ardiente que quema.', poder: 1.0, enfriamiento: 2.4, alcance: 300, radio: 14, velocidad: 400, estado: 'quemadura', probEstado: 0.3 },
+    llamarada: { nombre: 'Llamarada', tipo: 'rayo', desc: 'Un chorro de fuego en línea recta.', poder: 1.6, enfriamiento: 6, alcance: 240, radio: 26, preparacion: 0.45, estado: 'quemadura', probEstado: 0.5 },
+    erupcion: { nombre: 'Erupción', tipo: 'zona', desc: 'El suelo estalla frente a ti.', poder: 2.2, enfriamiento: 9, alcance: 320, radio: 80, preparacion: 0.9, estado: 'quemadura', probEstado: 0.6 },
+    embestida_ignea: { nombre: 'Embestida ígnea', tipo: 'embestida', desc: 'Se lanza envuelto en llamas.', poder: 1.3, enfriamiento: 5, alcance: 200, radio: 26, estado: 'quemadura', probEstado: 0.35, empuje: 60 },
+    ardor: { nombre: 'Ardor', tipo: 'mejora', desc: '+30% de daño por un rato.', poder: 0.3, enfriamiento: 12, alcance: 0, duracion: 6, mejora: 'dano' },
+  }),
+  ...mov('agua', {
+    burbuja: { nombre: 'Burbuja', tipo: 'proyectil', desc: 'Una burbuja que ralentiza.', poder: 0.9, enfriamiento: 2.2, alcance: 280, radio: 13, velocidad: 300, estado: 'lento', probEstado: 0.5 },
+    lanza_agua: { nombre: 'Lanza de agua', tipo: 'proyectil', desc: 'Un chorro veloz que atraviesa.', poder: 0.9, enfriamiento: 2.2, alcance: 340, radio: 10, velocidad: 620, atraviesa: true },
+    hidrochorro: { nombre: 'Hidrochorro', tipo: 'rayo', desc: 'Chorro a presión que empuja.', poder: 1.5, enfriamiento: 6, alcance: 300, radio: 22, preparacion: 0.4, empuje: 90 },
+    torbellino: { nombre: 'Torbellino', tipo: 'zona', desc: 'Un remolino que atrapa y frena.', poder: 1.6, enfriamiento: 7.5, alcance: 300, radio: 80, preparacion: 0.7, estado: 'lento', probEstado: 1 },
+    ola: { nombre: 'Ola', tipo: 'area', desc: 'Una ola a tu alrededor que aparta a todos.', poder: 1.4, enfriamiento: 7, alcance: 120, empuje: 140 },
+    marea_curativa: { nombre: 'Marea curativa', tipo: 'curar', desc: 'Recupera parte de la vida.', poder: 0.28, enfriamiento: 14, alcance: 0 },
+  }),
+  ...mov('planta', {
+    hojas_navaja: { nombre: 'Hojas navaja', tipo: 'rafaga', desc: 'Hojas afiladas en abanico.', poder: 0.75, enfriamiento: 2.6, alcance: 260, radio: 9, velocidad: 420, cantidad: 3, apertura: 12 },
+    semillas: { nombre: 'Lluvia de semillas', tipo: 'rafaga', desc: 'Cinco semillas duras en abanico.', poder: 0.45, enfriamiento: 2.6, alcance: 240, radio: 7, velocidad: 440, cantidad: 5, apertura: 9 },
+    latigo_cepa: { nombre: 'Látigo cepa', tipo: 'rayo', desc: 'Un latigazo largo y rápido.', poder: 1.35, enfriamiento: 4.5, alcance: 200, radio: 20, preparacion: 0.25, empuje: 50 },
+    esporas: { nombre: 'Esporas', tipo: 'zona', desc: 'Nube de esporas venenosas.', poder: 0.8, enfriamiento: 8, alcance: 280, radio: 90, preparacion: 0.6, estado: 'veneno', probEstado: 1 },
+    rodillo_espinas: { nombre: 'Rodillo de espinas', tipo: 'embestida', desc: 'Rueda cubierto de espinas venenosas.', poder: 1.25, enfriamiento: 5, alcance: 210, radio: 26, estado: 'veneno', probEstado: 0.4 },
+    raices: { nombre: 'Raíces', tipo: 'escudo', desc: 'Echa raíces: escudo resistente.', poder: 0.3, enfriamiento: 13, alcance: 0, duracion: 5 },
+  }),
+  ...mov('electrico', {
+    chispazo: { nombre: 'Chispazo', tipo: 'proyectil', desc: 'Rayo rápido que puede paralizar.', poder: 0.85, enfriamiento: 2, alcance: 320, radio: 10, velocidad: 560, estado: 'paralisis', probEstado: 0.25 },
+    bola_voltio: { nombre: 'Bola voltio', tipo: 'proyectil', desc: 'Esfera eléctrica lenta y poderosa.', poder: 1.2, enfriamiento: 3.2, alcance: 300, radio: 16, velocidad: 300, estado: 'paralisis', probEstado: 0.35 },
+    descarga: { nombre: 'Descarga', tipo: 'rayo', desc: 'Una descarga en línea recta.', poder: 1.6, enfriamiento: 6, alcance: 280, radio: 20, preparacion: 0.35, estado: 'paralisis', probEstado: 0.4 },
+    rayo_trueno: { nombre: 'Rayo trueno', tipo: 'zona', desc: 'Un relámpago cae del cielo.', poder: 2.0, enfriamiento: 8, alcance: 340, radio: 60, preparacion: 0.8, estado: 'paralisis', probEstado: 0.5 },
+    carga_voltio: { nombre: 'Carga voltio', tipo: 'embestida', desc: 'Una carga eléctrica veloz.', poder: 1.2, enfriamiento: 4.5, alcance: 240, radio: 24, estado: 'paralisis', probEstado: 0.3, empuje: 40 },
+    aceleron: { nombre: 'Acelerón', tipo: 'mejora', desc: '+40% de velocidad por un rato.', poder: 0.4, enfriamiento: 12, alcance: 0, duracion: 5, mejora: 'vel' },
+  }),
+  ...mov('roca', {
+    lanzarrocas: { nombre: 'Lanzarrocas', tipo: 'proyectil', desc: 'Una roca pesada que empuja.', poder: 1.3, enfriamiento: 3, alcance: 260, radio: 16, velocidad: 280, empuje: 60 },
+    pedrada: { nombre: 'Pedrada', tipo: 'rafaga', desc: 'Tres piedras en abanico.', poder: 0.7, enfriamiento: 2.8, alcance: 250, radio: 11, velocidad: 360, cantidad: 3, apertura: 15 },
+    grieta: { nombre: 'Grieta', tipo: 'rayo', desc: 'El suelo se parte en línea y salen picos.', poder: 1.8, enfriamiento: 7, alcance: 300, radio: 26, preparacion: 0.55, empuje: 70 },
+    avalancha: { nombre: 'Avalancha', tipo: 'zona', desc: 'Rocas caen sobre el objetivo.', poder: 2.1, enfriamiento: 9, alcance: 300, radio: 75, preparacion: 1.0 },
+    terremoto: { nombre: 'Terremoto', tipo: 'area', desc: 'Sacude el suelo a tu alrededor.', poder: 1.8, enfriamiento: 8, alcance: 140, empuje: 60 },
+    coraza: { nombre: 'Coraza', tipo: 'escudo', desc: 'Un escudo de piedra enorme.', poder: 0.4, enfriamiento: 14, alcance: 0, duracion: 5 },
+  }),
+  ...mov('viento', {
+    cuchilla_aire: { nombre: 'Cuchilla de aire', tipo: 'proyectil', desc: 'Corta y atraviesa enemigos.', poder: 0.95, enfriamiento: 2.2, alcance: 360, radio: 11, velocidad: 600, atraviesa: true },
+    pluma_filo: { nombre: 'Pluma filo', tipo: 'rafaga', desc: 'Tres plumas afiladas.', poder: 0.7, enfriamiento: 2.3, alcance: 300, radio: 8, velocidad: 560, cantidad: 3, apertura: 10 },
+    corriente: { nombre: 'Corriente', tipo: 'rayo', desc: 'Un ventarrón en línea que arrastra.', poder: 1.3, enfriamiento: 5.5, alcance: 320, radio: 30, preparacion: 0.3, empuje: 200, estado: 'lento', probEstado: 0.5 },
+    tornado: { nombre: 'Tornado', tipo: 'zona', desc: 'Un tornado que ralentiza.', poder: 1.5, enfriamiento: 7, alcance: 320, radio: 70, preparacion: 0.6, estado: 'lento', probEstado: 1 },
+    vuelo_raudo: { nombre: 'Vuelo raudo', tipo: 'embestida', desc: 'Un vuelo rasante muy largo.', poder: 1.1, enfriamiento: 4, alcance: 300, radio: 22 },
+    vendaval: { nombre: 'Vendaval', tipo: 'area', desc: 'Una ráfaga que lo aparta todo.', poder: 1.1, enfriamiento: 6, alcance: 130, empuje: 180 },
+  }),
+  ...mov('sombra', {
+    bola_sombra: { nombre: 'Bola sombra', tipo: 'proyectil', desc: 'Una esfera de oscuridad.', poder: 1.1, enfriamiento: 2.6, alcance: 300, radio: 13, velocidad: 380 },
+    colmillo_sombra: { nombre: 'Colmillo sombra', tipo: 'rafaga', desc: 'Dos colmillos oscuros que envenenan.', poder: 0.8, enfriamiento: 2.4, alcance: 220, radio: 11, velocidad: 460, cantidad: 2, apertura: 18, estado: 'veneno', probEstado: 0.2 },
+    garra_eclipse: { nombre: 'Garra eclipse', tipo: 'rayo', desc: 'Un zarpazo de sombra muy largo.', poder: 1.7, enfriamiento: 6.5, alcance: 230, radio: 28, preparacion: 0.4 },
+    maldicion: { nombre: 'Maldición', tipo: 'zona', desc: 'Un círculo maldito que envenena.', poder: 1.3, enfriamiento: 8, alcance: 300, radio: 80, preparacion: 0.7, estado: 'veneno', probEstado: 1 },
+    paso_sombrio: { nombre: 'Paso sombrío', tipo: 'embestida', desc: 'Atraviesa al rival siendo intocable.', poder: 1.2, enfriamiento: 5, alcance: 220, radio: 24, intangible: true },
+    aullido: { nombre: 'Aullido', tipo: 'mejora', desc: '+35% de daño por un rato.', poder: 0.35, enfriamiento: 12, alcance: 0, duracion: 6, mejora: 'dano' },
+  }),
+  ...mov('hielo', {
+    granizo: { nombre: 'Granizo', tipo: 'rafaga', desc: 'Tres granizos que pueden frenar.', poder: 0.7, enfriamiento: 2.5, alcance: 270, radio: 10, velocidad: 400, cantidad: 3, apertura: 13, estado: 'lento', probEstado: 0.3 },
+    carambano: { nombre: 'Carámbano', tipo: 'proyectil', desc: 'Una punta de hielo que atraviesa.', poder: 0.95, enfriamiento: 2.3, alcance: 330, radio: 10, velocidad: 600, atraviesa: true, estado: 'lento', probEstado: 0.2 },
+    aliento_helado: { nombre: 'Aliento helado', tipo: 'rayo', desc: 'Un soplo congelante en línea.', poder: 1.5, enfriamiento: 6, alcance: 260, radio: 26, preparacion: 0.45, estado: 'lento', probEstado: 0.8 },
+    pico_glaciar: { nombre: 'Pico glaciar', tipo: 'zona', desc: 'Un pico de hielo brota del suelo y congela.', poder: 2.1, enfriamiento: 9, alcance: 320, radio: 75, preparacion: 0.9, estado: 'paralisis', probEstado: 0.5 },
+    patinazo: { nombre: 'Patinazo', tipo: 'embestida', desc: 'Se desliza sobre hielo y embiste.', poder: 1.15, enfriamiento: 4.5, alcance: 260, radio: 24, estado: 'lento', probEstado: 0.4 },
+    muro_hielo: { nombre: 'Muro de hielo', tipo: 'escudo', desc: 'Una coraza de hielo.', poder: 0.35, enfriamiento: 13, alcance: 0, duracion: 5 },
+  }),
+  ...mov('luz', {
+    destello: { nombre: 'Destello', tipo: 'proyectil', desc: 'Un haz de luz veloz.', poder: 0.9, enfriamiento: 2.1, alcance: 340, radio: 10, velocidad: 650 },
+    prisma: { nombre: 'Prisma', tipo: 'rafaga', desc: 'Cinco rayos de colores en abanico.', poder: 0.45, enfriamiento: 2.8, alcance: 280, radio: 8, velocidad: 520, cantidad: 5, apertura: 8 },
+    rayo_solar: { nombre: 'Rayo solar', tipo: 'rayo', desc: 'Concentra la luz del sol en un rayo largo.', poder: 2.0, enfriamiento: 8, alcance: 380, radio: 24, preparacion: 0.7 },
+    juicio: { nombre: 'Juicio', tipo: 'zona', desc: 'Una columna de luz cae del cielo.', poder: 2.0, enfriamiento: 9, alcance: 320, radio: 70, preparacion: 0.85, estado: 'paralisis', probEstado: 0.3 },
+    saeta_luz: { nombre: 'Saeta de luz', tipo: 'embestida', desc: 'Se vuelve luz y atraviesa al rival.', poder: 1.1, enfriamiento: 4.5, alcance: 260, radio: 24, intangible: true },
+    bendicion: { nombre: 'Bendición', tipo: 'curar', desc: 'Una luz cálida que cura.', poder: 0.24, enfriamiento: 14, alcance: 0 },
+  }),
+};
+
+/** Movimientos de cada elemento por papel: r = rápido, f = fuerte, m = movilidad/área, a = apoyo. */
+export const POOL: Record<Elemento, { r: string[]; f: string[]; m: string; a: string }> = {
+  fuego: { r: ['ascuas', 'bola_fuego'], f: ['llamarada', 'erupcion'], m: 'embestida_ignea', a: 'ardor' },
+  agua: { r: ['burbuja', 'lanza_agua'], f: ['hidrochorro', 'torbellino'], m: 'ola', a: 'marea_curativa' },
+  planta: { r: ['hojas_navaja', 'semillas'], f: ['latigo_cepa', 'esporas'], m: 'rodillo_espinas', a: 'raices' },
+  electrico: { r: ['chispazo', 'bola_voltio'], f: ['descarga', 'rayo_trueno'], m: 'carga_voltio', a: 'aceleron' },
+  roca: { r: ['lanzarrocas', 'pedrada'], f: ['grieta', 'avalancha'], m: 'terremoto', a: 'coraza' },
+  viento: { r: ['cuchilla_aire', 'pluma_filo'], f: ['corriente', 'tornado'], m: 'vuelo_raudo', a: 'vendaval' },
+  sombra: { r: ['bola_sombra', 'colmillo_sombra'], f: ['garra_eclipse', 'maldicion'], m: 'paso_sombrio', a: 'aullido' },
+  hielo: { r: ['granizo', 'carambano'], f: ['aliento_helado', 'pico_glaciar'], m: 'patinazo', a: 'muro_hielo' },
+  luz: { r: ['destello', 'prisma'], f: ['rayo_solar', 'juicio'], m: 'saeta_luz', a: 'bendicion' },
 };
 
 // ------------------------------------------------------------------ habilidades (pasivas)
-export interface Habilidad { id: string; nombre: string; desc: string }
-export const HABILIDADES: Record<string, Habilidad> = {
-  brasa_interior: { id: 'brasa_interior', nombre: 'Brasa interior', desc: 'Con menos del 35% de vida, sus ataques de fuego hacen +30% de daño.' },
-  marea: { id: 'marea', nombre: 'Marea', desc: 'Con menos del 35% de vida, sus ataques de agua hacen +30% de daño.' },
-  espesura: { id: 'espesura', nombre: 'Espesura', desc: 'Con menos del 35% de vida, sus ataques de planta hacen +30% de daño.' },
-  estatica: { id: 'estatica', nombre: 'Estática', desc: 'Sus golpes básicos pueden paralizar (15%).' },
-  furia_tormenta: { id: 'furia_tormenta', nombre: 'Furia de tormenta', desc: '+12% de daño y +10% de velocidad.' },
-  roca_solida: { id: 'roca_solida', nombre: 'Roca sólida', desc: 'Recibe un 15% menos de daño.' },
-  viento_cola: { id: 'viento_cola', nombre: 'Viento de cola', desc: 'Se mueve un 20% más rápido.' },
-  sombra_esquiva: { id: 'sombra_esquiva', nombre: 'Sombra esquiva', desc: '15% de probabilidad de esquivar un ataque.' },
-};
+export interface Habilidad {
+  id: string;
+  nombre: string;
+  desc: string;
+  pinch?: Elemento; // con menos del 35% de vida, ese elemento pega +30%
+  dano?: number; // multiplicador de daño causado
+  defensa?: number; // multiplicador de daño recibido
+  vel?: number; // multiplicador de velocidad
+  esquiva?: number; // probabilidad de esquivar
+  critico?: number; // probabilidad de crítico (normal: 8%)
+  basico?: { estado: Estado; prob: number }; // efecto de los golpes básicos
+  regen?: number; // fracción de vida recuperada cada 2 s
+  robo?: number; // fracción del daño causado que se cura
+  carga?: number; // multiplicador de carga de la técnica especial
+}
+const hab = (lista: Record<string, Omit<Habilidad, 'id'>>) =>
+  Object.fromEntries(Object.entries(lista).map(([id, h]) => [id, { id, ...h }])) as Record<string, Habilidad>;
 
-// ------------------------------------------------------------------ especies
+export const HABILIDADES: Record<string, Habilidad> = hab({
+  brasa_interior: { nombre: 'Brasa interior', desc: 'Con menos del 35% de vida, sus ataques de fuego hacen +30% de daño.', pinch: 'fuego' },
+  marea: { nombre: 'Marea', desc: 'Con menos del 35% de vida, sus ataques de agua hacen +30% de daño.', pinch: 'agua' },
+  espesura: { nombre: 'Espesura', desc: 'Con menos del 35% de vida, sus ataques de planta hacen +30% de daño.', pinch: 'planta' },
+  corazon_glaciar: { nombre: 'Corazón glaciar', desc: 'Con menos del 35% de vida, sus ataques de hielo hacen +30% de daño.', pinch: 'hielo' },
+  aurora: { nombre: 'Aurora', desc: 'Con menos del 35% de vida, sus ataques de luz hacen +30% de daño.', pinch: 'luz' },
+  estatica: { nombre: 'Estática', desc: 'Sus golpes básicos pueden paralizar (15%).', basico: { estado: 'paralisis', prob: 0.15 } },
+  escarcha: { nombre: 'Escarcha', desc: 'Sus golpes básicos pueden ralentizar (25%).', basico: { estado: 'lento', prob: 0.25 } },
+  toxico: { nombre: 'Piel tóxica', desc: 'Sus golpes básicos pueden envenenar (20%).', basico: { estado: 'veneno', prob: 0.2 } },
+  furia_tormenta: { nombre: 'Furia de tormenta', desc: '+12% de daño y +10% de velocidad.', dano: 1.12, vel: 1.1 },
+  roca_solida: { nombre: 'Roca sólida', desc: 'Recibe un 15% menos de daño.', defensa: 0.85 },
+  viento_cola: { nombre: 'Viento de cola', desc: 'Se mueve un 20% más rápido.', vel: 1.2 },
+  sombra_esquiva: { nombre: 'Sombra esquiva', desc: '15% de probabilidad de esquivar un ataque.', esquiva: 0.15 },
+  fotosintesis: { nombre: 'Fotosíntesis', desc: 'Recupera un 1,5% de vida cada 2 segundos.', regen: 0.015 },
+  vampiro: { nombre: 'Vampiro', desc: 'Se cura un 12% del daño que causa.', robo: 0.12 },
+  concentracion: { nombre: 'Concentración', desc: 'Carga su técnica especial un 35% más rápido.', carga: 1.35 },
+  instinto_cazador: { nombre: 'Instinto cazador', desc: 'Doble probabilidad de golpe crítico.', critico: 0.16 },
+  // legendarias
+  taita: { nombre: 'Padre de las montañas', desc: 'Recibe un 25% menos de daño.', defensa: 0.75 },
+  mama_volcan: { nombre: 'Madre volcana', desc: 'Sus golpes básicos queman (25%) y con poca vida su fuego pega +30%.', basico: { estado: 'quemadura', prob: 0.25 }, pinch: 'fuego' },
+  sol_eterno: { nombre: 'Sol eterno', desc: '+10% de daño y recupera un 1% de vida cada 2 segundos.', dano: 1.1, regen: 0.01 },
+  rey_andes: { nombre: 'Rey de los Andes', desc: '+15% de velocidad y 18% de golpe crítico.', vel: 1.15, critico: 0.18 },
+  arcoiris: { nombre: 'Espíritu del arcoíris', desc: 'Carga su técnica un 40% más rápido y esquiva el 10% de los ataques.', carga: 1.4, esquiva: 0.1 },
+});
+
+// ------------------------------------------------------------------ especies (tipo)
 export interface Especie {
   id: string;
   nombre: string;
   elemento: Elemento;
-  etapa: 1 | 2 | 3;
+  elemento2?: Elemento;
+  rareza: Rareza;
+  /** 0 = no evoluciona; 1, 2, 3 = etapa en su línea evolutiva. */
+  etapa: 0 | 1 | 2 | 3;
   evoluciona?: { a: string; nivel: number };
   base: { vida: number; ataque: number; defensa: number; velocidad: number };
   basico: 'cuerpo' | 'distancia'; // golpe básico: combo cuerpo a cuerpo o disparos
@@ -131,55 +254,6 @@ export interface Especie {
   inicial?: boolean;
 }
 
-export const ESPECIES: Record<string, Especie> = {
-  chispi: { id: 'chispi', nombre: 'Chispi', elemento: 'fuego', etapa: 1, evoluciona: { a: 'llamarak', nivel: 12 }, inicial: true,
-    base: { vida: 44, ataque: 55, defensa: 40, velocidad: 72 }, basico: 'cuerpo', movimientos: ['ascuas', 'embestida_ignea', 'llamarada', 'erupcion'],
-    habilidad: 'brasa_interior', desc: 'Salamandra inquieta. Su cresta arde más cuando está contenta.', captura: { nivel: 8, monedas: 600, nivelSalvaje: 8 } },
-  llamarak: { id: 'llamarak', nombre: 'Llamarak', elemento: 'fuego', etapa: 2, evoluciona: { a: 'infernox', nivel: 28 },
-    base: { vida: 60, ataque: 70, defensa: 52, velocidad: 76 }, basico: 'cuerpo', movimientos: ['ascuas', 'embestida_ignea', 'llamarada', 'erupcion'],
-    habilidad: 'brasa_interior', desc: 'Guerrero de melena ardiente. Nunca retrocede.', captura: { nivel: 22, monedas: 3000, nivelSalvaje: 18 } },
-  infernox: { id: 'infernox', nombre: 'Infernox', elemento: 'fuego', etapa: 3,
-    base: { vida: 80, ataque: 90, defensa: 68, velocidad: 70 }, basico: 'cuerpo', movimientos: ['ascuas', 'embestida_ignea', 'llamarada', 'erupcion'],
-    habilidad: 'brasa_interior', desc: 'Bestia volcánica. Por sus grietas corre magma.', captura: { nivel: 38, monedas: 12000, nivelSalvaje: 32 } },
-  gotin: { id: 'gotin', nombre: 'Gotín', elemento: 'agua', etapa: 1, evoluciona: { a: 'marejon', nivel: 12 }, inicial: true,
-    base: { vida: 50, ataque: 48, defensa: 48, velocidad: 64 }, basico: 'distancia', movimientos: ['burbuja', 'hidrochorro', 'ola', 'marea_curativa'],
-    habilidad: 'marea', desc: 'Ajolote curioso. La burbuja de su cola nunca revienta.', captura: { nivel: 8, monedas: 600, nivelSalvaje: 8 } },
-  marejon: { id: 'marejon', nombre: 'Marejón', elemento: 'agua', etapa: 2, evoluciona: { a: 'abisaurio', nivel: 28 },
-    base: { vida: 66, ataque: 62, defensa: 60, velocidad: 70 }, basico: 'distancia', movimientos: ['burbuja', 'hidrochorro', 'ola', 'marea_curativa'],
-    habilidad: 'marea', desc: 'Nutria guerrera. Mueve el agua con las patas.', captura: { nivel: 22, monedas: 3000, nivelSalvaje: 18 } },
-  abisaurio: { id: 'abisaurio', nombre: 'Abisaurio', elemento: 'agua', etapa: 3,
-    base: { vida: 90, ataque: 78, defensa: 80, velocidad: 60 }, basico: 'distancia', movimientos: ['burbuja', 'hidrochorro', 'ola', 'marea_curativa'],
-    habilidad: 'marea', desc: 'Serpiente acorazada de los abismos.', captura: { nivel: 38, monedas: 12000, nivelSalvaje: 32 } },
-  brotin: { id: 'brotin', nombre: 'Brotín', elemento: 'planta', etapa: 1, evoluciona: { a: 'espinardo', nivel: 12 }, inicial: true,
-    base: { vida: 52, ataque: 46, defensa: 54, velocidad: 60 }, basico: 'cuerpo', movimientos: ['hojas_navaja', 'latigo_cepa', 'esporas', 'raices'],
-    habilidad: 'espesura', desc: 'Erizo de hojas. Si se asusta, florece.', captura: { nivel: 8, monedas: 600, nivelSalvaje: 8 } },
-  espinardo: { id: 'espinardo', nombre: 'Espinardo', elemento: 'planta', etapa: 2, evoluciona: { a: 'selvagor', nivel: 28 },
-    base: { vida: 70, ataque: 60, defensa: 68, velocidad: 62 }, basico: 'cuerpo', movimientos: ['hojas_navaja', 'latigo_cepa', 'esporas', 'raices'],
-    habilidad: 'espesura', desc: 'Jabalí de espinas. Sus colmillos son de madera dura.', captura: { nivel: 22, monedas: 3000, nivelSalvaje: 18 } },
-  selvagor: { id: 'selvagor', nombre: 'Selvagor', elemento: 'planta', etapa: 3,
-    base: { vida: 96, ataque: 76, defensa: 88, velocidad: 54 }, basico: 'cuerpo', movimientos: ['hojas_navaja', 'latigo_cepa', 'esporas', 'raices'],
-    habilidad: 'espesura', desc: 'Bestia ancestral. Sobre su lomo crece un árbol.', captura: { nivel: 38, monedas: 12000, nivelSalvaje: 32 } },
-  voltiron: { id: 'voltiron', nombre: 'Voltirón', elemento: 'electrico', etapa: 1, evoluciona: { a: 'tormentauro', nivel: 20 },
-    base: { vida: 42, ataque: 56, defensa: 38, velocidad: 88 }, basico: 'distancia', movimientos: ['chispazo', 'carga_voltio', 'rayo_trueno', 'aceleron'],
-    habilidad: 'estatica', desc: 'Hurón chispeante. Nunca se queda quieto.', captura: { nivel: 3, monedas: 250, nivelSalvaje: 4 } },
-  tormentauro: { id: 'tormentauro', nombre: 'Tormentauro', elemento: 'electrico', etapa: 2,
-    base: { vida: 82, ataque: 84, defensa: 62, velocidad: 78 }, basico: 'cuerpo', movimientos: ['chispazo', 'carga_voltio', 'rayo_trueno', 'aceleron'],
-    habilidad: 'furia_tormenta', desc: 'Toro de tormenta. Donde embiste, cae un rayo.', captura: { nivel: 30, monedas: 8000, nivelSalvaje: 26 } },
-  pedrusco: { id: 'pedrusco', nombre: 'Pedrusco', elemento: 'roca', etapa: 1, evoluciona: { a: 'golemon', nivel: 20 },
-    base: { vida: 58, ataque: 50, defensa: 70, velocidad: 46 }, basico: 'cuerpo', movimientos: ['lanzarrocas', 'coraza', 'terremoto', 'avalancha'],
-    habilidad: 'roca_solida', desc: 'Cangrejo de piedra. Colecciona cristales.', captura: { nivel: 2, monedas: 150, nivelSalvaje: 3 } },
-  golemon: { id: 'golemon', nombre: 'Golemón', elemento: 'roca', etapa: 2,
-    base: { vida: 98, ataque: 80, defensa: 96, velocidad: 44 }, basico: 'cuerpo', movimientos: ['lanzarrocas', 'coraza', 'terremoto', 'avalancha'],
-    habilidad: 'roca_solida', desc: 'Gorila de roca. Sus puños de cristal parten montañas.', captura: { nivel: 30, monedas: 8000, nivelSalvaje: 26 } },
-  cefiro: { id: 'cefiro', nombre: 'Céfiro', elemento: 'viento', etapa: 2,
-    base: { vida: 56, ataque: 64, defensa: 48, velocidad: 96 }, basico: 'distancia', movimientos: ['cuchilla_aire', 'vuelo_raudo', 'tornado', 'vendaval'],
-    habilidad: 'viento_cola', desc: 'Halcón del viento. Vuela más rápido que su sombra.', captura: { nivel: 12, monedas: 1400, nivelSalvaje: 12 } },
-  umbraz: { id: 'umbraz', nombre: 'Umbraz', elemento: 'sombra', etapa: 2,
-    base: { vida: 60, ataque: 72, defensa: 50, velocidad: 84 }, basico: 'cuerpo', movimientos: ['bola_sombra', 'paso_sombrio', 'maldicion', 'aullido'],
-    habilidad: 'sombra_esquiva', desc: 'Zorro de sombras con colas de fuego fantasma.', captura: { nivel: 16, monedas: 2200, nivelSalvaje: 15 } },
-};
-
-export const INICIALES = ['chispi', 'gotin', 'brotin'];
 export const NIVEL_MAX_PRIMAL = 40;
 
 /** Estadísticas de un Primal en un nivel. */
@@ -198,16 +272,51 @@ export function xpPrimal(n: number) {
   return 40 + 20 * n;
 }
 
-// ------------------------------------------------------------------ técnicas especiales (una por elemento)
-/** Se cargan peleando (golpear y recibir golpes llena la barra) y se lanzan con R / el botón dorado. */
+export const esLegendario = (esp: string) => ESPECIES[esp]?.rareza === 'legendario';
+
+// ------------------------------------------------------------------ técnicas especiales
+/** Se cargan peleando (golpear y recibir golpes llena la barra) y se lanzan con R (y T los legendarios). */
 export interface Especial { id: string; nombre: string; elemento: Elemento; desc: string; poder: number }
 export const ESPECIALES: Record<Elemento, Especial> = {
-  fuego: { id: 'supernova', nombre: 'Supernova', elemento: 'fuego', poder: 3.0, desc: 'Estalla en una explosión solar que quema todo a su alrededor.' },
-  agua: { id: 'maremoto', nombre: 'Maremoto', elemento: 'agua', poder: 2.6, desc: 'Desata una ola colosal que arrasa en línea recta.' },
-  planta: { id: 'jardin_espinoso', nombre: 'Jardín espinoso', elemento: 'planta', poder: 2.2, desc: 'Brota un campo de espinas venenosas y recupera vida.' },
-  electrico: { id: 'tormenta', nombre: 'Tormenta', elemento: 'electrico', poder: 0.95, desc: 'Cinco relámpagos persiguen al rival.' },
-  roca: { id: 'meteoro', nombre: 'Meteoro', elemento: 'roca', poder: 3.2, desc: 'Un meteoro cae del cielo y aturde al impactar.' },
-  viento: { id: 'huracan', nombre: 'Huracán', elemento: 'viento', poder: 2.3, desc: 'Cruza la arena como un rayo y deja un huracán a su paso.' },
-  sombra: { id: 'eclipse', nombre: 'Eclipse', elemento: 'sombra', poder: 2.8, desc: 'Se desvanece, reaparece tras el rival y lo golpea por la espalda.' },
+  fuego: { id: 'supernova', nombre: 'Supernova', elemento: 'fuego', poder: 2.4, desc: 'Atrae al rival, estalla como un sol y lanza un anillo de columnas de fuego que dejan el suelo ardiendo.' },
+  agua: { id: 'maremoto', nombre: 'Maremoto', elemento: 'agua', poder: 2.2, desc: 'Tres olas colosales arrasan en abanico y dejan un remolino que atrapa al rival.' },
+  planta: { id: 'jardin_espinoso', nombre: 'Jardín espinoso', elemento: 'planta', poder: 1.7, desc: 'Brotan espinas en línea hacia el rival, florece un campo venenoso y recupera vida.' },
+  electrico: { id: 'tormenta', nombre: 'Tormenta', elemento: 'electrico', poder: 0.85, desc: 'El cielo se oscurece: seis relámpagos persiguen al rival y el último paraliza.' },
+  roca: { id: 'meteoro', nombre: 'Lluvia de meteoros', elemento: 'roca', poder: 1.1, desc: 'Caen meteoros alrededor del rival y al final uno gigante que lo aturde.' },
+  viento: { id: 'huracan', nombre: 'Huracán', elemento: 'viento', poder: 1.9, desc: 'Cruza la arena como un rayo y deja un huracán que absorbe al rival.' },
+  sombra: { id: 'eclipse', nombre: 'Eclipse', elemento: 'sombra', poder: 1.2, desc: 'La arena se oscurece, reaparece detrás del rival y lo golpea tres veces.' },
+  hielo: { id: 'ventisca_glacial', nombre: 'Ventisca glacial', elemento: 'hielo', poder: 1.3, desc: 'Tres oleadas de picos de hielo avanzan en zigzag y dejan el suelo congelado.' },
+  luz: { id: 'prisma_solar', nombre: 'Prisma solar', elemento: 'luz', poder: 1.4, desc: 'Dispara siete rayos de luz en estrella y luego uno enorme hacia el rival.' },
 };
-export const CARGA_MAX = 100;
+
+/** Los legendarios tienen dos técnicas propias (R y T). */
+export const ESPECIALES_LEGENDARIOS: Record<string, [Especial, Especial]> = {
+  taitachimbo: [
+    { id: 'avalancha_andina', nombre: 'Avalancha andina', elemento: 'roca', poder: 1.2, desc: 'Siete rocas nevadas ruedan montaña abajo hacia el rival.' },
+    { id: 'corona_nevada', nombre: 'Corona nevada', elemento: 'hielo', poder: 1.6, desc: 'Un anillo de picos de hielo lo rodea, congela y le da un escudo enorme.' },
+  ],
+  mamatungura: [
+    { id: 'furia_volcanica', nombre: 'Furia volcánica', elemento: 'fuego', poder: 1.3, desc: 'Lanza siete bombas de lava que dejan charcos ardientes.' },
+    { id: 'rio_de_lava', nombre: 'Río de lava', elemento: 'fuego', poder: 1.8, desc: 'Abre un río de lava en línea recta que quema a quien lo cruza.' },
+  ],
+  inti: [
+    { id: 'sol_naciente', nombre: 'Sol naciente', elemento: 'luz', poder: 1.8, desc: 'Dos anillos de sol estallan a su alrededor y recupera un 25% de vida.' },
+    { id: 'rayo_de_inti', nombre: 'Rayo de Inti', elemento: 'fuego', poder: 3.4, desc: 'El sol entero en un rayo gigante que cruza la arena.' },
+  ],
+  apukuntur: [
+    { id: 'vuelo_del_condor', nombre: 'Vuelo del cóndor', elemento: 'viento', poder: 3.0, desc: 'Se eleva fuera de alcance y cae en picada sobre el rival.' },
+    { id: 'alas_de_tormenta', nombre: 'Alas de tormenta', elemento: 'sombra', poder: 0.6, desc: 'Doce plumas oscuras en todas direcciones y un torbellino que atrae al rival.' },
+  ],
+  cuichi: [
+    { id: 'arcoiris', nombre: 'Arcoíris', elemento: 'luz', poder: 0.9, desc: 'Siete rayos de colores barren la arena uno tras otro.' },
+    { id: 'diluvio', nombre: 'Diluvio', elemento: 'agua', poder: 0.5, desc: 'Una lluvia torrencial cae sobre el rival, lo frena y daña poco a poco, y cura a Cuichi.' },
+  ],
+};
+
+/** Técnicas especiales de una especie: una por su elemento o dos si es legendaria. */
+export function especialesDe(esp: string): Especial[] {
+  return ESPECIALES_LEGENDARIOS[esp] ?? [ESPECIALES[ESPECIES[esp].elemento]];
+}
+export const CARGA_MAX = 100; // cada técnica cuesta una barra completa
+/** Barras de carga que puede acumular el Primal activo (los legendarios, dos). */
+export const cargaMax = (esp: string) => CARGA_MAX * especialesDe(esp).length;

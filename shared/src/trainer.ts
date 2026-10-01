@@ -6,15 +6,15 @@ export function xpDomador(n: number) {
   return 100 + 50 * n;
 }
 
-export interface Liga { id: string; nombre: string; trofeos: number; color: string; icono: string }
+export interface Liga { id: string; nombre: string; trofeos: number; color: string; icono: string; arena: string }
 export const LIGAS: Liga[] = [
-  { id: 'bronce', nombre: 'Liga Bronce', trofeos: 0, color: '#c98a52', icono: '🥉' },
-  { id: 'plata', nombre: 'Liga Plata', trofeos: 400, color: '#c8d0dc', icono: '🥈' },
-  { id: 'oro', nombre: 'Liga Oro', trofeos: 1000, color: '#ffcf4a', icono: '🥇' },
-  { id: 'platino', nombre: 'Liga Platino', trofeos: 1800, color: '#7ff0e0', icono: '💠' },
-  { id: 'diamante', nombre: 'Liga Diamante', trofeos: 2800, color: '#7ab8ff', icono: '💎' },
-  { id: 'maestro', nombre: 'Liga Maestro', trofeos: 4000, color: '#c77dff', icono: '👑' },
-  { id: 'campeon', nombre: 'Liga Campeón', trofeos: 5500, color: '#ff5a6a', icono: '🏆' },
+  { id: 'bronce', nombre: 'Liga Bronce', trofeos: 0, color: '#c98a52', icono: '🥉', arena: 'Estadio Malecón' },
+  { id: 'plata', nombre: 'Liga Plata', trofeos: 400, color: '#c8d0dc', icono: '🥈', arena: 'Coliseo Amazónico' },
+  { id: 'oro', nombre: 'Liga Oro', trofeos: 1000, color: '#ffcf4a', icono: '🥇', arena: 'Arena Cotopaxi' },
+  { id: 'platino', nombre: 'Liga Platino', trofeos: 1800, color: '#7ff0e0', icono: '💠', arena: 'Estadio Galápagos' },
+  { id: 'diamante', nombre: 'Liga Diamante', trofeos: 2800, color: '#7ab8ff', icono: '💎', arena: 'Plaza Quito Colonial' },
+  { id: 'maestro', nombre: 'Liga Maestro', trofeos: 4000, color: '#c77dff', icono: '👑', arena: 'Glaciar Chimborazo' },
+  { id: 'campeon', nombre: 'Liga Campeón', trofeos: 5500, color: '#ff5a6a', icono: '🏆', arena: 'Mitad del Mundo' },
 ];
 
 export function ligaDe(trofeos: number): Liga {
@@ -62,6 +62,15 @@ export const RECOMPENSAS = {
   derrota: { trofeos: -18, xpDomador: 0, monedas: 6, xpPrimal: 0 }, // perder no da experiencia
   captura: { xpDomador: 40, xpPrimal: 80 },
 };
-export const TAM_EQUIPO = 6;
+export const TAM_EQUIPO = 3; // Primales por batalla
+export const MAX_LEGENDARIOS = 1; // solo un legendario por equipo
+export const NUM_INICIALES = 3; // al empezar eliges 3 comunes
 export const DURACION_BATALLA = 180; // segundos
 export const ESPERA_CAMBIO = 3.5; // segundos entre cambios de Primal
+
+/** Legendario que se puede retar hoy (rota cada día, igual para todo el mundo). */
+export const LEGENDARIOS = ['taitachimbo', 'mamatungura', 'inti', 'apukuntur', 'cuichi'];
+export function legendarioDelDia(ahora = Date.now()) {
+  const dia = Math.floor(ahora / 86_400_000);
+  return { id: LEGENDARIOS[dia % LEGENDARIOS.length], terminaEn: (dia + 1) * 86_400_000 - ahora };
+}

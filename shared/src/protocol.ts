@@ -45,6 +45,9 @@ export interface UnidadSnap {
 export interface ProyectilSnap { id: number; x: number; y: number; vx: number; vy: number; el: string; r: number; m: string }
 export interface AvisoSnap { id: number; forma: 'circulo' | 'linea'; x: number; y: number; r: number; ang?: number; largo?: number; t: number; dur: number; el: string; lado: 0 | 1 }
 
+/** Campo persistente en el suelo (lava, remolino, hielo…): daña o frena mientras dure. */
+export interface CampoSnap { id: number; k: string; forma: 'circulo' | 'linea'; x: number; y: number; r: number; ang?: number; largo?: number; t: number; dur: number; el: string; lado: 0 | 1; tiron?: boolean }
+
 export interface EquipoSnap { hp: number[]; mhp: number[]; esp: string[]; activo: number; cambioListo: number; carga: number; combo: number }
 
 export interface Snapshot {
@@ -54,6 +57,7 @@ export interface Snapshot {
   u: UnidadSnap[];
   pj: ProyectilSnap[];
   av: AvisoSnap[];
+  cp: CampoSnap[];
   eq: [EquipoSnap, EquipoSnap];
   cds: number[]; // recargas del propio Primal activo (segundos restantes) [básico, m1..m4, esquiva]
 }
@@ -81,7 +85,13 @@ export interface InicioBatalla {
   trofeos: [number, number];
   obstaculos: Obstaculo[];
   movimientos: string[][]; // por slot de tu equipo: ids de movimientos
+  liga: string; // estadio de la batalla (según los trofeos)
 }
+
+/** Emotes que se pueden enviar al rival (stickers y frases rápidas). */
+export const EMOTES = ['risa', 'pulgar', 'enojo', 'llanto', 'sorpresa', 'amor', 'dormido', 'fiesta'] as const;
+export const FRASES = ['gg', 'bien', 'ups', 'gracias', 'vamos', 'wow'] as const;
+export type EmoteId = (typeof EMOTES)[number] | (typeof FRASES)[number];
 
 export interface FinBatalla {
   gano: boolean;
