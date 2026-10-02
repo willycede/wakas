@@ -1,4 +1,4 @@
-// Servidor de Primal Clash: cuentas, perfil, emparejamiento de la Liga, capturas y batallas.
+// Servidor de Wakas Monster: cuentas, perfil, emparejamiento de la Liga, capturas y batallas.
 
 import express from 'express';
 import http from 'node:http';
@@ -500,7 +500,7 @@ async function main() {
   const gameServer = new Server({ transport: new WebSocketTransport({ server }), greet: false });
   gameServer.define('batalla', BatallaRoom);
   await gameServer.listen(PORT);
-  console.log(`[primal-clash] Servidor listo en http://localhost:${PORT}`);
+  console.log(`[wakas] Servidor listo en http://localhost:${PORT}`);
 }
 
 main().catch((e) => {

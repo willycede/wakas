@@ -1,8 +1,8 @@
 {
-  "name": "primal-clash",
+  "name": "wakas-monster",
   "version": "0.1.0",
   "private": true,
-  "description": "Primal Clash: batallas de criaturas en tiempo real con ligas mundiales",
+  "description": "Wakas Monster: batallas de criaturas en tiempo real con ligas mundiales",
   "type": "module",
   "engines": { "node": ">=20" },
   "scripts": {

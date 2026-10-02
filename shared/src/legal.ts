@@ -9,12 +9,12 @@ export const LEGAL = {
     terminos: {
       titulo: 'Términos y Condiciones',
       secciones: [
-        ['Quiénes somos', 'Primal Clash es un videojuego en línea operado por Willy Cedeño (persona natural), con domicilio en Jipijapa, Ecuador. Contacto: willycedenodev@gmail.com.'],
+        ['Quiénes somos', 'Wakas: Monster es un videojuego en línea operado por Willy Cedeño (persona natural), con domicilio en Jipijapa, Ecuador. Contacto: willycedenodev@gmail.com.'],
         ['Aceptación', 'Al crear una cuenta aceptas estos Términos y la Política de Privacidad. Si no estás de acuerdo, no uses el juego.'],
         ['Edad', 'Debes tener al menos 13 años. Si eres menor de 18 años, necesitas el permiso de tu madre, padre o representante legal, en especial para hacer compras.'],
         ['Tu cuenta', 'Eres responsable de tu nombre de Entrenador y de tu contraseña. No compartas tu cuenta. Los nombres ofensivos, que suplanten a otra persona o que inciten al odio pueden ser cambiados o eliminados.'],
         ['Juego limpio', 'No se permiten trampas, programas que automaticen el juego, aprovechar errores, ni acosar o insultar a otros jugadores. Podemos suspender o cerrar cuentas que incumplan estas normas.'],
-        ['Contenido del juego', 'Los Primales, el arte, la música y el resto del contenido pertenecen a Primal Clash. Las monedas, los Primales y demás objetos del juego no son dinero real, no tienen valor fuera del juego y no se pueden vender ni cambiar por dinero.'],
+        ['Contenido del juego', 'Los Primales, el arte, la música y el resto del contenido pertenecen a Wakas: Monster. Las monedas, los Primales y demás objetos del juego no son dinero real, no tienen valor fuera del juego y no se pueden vender ni cambiar por dinero.'],
         ['Compras', 'Cuando el juego ofrezca compras, se procesarán a través de un proveedor de pagos externo y seguro: nunca guardamos los datos de tu tarjeta. Los precios incluirán los impuestos que correspondan y se emitirá la factura según la ley ecuatoriana. Los objetos digitales se entregan al instante; las condiciones de reembolso se indicarán antes de cada compra, respetando tus derechos como consumidor.'],
         ['Disponibilidad', 'El juego está en desarrollo: puede cambiar, tener errores o dejar de estar disponible por mantenimiento. Haremos lo posible para avisar de cambios importantes.'],
         ['Responsabilidad', 'El juego se ofrece "tal como está". En la medida que permita la ley, no somos responsables de daños indirectos derivados de su uso.'],
@@ -43,12 +43,12 @@ export const LEGAL = {
     terminos: {
       titulo: 'Terms and Conditions',
       secciones: [
-        ['Who we are', 'Primal Clash is an online video game operated by Willy Cedeño (individual), based in Jipijapa, Ecuador. Contact: willycedenodev@gmail.com.'],
+        ['Who we are', 'Wakas: Monster is an online video game operated by Willy Cedeño (individual), based in Jipijapa, Ecuador. Contact: willycedenodev@gmail.com.'],
         ['Acceptance', 'By creating an account you accept these Terms and the Privacy Policy. If you do not agree, do not use the game.'],
         ['Age', 'You must be at least 13 years old. If you are under 18, you need permission from a parent or legal guardian, especially to make purchases.'],
         ['Your account', 'You are responsible for your Trainer name and password. Do not share your account. Offensive names, impersonation or hate speech may be changed or removed.'],
         ['Fair play', 'Cheating, bots, exploiting bugs, harassing or insulting other players is not allowed. We may suspend or close accounts that break these rules.'],
-        ['Game content', 'Primals, art, music and all other content belong to Primal Clash. Coins, Primals and other in-game items are not real money, have no value outside the game and cannot be sold or exchanged for money.'],
+        ['Game content', 'Primals, art, music and all other content belong to Wakas: Monster. Coins, Primals and other in-game items are not real money, have no value outside the game and cannot be sold or exchanged for money.'],
         ['Purchases', 'When the game offers purchases, they will be processed by a secure external payment provider: we never store your card details. Prices will include applicable taxes and invoices will be issued under Ecuadorian law. Digital items are delivered instantly; refund conditions will be shown before each purchase, respecting your consumer rights.'],
         ['Availability', 'The game is in development: it may change, have bugs or be unavailable for maintenance. We will try to announce important changes.'],
         ['Liability', 'The game is provided "as is". To the extent permitted by law, we are not liable for indirect damages arising from its use.'],

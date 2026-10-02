@@ -1,4 +1,4 @@
-// Primal Clash: flujo principal (entrar -> elegir inicial -> menú -> batallas).
+// Wakas Monster: flujo principal (entrar -> elegir inicial -> menú -> batallas).
 
 import Phaser from 'phaser';
 import { DESBLOQUEO, ESPECIES, xpPrimal, type FinBatalla, type InicioBatalla, type Perfil } from '../../shared/src';

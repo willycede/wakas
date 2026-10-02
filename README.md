@@ -1,12 +1,12 @@
-# Primal Clash
+# Wakas: Monster
 
 Batallas de criaturas en tiempo real con ligas mundiales. Se juega en el navegador (PC y celular).
 
 ## Subirlo a Railway (paso a paso)
 
-1. **Sube el proyecto a GitHub** (una sola vez): crea un repositorio nuevo llamado `primal-clash` y sube esta carpeta (o pídeselo a Claude).
+1. **Sube el proyecto a GitHub** (una sola vez): crea un repositorio nuevo llamado `wakas-monster` y sube esta carpeta (o pídeselo a Claude).
 2. Entra a **railway.app** e inicia sesión con tu cuenta de GitHub.
-3. Toca **New Project → Deploy from GitHub repo** y elige `primal-clash`.
+3. Toca **New Project → Deploy from GitHub repo** y elige `wakas-monster`.
 4. En ese mismo proyecto toca **New → Database → PostgreSQL**. Así se guardan las cuentas y los trofeos.
 5. Abre el servicio del juego → pestaña **Variables** → **New Variable → Add Reference** → elige `DATABASE_URL` de la base de datos.
 6. Pestaña **Variables** → **New Variable**: `ADMIN_KEY` = una clave larga que solo tú sepas (es la clave del panel `/admin`).

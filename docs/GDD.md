@@ -1,4 +1,4 @@
-# PRIMAL CLASH — Documento de diseño (v0.3)
+# WAKAS: MONSTER — Documento de diseño (v0.3)
 
 ## 1. Visión
 Batallas de criaturas **en tiempo real** para navegador (PC y móvil) contra gente de todo el mundo.

@@ -1,4 +1,4 @@
-# Primal Clash — instrucciones del proyecto
+# Wakas: Monster — instrucciones del proyecto
 
 ## Contexto del dueño
 - **El dueño no programa.** Claude construye todo: código, arte, balance, base de datos y despliegue.
