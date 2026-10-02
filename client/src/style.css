@@ -600,3 +600,70 @@ input:focus { outline: none; box-shadow: inset 0 0 0 2px var(--gold), 0 0 0 4px 
   .f-titulo h2 { font-size: 28px; }
   #bh-tuto { width: 84vw; top: 74px; } #bh-tuto p { font-size: 13px; }
 }
+
+/* ---------- pantalla de evolución ---------- */
+#evolucion { --c: #ffc940; position: fixed; inset: 0; z-index: 70; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 20px;
+  background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--c) 28%, #120c26) 0%, #07040f 70%); }
+.ev-rayos { position: absolute; left: 50%; top: 40%; width: 220vmax; height: 220vmax; transform: translate(-50%, -50%); opacity: .35; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--c) 60%, transparent) 0deg 6deg, transparent 6deg 18deg); animation: gira 40s linear infinite;
+  -webkit-mask: radial-gradient(circle, #000 0%, transparent 55%); mask: radial-gradient(circle, #000 0%, transparent 55%); transition: opacity .6s; }
+.ev.brilla .ev-rayos { opacity: .7; animation-duration: 8s; }
+.ev-texto { position: relative; font-family: var(--display); font-size: 30px; text-align: center; text-shadow: 0 3px 0 rgba(0,0,0,.5); animation: aparece .4s ease-out; min-height: 40px; }
+.ev-texto b { color: var(--c); font-weight: 400; }
+.ev-escena { position: relative; width: 300px; height: 280px; display: flex; align-items: flex-end; justify-content: center; }
+.ev-halo { position: absolute; left: 50%; bottom: 30px; width: 240px; height: 240px; transform: translate(-50%, 0) scale(.6); border-radius: 50%; opacity: 0;
+  background: radial-gradient(circle, #fff 0%, color-mix(in srgb, var(--c) 70%, #fff) 30%, transparent 68%); transition: opacity .7s, transform .7s; }
+.ev.brilla .ev-halo { opacity: .85; transform: translate(-50%, 0) scale(1); animation: latido .5s ease-in-out infinite; }
+.ev-spr { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); height: 220px; image-rendering: pixelated; transition: filter .5s, opacity .08s; }
+.ev-viejo { animation: flota 2.6s ease-in-out infinite; }
+.ev-nuevo { opacity: 0; }
+/* brillo: el Primal se vuelve una silueta blanca */
+.ev.brilla .ev-spr { filter: brightness(0) invert(1) drop-shadow(0 0 18px #fff) drop-shadow(0 0 40px var(--c)); }
+.ev.cambiando .ev-viejo { opacity: 1; } .ev.cambiando.ver-nuevo .ev-viejo { opacity: 0; }
+.ev.cambiando.ver-nuevo .ev-nuevo { opacity: 1; }
+.ev-flash { position: absolute; inset: -400px; background: #fff; opacity: 0; pointer-events: none; }
+.ev.estalla .ev-flash { animation: evflash .9s ease-out forwards; }
+@keyframes evflash { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
+.ev-chispas i { position: absolute; left: 50%; bottom: 120px; width: 10px; height: 10px; border-radius: 2px; background: #fff; box-shadow: 0 0 10px var(--c); opacity: 0; }
+.ev.estalla .ev-chispas i { animation: evchispa .9s ease-out forwards; }
+@keyframes evchispa { 0% { opacity: 1; transform: rotate(var(--a)) translateY(0) scale(1.4); } 100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--d) * -1)) scale(.3); } }
+/* revelado: la nueva forma a todo color */
+.ev.revelado .ev-halo { opacity: .45; animation: none; transform: translate(-50%, 0) scale(1.15); }
+.ev.revelado .ev-viejo { opacity: 0; }
+.ev.revelado .ev-nuevo { opacity: 1; filter: drop-shadow(0 0 20px color-mix(in srgb, var(--c) 80%, transparent)); animation: evaparece .6s cubic-bezier(.2,1.6,.4,1), flota 3s ease-in-out .6s infinite; }
+@keyframes evaparece { from { transform: translateX(-50%) scale(.4); } to { transform: translateX(-50%) scale(1); } }
+.ev-info { position: relative; width: min(520px, 94vw); display: none; flex-direction: column; align-items: center; gap: 12px; }
+.ev.revelado .ev-info { display: flex; animation: aparece .5s ease-out .2s both; }
+.ev-nombre { text-align: center; }
+.ev-nombre h2 { font-family: var(--display); font-weight: 400; font-size: 44px; margin: 0 0 6px; color: #fff; text-shadow: 0 4px 0 rgba(0,0,0,.4), 0 0 24px var(--c); }
+.ev-nombre .tipos { justify-content: center; }
+.el.nuevo { box-shadow: inset 0 0 0 1px var(--c), 0 0 10px var(--c); animation: latido 1s ease-in-out infinite; }
+.ev-stats { width: 100%; display: grid; gap: 6px; padding: 12px 14px; border-radius: 14px; background: rgba(0,0,0,.35); box-shadow: inset 0 0 0 1px var(--line); }
+.ev-stat { display: grid; grid-template-columns: 76px 1fr 42px 46px; gap: 8px; align-items: center; font-size: 12px; font-weight: 800; color: var(--muted); }
+.ev-stat .bar { position: relative; height: 8px; border-radius: 4px; background: rgba(255,255,255,.08); overflow: hidden; }
+.ev-stat .b0, .ev-stat .b1 { position: absolute; inset: 0 auto 0 0; border-radius: 4px; }
+.ev-stat .b1 { width: 0; background: linear-gradient(90deg, var(--good), #a8ffcf); animation: evbarra 1s ease-out .6s forwards; }
+.ev-stat .b0 { background: color-mix(in srgb, var(--c) 80%, #fff); z-index: 1; }
+@keyframes evbarra { to { width: var(--w); } }
+.ev-stat b { color: var(--text); text-align: right; font-variant-numeric: tabular-nums; }
+.ev-stat em { font-style: normal; color: var(--good); font-weight: 900; }
+.ev-extras { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.ev-extra { --m: var(--gold); display: flex; gap: 8px; align-items: center; padding: 8px 12px; border-radius: 12px; font-size: 20px; color: var(--m); background: rgba(0,0,0,.3); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--m) 50%, transparent); }
+.ev-extra small { display: block; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); }
+.ev-extra b { display: block; font-size: 14px; color: var(--text); }
+.ev-extra span { display: block; font-size: 11px; color: var(--muted); max-width: 240px; }
+.ev-saltar { position: absolute; top: max(14px, env(safe-area-inset-top)); right: 14px; border: 0; cursor: pointer; padding: 7px 14px; border-radius: 999px; font-weight: 800; font-size: 13px; color: var(--muted); background: rgba(255,255,255,.08); }
+.ev.revelado .ev-saltar { display: none; }
+@media (max-height: 640px) {
+  .ev-escena { height: 190px; } .ev-spr { height: 150px; } .ev-halo { width: 170px; height: 170px; }
+  .ev-texto { font-size: 22px; } .ev-nombre h2 { font-size: 32px; }
+}
+
+/* ficha: línea evolutiva más clara */
+.f-evo { gap: 6px; }
+.f-evo-item { position: relative; padding: 10px 12px 8px; min-width: 92px; }
+.f-evo-item img { height: 62px; transition: transform .15s; }
+.f-evo-item:hover img { transform: translateY(-3px); }
+.f-evo-item.on { background: linear-gradient(180deg, rgba(255,201,64,.18), rgba(0,0,0,.2)); }
+.f-flecha { padding: 0 2px; }
+.f-flecha .ic { font-size: 20px; animation: flota 2s ease-in-out infinite; }

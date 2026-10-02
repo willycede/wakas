@@ -3,6 +3,7 @@
 import Phaser from 'phaser';
 import { DESBLOQUEO, ESPECIES, xpPrimal, type FinBatalla, type InicioBatalla, type Perfil } from '../../shared/src';
 import { dialogo } from './ficha';
+import { mostrarEvoluciones } from './evolucion';
 import { nombreMov } from './i18n';
 import { api, getToken, setToken, spriteUrl } from './api';
 import { BatallaScene } from './battle';
@@ -66,6 +67,7 @@ async function empezarTutorial() {
   try { const r = await api.tutorial(); await menu.onBatalla(r.roomId); } catch (e: any) { toast(e.message, true); }
 }
 menu.onTutorial = () => void empezarTutorial();
+(window as any).__evo = mostrarEvoluciones; // para depurar
 
 /** Enlace de reto amistoso (?reto=CÓDIGO): entra directo a la batalla. */
 function retoPendiente() {
@@ -132,6 +134,9 @@ async function terminar(r: FinBatalla) {
   sc?.cerrar();
   game?.scene.stop('batalla');
   await conexion?.salir();
+  // primero, la pantalla de evolución de cada Primal que evolucionó
+  const evos = r.xpPrimales.filter((x) => x.evoluciono).map((x) => ({ de: x.esp, a: x.evoluciono!, nivel: x.nivel }));
+  if (evos.length) await mostrarEvoluciones(evos);
   const clase = r.empate ? 'draw' : r.gano ? 'win' : 'lose';
   const titulo = r.empate ? t('res.draw') : r.gano ? (r.capturado ? t('res.caught') : t('res.win')) : t('res.lose');
   const motivo = r.motivo === 'tiempo' ? t('res.time') : r.motivo === 'abandono' ? (r.gano ? t('res.left') : '') : r.motivo === 'rendicion' ? t('res.surrender') : '';
