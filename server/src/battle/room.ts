@@ -2,17 +2,17 @@
 // Captura: un Domador contra un Primal salvaje (con IA). 20 ticks por segundo.
 
 import { Room, type Client } from 'colyseus';
-import { ARENA, EMOTES, ESPECIES, FRASES, TICK_MS, ligaDe, type InicioBatalla, type Obstaculo } from '../../../shared/src';
+import { ARENA, EMOTES, ESPECIES, FRASES, TICK_MS, ligaDe, type FinBatalla, type InicioBatalla, type Obstaculo } from '../../../shared/src';
 import type { Domador } from '../db';
 import { mods, recompensar } from '../progress';
 import { domadores, store } from '../services';
 import { IA } from './ai';
 import { Batalla, crearUnidad, type Unidad } from './engine';
 
-export interface Participante { id: number | null; nombre: string; trofeos: number; equipo: { uid: string; esp: string; nivel: number }[]; ia?: number }
+export interface Participante { id: number | null; nombre: string; trofeos: number; equipo: { uid: string; esp: string; nivel: number }[]; ia?: number; pasivo?: boolean }
 
 export interface OpcionesBatalla {
-  modo: 'liga' | 'captura';
+  modo: 'liga' | 'captura' | 'tutorial' | 'amistosa';
   lados: [Participante, Participante];
   especieSalvaje?: string;
   costo?: number;
@@ -38,15 +38,23 @@ export class BatallaRoom extends Room {
   clientes = new Map<string, 0 | 1>();
   acks: [number, number] = [0, 0];
   private fin = false;
+  private nivelMax = 99;
   private inicio = 0;
   private uids: [Set<string>, Set<string>] = [new Set(), new Set()];
 
   onCreate(opts: OpcionesBatalla) {
     this.opts = opts;
     this.setPrivate(true);
-    const equipos = opts.lados.map((p, l) => p.equipo.map((e) => crearUnidad(e.esp, e.nivel, l === 0 ? this.modsDe(p) : this.modsDe(p)))) as [Unidad[], Unidad[]];
-    this.b = new Batalla(equipos[0], equipos[1], this.modsDe(opts.lados[0]), this.modsDe(opts.lados[1]), obstaculos());
-    opts.lados.forEach((p, l) => { if (p.ia !== undefined) this.ias.push(new IA(this.b, l as 0 | 1, p.ia)); });
+    // en la Liga y en las amistosas los Primales pelean como mucho al nivel máximo de la liga
+    this.nivelMax = opts.modo === 'liga' || opts.modo === 'amistosa' ? ligaDe(Math.max(opts.lados[0].trofeos, opts.lados[1].trofeos)).nivelMax : 99;
+    const equipos = opts.lados.map((p) => p.equipo.map((e) => crearUnidad(e.esp, Math.min(e.nivel, this.nivelMax), this.modsDe(p)))) as [Unidad[], Unidad[]];
+    this.b = new Batalla(equipos[0], equipos[1], this.modsDe(opts.lados[0]), this.modsDe(opts.lados[1]), opts.modo === 'tutorial' ? [] : obstaculos());
+    opts.lados.forEach((p, l) => { if (p.ia !== undefined && !p.pasivo) this.ias.push(new IA(this.b, l as 0 | 1, p.ia)); });
+    if (opts.modo === 'tutorial') {
+      // el muñeco de práctica aguanta hasta el último paso del tutorial
+      const m = this.b.lados[1].unidades[0];
+      m.mhp *= 8; m.hp = m.mhp;
+    }
     opts.lados.forEach((p, l) => { if (p.equipo[0]) this.uids[l].add(p.equipo[0].uid); });
     this.onMessage('in', (c, m) => {
       const l = this.clientes.get(c.sessionId);
@@ -76,6 +84,13 @@ export class BatallaRoom extends Room {
       const u = this.b.lados[l].unidades[this.b.lados[l].activo];
       const eq = this.opts.lados[l].equipo[this.b.lados[l].activo];
       if (u && eq) this.uids[l].add(eq.uid);
+    });
+    // tutorial: llenar la barra para practicar la técnica especial y debilitar al muñeco al final
+    this.onMessage('tutorial', (c, m) => {
+      const l = this.clientes.get(c.sessionId);
+      if (l === undefined || this.opts.modo !== 'tutorial') return;
+      if (m?.paso === 'carga') this.b.lados[l].carga = 100;
+      if (m?.paso === 'final') { const u = this.b.lados[1].unidades[0]; u.mhp = Math.round(u.mhp / 8); u.hp = Math.min(u.hp, Math.round(u.mhp * 0.6)); }
     });
     // truco de prueba (solo en local): llena la barra de técnicas especiales
     if (!process.env.DATABASE_URL && !process.env.RAILWAY_ENVIRONMENT) {
@@ -114,6 +129,7 @@ export class BatallaRoom extends Room {
       nombres: [o.lados[0].nombre, o.lados[1].nombre], trofeos: [o.lados[0].trofeos, o.lados[1].trofeos], obstaculos: this.b.obstaculos,
       movimientos: o.lados[auth.lado].equipo.map((e) => ESPECIES[e.esp].movimientos),
       liga: ligaDe(Math.max(o.lados[0].trofeos, o.lados[1].trofeos)).id,
+      nivelMax: this.nivelMax < 99 ? this.nivelMax : undefined,
     };
     c.send('inicio', init);
     // la batalla empieza 3 s después de que estén todos
@@ -183,6 +199,14 @@ export class BatallaRoom extends Room {
       if (!d) continue;
       const gano = t.ganador === l;
       const empate = t.ganador === -1;
+      if (this.opts.modo === 'amistosa' || this.opts.modo === 'tutorial') {
+        // sin trofeos ni experiencia; el tutorial regala 200 monedas la primera vez
+        let monedas = 0;
+        if (this.opts.modo === 'tutorial' && gano && !d.tutorial) { monedas = 200; d.monedas += monedas; d.tutorial = true; await domadores.guardar(d); }
+        const res: FinBatalla = { gano, empate, motivo: t.motivo, trofeos: 0, monedas, xpDomador: 0, xpPrimales: [], medallasNuevas: [], nivelDomador: d.nivel, subioDomador: 0 };
+        for (const c of this.clients) if (this.clientes.get(c.sessionId) === l) c.send('fin', res);
+        continue;
+      }
       let capturado: string | undefined;
       if (this.opts.modo === 'captura' && gano && this.opts.especieSalvaje) capturado = this.opts.especieSalvaje;
       const res = recompensar(d, gano, empate, this.opts.modo, [...this.uids[l]], capturado);

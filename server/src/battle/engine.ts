@@ -5,7 +5,7 @@
 
 import {
   ARENA, CARGA_MAX, DURACION_BATALLA, ESPECIALES, ESPECIALES_LEGENDARIOS, ESPECIES, ESPERA_CAMBIO, HABILIDADES, MOVIMIENTOS, RADIO_PRIMAL, TICK_MS,
-  cargaMax, efectividad, especialesDe, moverEnArena, statsPrimal, tipos, velocidadMover, ST, type AvisoSnap, type CampoSnap, type Estado, type Fx,
+  cargaMax, efectividad, especialesDe, movDesbloqueado, moverEnArena, statsPrimal, tipos, velocidadMover, ST, type AvisoSnap, type CampoSnap, type Estado, type Fx,
   type Habilidad, type Movimiento, type Obstaculo, type ProyectilSnap, type Snapshot, type UnidadSnap,
 } from '../../../shared/src';
 
@@ -159,6 +159,7 @@ export class Batalla {
     if (u.hp <= 0 || this.t < u.accionHasta || this.t < u.paralisisHasta) return;
     if (i === 6 || i === 7) return this.especial(l, u, i - 6);
     if (u.cds[i] > 0) return;
+    if (i >= 1 && i <= 4 && !movDesbloqueado(u.esp, i, u.nivel)) return; // aún no lo ha aprendido
     const rival = this.activa(l === 0 ? 1 : 0);
     let ang = u.fa;
     let tx: number, ty: number;
@@ -167,6 +168,7 @@ export class Batalla {
     if (objetivo) { ang = Math.atan2(objetivo.y - u.y, objetivo.x - u.x); tx = objetivo.x; ty = objetivo.y; }
     else if (rival.hp > 0 && dr < 460 && angDif(angR, u.fa) < 0.7) { ang = angR; tx = rival.x; ty = rival.y; }
     else { tx = u.x + Math.cos(ang) * 200; ty = u.y + Math.sin(ang) * 200; }
+    const apuntado = !!objetivo || (tx === rival.x && ty === rival.y);
     u.fa = ang;
     const e = ESPECIES[u.esp];
     const enfria = this.lados[l].mods.enfriaMult;
@@ -190,7 +192,7 @@ export class Batalla {
     const enlace = this.t < u.enlaceHasta;
     u.enlaceHasta = 0;
     this.fx.push({ k: 'mov', lado: l, id: mov.id, x: r1(u.x), y: r1(u.y), ang: r2(ang), enlace: enlace || undefined });
-    this.usar(l, u, mov, ang, tx, ty, enlace ? 1.3 : 1);
+    this.usar(l, u, mov, ang, tx, ty, enlace ? 1.3 : 1, apuntado);
   }
 
   // ---------------------------------------------------------------- técnicas especiales
@@ -223,17 +225,15 @@ export class Batalla {
       if (n > 0) this.fx.push({ k: 'cura', lado: l, x: r1(u.x), y: r1(u.y), n });
     };
     const vivo = () => !this.terminado && u.hp > 0 && this.activa(l) === u;
-    const cerca = (x: number, y: number, d: number) => {
-      const a = Math.random() * Math.PI * 2, r = Math.random() * d;
-      return { x: x + Math.cos(a) * r, y: y + Math.sin(a) * r };
-    };
+    /** Punto a d píxeles delante (y lat a un lado) desde donde se lanzó. */
+    const delante = (d: number, lat = 0) => ({ x: ox + dx * d - dy * lat, y: oy + dy * d + dx * lat });
     // pose de lanzamiento: invulnerable durante la preparación
     u.invulnHasta = this.t + 0.6;
     u.accionHasta = this.t + 0.55;
     u.anim = 'mov'; u.animHasta = this.t + 0.6;
-    this.fx.push({ k: 'especial', lado: l, id: sp.id, el: sp.elemento, x: r1(u.x), y: r1(u.y), ang: r2(ang) });
     const ox = u.x, oy = u.y;
     const dx = Math.cos(ang), dy = Math.sin(ang);
+    this.fx.push({ k: 'especial', lado: l, id: sp.id, el: sp.elemento, x: r1(u.x), y: r1(u.y), ang: r2(ang) });
     switch (sp.id) {
       // ------------------------------------------------ una por elemento
       case 'supernova':
@@ -250,32 +250,28 @@ export class Batalla {
       case 'maremoto':
         [-0.42, 0, 0.42].forEach((d, i) => this.programar(i * 0.22, () =>
           aviso('linea', ox, oy, 60, 0.5, mov(0.8, { tipo: 'rayo', empuje: 220 }), { ang: ang + d, largo: 440 })));
-        this.programar(0.95, () => {
-          const r = rival();
-          const p = Math.hypot(r.x - ox, r.y - oy) < 480 ? r : { x: ox + dx * 360, y: oy + dy * 360 };
-          campo('circulo', p.x, p.y, 115, 3, mov(0.1, { estado: 'lento', probEstado: 1 }), { tiron: 150, k: 'remolino' });
-        });
+        this.programar(0.95, () => { const p = delante(330); campo('circulo', p.x, p.y, 115, 3, mov(0.1, { estado: 'lento', probEstado: 1 }), { tiron: 150, k: 'remolino' }); });
         break;
       case 'jardin_espinoso': {
-        const aR = Math.atan2(r0.y - oy, r0.x - ox);
-        for (let i = 1; i <= 6; i++) aviso('circulo', ox + Math.cos(aR) * 72 * i, oy + Math.sin(aR) * 72 * i, 50, 0.3 + i * 0.12, mov(0.45, { estado: 'veneno', probEstado: 0.5, empuje: 30 }));
-        this.programar(1.1, () => { const r = rival(); campo('circulo', r.x, r.y, 135, 3.5, mov(0.1, { estado: 'veneno', probEstado: 0.4 }), { k: 'espinas' }); });
+        for (let i = 1; i <= 6; i++) { const p = delante(72 * i); aviso('circulo', p.x, p.y, 50, 0.3 + i * 0.12, mov(0.45, { estado: 'veneno', probEstado: 0.5, empuje: 30 })); }
+        this.programar(1.1, () => { const p = delante(300); campo('circulo', p.x, p.y, 135, 3.5, mov(0.1, { estado: 'veneno', probEstado: 0.4 }), { k: 'espinas' }); });
         curar(0.2);
         break;
       }
       case 'tormenta':
+        // seis relámpagos avanzando en zigzag frente al Primal; el último, el más grande
         for (let i = 0; i < 6; i++) {
-          this.programar(i * 0.34, () => {
-            if (!vivo()) return;
-            const p = cerca(rival().x, rival().y, i === 5 ? 0 : 30);
-            aviso('circulo', p.x, p.y, i === 5 ? 90 : 60, 0.5, mov(i === 5 ? 2.2 : 1, { estado: 'paralisis', probEstado: i === 5 ? 1 : 0.25 }));
-          });
+          const p = delante(70 + i * 62, i === 5 ? 0 : (i % 2 ? 38 : -38));
+          aviso('circulo', p.x, p.y, i === 5 ? 90 : 58, 0.45 + i * 0.22, mov(i === 5 ? 2.2 : 1, { estado: 'paralisis', probEstado: i === 5 ? 1 : 0.25 }));
         }
         break;
-      case 'meteoro':
-        for (let i = 0; i < 5; i++) { const p = cerca(r0.x, r0.y, 140); aviso('circulo', p.x, p.y, 55, 0.6 + i * 0.15, mov(0.7)); }
-        this.programar(0.9, () => { const r = rival(); aviso('circulo', r.x, r.y, 120, 0.9, mov(2.4, { estado: 'paralisis', probEstado: 1, empuje: 100 })); });
+      case 'meteoro': {
+        // tres meteoros en fila y uno gigante al final de la línea
+        for (let i = 0; i < 3; i++) { const p = delante(110 + i * 85); aviso('circulo', p.x, p.y, 55, 0.6 + i * 0.15, mov(0.7)); }
+        const p = delante(340);
+        aviso('circulo', p.x, p.y, 115, 1.4, mov(2.4, { estado: 'paralisis', probEstado: 1, empuje: 100 }));
         break;
+      }
       case 'huracan': {
         const dur = 0.3, largo = 320;
         u.dash = { vx: dx * largo / dur, vy: dy * largo / dur, hasta: this.t + dur, mov: mov(0.6, { tipo: 'embestida', radio: 34 }), golpeados: new Set(),
@@ -290,17 +286,19 @@ export class Batalla {
       }
       case 'eclipse': {
         u.invulnHasta = this.t + 1.2;
+        // si el rival está enfrente y cerca, aparece a su espalda; si no, avanza 240 px en línea recta
+        const enfrente = dr < 340 && angDif(angR, ang) < 0.8;
         this.programar(0.35, () => {
           if (!vivo()) return;
-          const r = rival();
-          const a = Math.atan2(r.y - u.y, r.x - u.x);
+          const r = enfrente ? rival() : delante(240);
+          const a = enfrente ? Math.atan2(r.y - u.y, r.x - u.x) : ang;
           const p = moverEnArena(r.x, r.y, Math.cos(a) * 48, Math.sin(a) * 48, this.obstaculos);
           u.x = p.x; u.y = p.y; u.fa = a + Math.PI;
           this.fx.push({ k: 'cambio', lado: l, esp: u.esp, x: r1(u.x), y: r1(u.y), silencioso: true });
           for (let j = 0; j < 3; j++) {
             this.programar(0.05 + j * 0.2, () => {
               if (!vivo()) return;
-              const r2_ = rival();
+              const r2_ = enfrente ? rival() : delante(240);
               u.anim = 'basico'; u.animHasta = this.t + 0.15;
               aviso('circulo', r2_.x, r2_.y, 75, 0.1, mov(j === 2 ? 1.5 : 0.8, j === 2 ? { estado: 'veneno', probEstado: 1, empuje: 90 } : {}));
             });
@@ -344,8 +342,10 @@ export class Batalla {
         u.escudoHasta = this.t + 6;
         break;
       case 'furia_volcanica':
+        // siete bombas en abanico delante: cerca, lejos, cerca…
         for (let i = 0; i < 7; i++) {
-          const p = i < 3 ? cerca(r0.x, r0.y, 40) : cerca(r0.x, r0.y, 250);
+          const a = ang + (i - 3) * 0.22, d = i % 2 ? 300 : 190;
+          const p = { x: ox + Math.cos(a) * d, y: oy + Math.sin(a) * d };
           const dur = 0.7 + i * 0.12;
           aviso('circulo', p.x, p.y, 70, dur, mov(0.75, { estado: 'quemadura', probEstado: 0.6 }));
           this.programar(dur, () => campo('circulo', p.x, p.y, 60, 3, mov(0.08, { estado: 'quemadura', probEstado: 0.3 }), { k: 'lava' }));
@@ -369,10 +369,11 @@ export class Batalla {
         u.accionHasta = this.t + 1.4;
         u.vueloHasta = this.t + 1.3;
         u.anim = 'vuelo'; u.animHasta = this.t + 1.3;
+        // cae a 260 px delante (si el rival está enfrente y a tiro, justo sobre él)
+        const caida = dr < 380 && angDif(angR, ang) < 0.7 ? { x: r0.x, y: r0.y } : delante(260);
         this.programar(0.8, () => {
           if (!vivo()) return;
-          const r = rival();
-          const p = { x: r.x, y: r.y };
+          const p = caida;
           aviso('circulo', p.x, p.y, 110, 0.5, mov(1, { empuje: 160 }));
           this.programar(0.48, () => { if (vivo()) { const q = moverEnArena(p.x, p.y, 0, 0, this.obstaculos); u.x = q.x; u.y = q.y; } });
         });
@@ -381,7 +382,7 @@ export class Batalla {
       case 'alas_de_tormenta': {
         const pluma = mov(1, { tipo: 'proyectil', estado: 'veneno', probEstado: 0.3 });
         for (let i = 0; i < 12; i++) this.disparar(l, u, pluma, ang + (i / 12) * Math.PI * 2, 380, 12, 520, 1);
-        this.programar(0.3, () => { const r = rival(); campo('circulo', r.x, r.y, 150, 2.5, mov(0.13, { estado: 'lento', probEstado: 1 }), { tiron: 210, k: 'torbellino' }); });
+        this.programar(0.3, () => { const p = delante(240); campo('circulo', p.x, p.y, 150, 2.5, mov(0.13, { estado: 'lento', probEstado: 1 }), { tiron: 210, k: 'torbellino' }); });
         break;
       }
       case 'arcoiris':
@@ -390,8 +391,8 @@ export class Batalla {
         });
         break;
       case 'diluvio': {
-        const r = rival();
-        campo('circulo', r.x, r.y, 200, 4, mov(0.12, { estado: 'lento', probEstado: 1 }), { k: 'lluvia' });
+        const p = delante(230);
+        campo('circulo', p.x, p.y, 190, 4, mov(0.12, { estado: 'lento', probEstado: 1 }), { k: 'lluvia' });
         curar(0.2);
         break;
       }
@@ -461,7 +462,7 @@ export class Batalla {
     }
   }
 
-  private usar(l: 0 | 1, u: Unidad, mov: Movimiento, ang: number, tx: number, ty: number, mult: number) {
+  private usar(l: 0 | 1, u: Unidad, mov: Movimiento, ang: number, tx: number, ty: number, mult: number, apuntado = false) {
     switch (mov.tipo) {
       case 'proyectil':
         this.disparar(l, u, mov, ang, mov.alcance, mov.radio ?? 10, mov.velocidad ?? 400, mult, !!mov.atraviesa);
@@ -485,10 +486,13 @@ export class Batalla {
         this.fx.push({ k: 'estalla', id: mov.id, forma: 'circulo', x: r1(u.x), y: r1(u.y), r: mov.alcance, el: mov.elemento });
         break;
       case 'zona': {
-        const d = Math.min(mov.alcance, Math.hypot(tx - u.x, ty - u.y));
-        const zx = clamp(u.x + Math.cos(ang) * d, 0, ARENA.w), zy = clamp(u.y + Math.sin(ang) * d, 0, ARENA.h);
+        // siempre en línea recta delante del Primal: sobre el rival si lo tiene enfrente y a tiro,
+        // si no, a una distancia fija. Con patrón 'pasos': tres círculos que avanzan.
         const dur = mov.preparacion ?? 0.8;
-        this.avisos.push({ id: this.seq++, lado: l, forma: 'circulo', x: zx, y: zy, r: mov.radio ?? 70, hasta: this.t + dur, dur, mov, poder: mult });
+        const pon = (d: number, extra: number) => this.avisos.push({ id: this.seq++, lado: l, forma: 'circulo', x: clamp(u.x + Math.cos(ang) * d, 0, ARENA.w), y: clamp(u.y + Math.sin(ang) * d, 0, ARENA.h),
+          r: mov.radio ?? 70, hasta: this.t + dur + extra, dur: dur + extra, mov, poder: mult });
+        if (mov.patron === 'pasos') [0.35, 0.65, 0.95].forEach((k, j) => pon(mov.alcance * k, j * 0.15));
+        else pon(Math.min(mov.alcance, apuntado ? Math.hypot(tx - u.x, ty - u.y) : mov.alcance * 0.65), 0);
         break;
       }
       case 'rayo': {

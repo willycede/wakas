@@ -1,7 +1,9 @@
 // Primal Clash: flujo principal (entrar -> elegir inicial -> menú -> batallas).
 
 import Phaser from 'phaser';
-import { ESPECIES, xpPrimal, type FinBatalla, type InicioBatalla, type Perfil } from '../../shared/src';
+import { DESBLOQUEO, ESPECIES, xpPrimal, type FinBatalla, type InicioBatalla, type Perfil } from '../../shared/src';
+import { dialogo } from './ficha';
+import { nombreMov } from './i18n';
 import { api, getToken, setToken, spriteUrl } from './api';
 import { BatallaScene } from './battle';
 import { alCambiarIdioma, aplicarHtml, cambiarIdioma, idioma, medalla, t, tError } from './i18n';
@@ -53,6 +55,27 @@ function mostrarLogin() {
   ($('login-pass') as HTMLInputElement).onkeydown = (e) => { if (e.key === 'Enter') void go(false); };
 }
 
+/** Primera vez: ofrece el tutorial (se puede saltar y repetir desde la pestaña Domador). */
+function ofrecerTutorial() {
+  dialogo(t('tuto.offer'), t('tuto.offerTxt'), [
+    { texto: t('tuto.start'), clase: 'primary big', fn: () => void empezarTutorial() },
+    { texto: t('tuto.skip'), clase: 'ghost', fn: () => void api.saltarTutorial().then((p) => menu.setPerfil(p)) },
+  ]);
+}
+async function empezarTutorial() {
+  try { const r = await api.tutorial(); await menu.onBatalla(r.roomId); } catch (e: any) { toast(e.message, true); }
+}
+menu.onTutorial = () => void empezarTutorial();
+
+/** Enlace de reto amistoso (?reto=CÓDIGO): entra directo a la batalla. */
+function retoPendiente() {
+  const c = new URLSearchParams(location.search).get('reto');
+  if (!c) return false;
+  history.replaceState(null, '', location.pathname);
+  void menu.unirseReto(c);
+  return true;
+}
+
 async function arrancar() {
   let p: Perfil;
   try {
@@ -67,11 +90,13 @@ async function arrancar() {
       repintarInicial = null;
       menu.setPerfil(np);
       menu.open();
-      toast(t('starter.joined', { n: ESPECIES[np.primales[0].esp].nombre }));
+      toast(t('starter.joined'));
+      if (!retoPendiente()) ofrecerTutorial();
     });
     return;
   }
   menu.open();
+  if (!retoPendiente() && !p.tutorial) ofrecerTutorial();
 }
 
 menu.onBatalla = async (roomId) => {
@@ -120,6 +145,11 @@ async function terminar(r: FinBatalla) {
         <div class="lvbar"><div style="width:0%" data-w="${Math.min(100, (x.xp / Math.max(1, xpPrimal(x.nivel))) * 100)}"></div></div></div>
       <span class="gain">+${x.xp} XP</span></div>`;
   }).join('');
+  // movimientos nuevos aprendidos al subir de nivel
+  const aprendidos = r.xpPrimales.flatMap((x) => {
+    const esp = x.evoluciono ?? x.esp, antes = x.nivel - x.subio;
+    return DESBLOQUEO.map((nv, i) => (antes < nv && x.nivel >= nv && i > 0 ? `<div class="banner-line">${icono('estrella')}${esc(t('res.newMove', { p: ESPECIES[esp].nombre, m: nombreMov(ESPECIES[esp].movimientos[i]) }))}</div>` : '')).filter(Boolean);
+  }).join('');
   const medallas = r.medallasNuevas.map((id) => `<div class="banner-line">${icono('medalla')}${esc(t('res.medal', { n: medalla(id).nombre }))}</div>`).join('');
   const panel = $('result-body');
   panel.style.setProperty('--glow', r.gano ? 'rgba(255,201,64,.35)' : r.empate ? 'rgba(120,180,255,.3)' : 'rgba(150,120,220,.22)');
@@ -133,7 +163,7 @@ async function terminar(r: FinBatalla) {
       ${r.xpDomador ? recompensa('xp', 'estrella', `+${r.xpDomador}`, 'XP') : ''}
     </div>
     ${r.subioDomador ? `<div class="banner-line">${icono('crecer')}${t('res.levelUp', { n: r.nivelDomador })}</div>` : ''}
-    ${medallas}
+    ${medallas}${aprendidos}
     ${!r.gano && !r.empate ? `<div class="banner-line info">${t('res.noXp')}</div>` : ''}
     ${xp ? `<div class="xp-list">${xp}</div>` : ''}
     <button class="btn primary big" id="btn-continuar">${t('res.continue')}</button>`;
@@ -149,6 +179,9 @@ async function terminar(r: FinBatalla) {
     menu.open();
   };
 }
+
+// se puede instalar como app (Android: "Añadir a pantalla de inicio")
+if ('serviceWorker' in navigator) window.addEventListener('load', () => void navigator.serviceWorker.register('/sw.js').catch(() => {}));
 
 if (getToken()) void arrancar();
 else mostrarLogin();

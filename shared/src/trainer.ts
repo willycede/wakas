@@ -6,16 +6,22 @@ export function xpDomador(n: number) {
   return 100 + 50 * n;
 }
 
-export interface Liga { id: string; nombre: string; trofeos: number; color: string; icono: string; arena: string }
+export interface Liga { id: string; nombre: string; trofeos: number; color: string; icono: string; arena: string; nivelMax: number }
 export const LIGAS: Liga[] = [
-  { id: 'bronce', nombre: 'Liga Bronce', trofeos: 0, color: '#c98a52', icono: '🥉', arena: 'Estadio Malecón' },
-  { id: 'plata', nombre: 'Liga Plata', trofeos: 400, color: '#c8d0dc', icono: '🥈', arena: 'Coliseo Amazónico' },
-  { id: 'oro', nombre: 'Liga Oro', trofeos: 1000, color: '#ffcf4a', icono: '🥇', arena: 'Arena Cotopaxi' },
-  { id: 'platino', nombre: 'Liga Platino', trofeos: 1800, color: '#7ff0e0', icono: '💠', arena: 'Estadio Galápagos' },
-  { id: 'diamante', nombre: 'Liga Diamante', trofeos: 2800, color: '#7ab8ff', icono: '💎', arena: 'Plaza Quito Colonial' },
-  { id: 'maestro', nombre: 'Liga Maestro', trofeos: 4000, color: '#c77dff', icono: '👑', arena: 'Glaciar Chimborazo' },
-  { id: 'campeon', nombre: 'Liga Campeón', trofeos: 5500, color: '#ff5a6a', icono: '🏆', arena: 'Mitad del Mundo' },
+  { id: 'bronce', nombre: 'Liga Bronce', trofeos: 0, color: '#c98a52', icono: '🥉', arena: 'Estadio Malecón', nivelMax: 12 },
+  { id: 'plata', nombre: 'Liga Plata', trofeos: 400, color: '#c8d0dc', icono: '🥈', arena: 'Coliseo Amazónico', nivelMax: 16 },
+  { id: 'oro', nombre: 'Liga Oro', trofeos: 1000, color: '#ffcf4a', icono: '🥇', arena: 'Arena Cotopaxi', nivelMax: 20 },
+  { id: 'platino', nombre: 'Liga Platino', trofeos: 1800, color: '#7ff0e0', icono: '💠', arena: 'Estadio Galápagos', nivelMax: 25 },
+  { id: 'diamante', nombre: 'Liga Diamante', trofeos: 2800, color: '#7ab8ff', icono: '💎', arena: 'Plaza Quito Colonial', nivelMax: 30 },
+  { id: 'maestro', nombre: 'Liga Maestro', trofeos: 4000, color: '#c77dff', icono: '👑', arena: 'Glaciar Chimborazo', nivelMax: 35 },
+  { id: 'campeon', nombre: 'Liga Campeón', trofeos: 5500, color: '#ff5a6a', icono: '🏆', arena: 'Mitad del Mundo', nivelMax: 40 },
 ];
+
+/** En la Liga, los Primales pelean como mucho al nivel máximo de la liga: así un jugador nuevo no
+ * se cruza con Primales de nivel 40 y los veteranos no pueden abusar en ligas bajas. */
+export function nivelEnLiga(nivel: number, trofeos: number) {
+  return Math.min(nivel, ligaDe(trofeos).nivelMax);
+}
 
 export function ligaDe(trofeos: number): Liga {
   let l = LIGAS[0];

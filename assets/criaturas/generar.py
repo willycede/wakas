@@ -44,7 +44,7 @@ STYLE = ('pixel art game sprite of one {desc}, original creature design for a mo
          'flat shading with a limited palette, bold dark outline, centered, plain white background, no text')
 
 # Tamaño final del sprite (alto en píxeles de arte) según la talla de la criatura
-SIZES = {'pequeño': 48, 'mediano': 64, 'grande': 84, 'enorme': 100}
+SIZES = {'pequeño': 48, 'mediano': 64, 'grande': 84, 'enorme': 100, 'legendario': 120}
 
 
 def load_db():
@@ -90,8 +90,10 @@ def generate_horde(cid, desc, seed):
         time.sleep(8)
         try:
             st = json.loads(urllib.request.urlopen(urllib.request.Request(API + '/generate/check/' + jid, headers=HEADERS), timeout=60).read())
-        except Exception as e:  # la red a veces se corta: se reintenta
+        except Exception as e:  # la red a veces se corta: se reintenta (si el trabajo caducó, se pide de nuevo)
             print(cid, 'reintento', e, flush=True)
+            if '404' in str(e) or time.time() - t0 > 1500:
+                raise
             continue
         if st.get('done') or st.get('faulted') or time.time() - t0 > 1800:
             break

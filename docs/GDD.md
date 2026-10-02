@@ -1,61 +1,71 @@
-# PRIMAL CLASH — Documento de diseño (v0.1)
+# PRIMAL CLASH — Documento de diseño (v0.3)
 
 ## 1. Visión
 Batallas de criaturas **en tiempo real** para navegador (PC y móvil) contra gente de todo el mundo.
-Controlas a tu equipo de hasta 6 **Primales**, uno a la vez en la arena: lo mueves, disparas, haces combos, esquivas y cambias de Primal en el momento justo.
-Ganas trofeos y subes de **liga** (como Clash Royale). Sin historia por ahora **[decisión del dueño]**.
+Llevas un equipo de **3 Primales** a cada batalla, uno a la vez en la arena: lo mueves, atacas, haces combos, esquivas y cambias de Primal en el momento justo.
+Ganas trofeos y subes de **liga** (como Clash Royale). Sin historia por ahora **[decisión del dueño]**. Las 100 criaturas están **inspiradas en Ecuador** **[decisión del dueño]**: volcanes, Galápagos, Amazonía, páramo, leyendas y cultura andina.
 
 ## 2. Batalla **[decisión del dueño: tiempo real, no por turnos]**
-- Arena de césped con rocas (obstáculos simétricos). 3 minutos.
-- Cada Domador tiene un Primal en la arena; los demás esperan en el banco.
-- **Controles:** mover (WASD / joystick), **básico** (clic / espacio) con combo de 3 golpes (el tercero es más fuerte), **4 movimientos** (1-4) con recarga, **esquivar** (Shift, invulnerable un instante) y **cambiar** de Primal (Q/E o tocando su retrato; espera de 3,5 s).
-- Si un Primal cae, entra el siguiente automáticamente. Gana quien deja al rival sin Primales; si se acaba el tiempo, gana quien tenga más vida total.
-- **Puntería [decisión del dueño]:** no se apunta. Todos los ataques salen **hacia donde mira el Primal** (la dirección en la que se movió por última vez). Si el rival está más o menos enfrente (±40°, a menos de 460 px), el ataque lo busca solo. Una flecha bajo tu Primal muestra la dirección: azul = hacia donde mira, dorada = fijada en el rival.
-- Ratón: clic derecho mover (mantener = seguir el cursor), clic izquierdo atacar (mantener = combo), rueda cambiar de Primal.
-- **Combos [decisión del dueño]:** golpes seguidos sin recibir daño suben el contador; cada 5 golpes +10 % de daño (máx. +30 %). **Enlace:** usar un movimiento justo después del tercer golpe básico pega +30 %.
-- **Técnica especial [decisión del dueño]** (tecla R o botón dorado): una por elemento, se carga golpeando (+3,5 por básico, +7 por movimiento, +3 por crítico) y recibiendo golpes (+4). Al 100 % se puede lanzar: Supernova (fuego, explosión a tu alrededor), Maremoto (agua, ola en línea), Jardín espinoso (planta, zona venenosa + curación), Tormenta (eléctrico, 5 rayos que persiguen), Meteoro (roca, paraliza), Huracán (viento, carrera + tornado) y Eclipse (sombra, aparece detrás del rival).
-- Movimientos: proyectil, ráfaga, embestida, área, zona (aviso en el suelo), rayo (aviso en línea), escudo, curación y mejora.
-- Estados: quemadura, veneno (daño con el tiempo), parálisis (no se mueve un instante), lentitud.
-- Cada especie tiene una **habilidad** pasiva (p. ej. Roca sólida: −15 % de daño recibido).
+- Estadio con obstáculos simétricos. 3 minutos.
+- Cada Domador tiene un Primal en la arena; los otros dos esperan en el banco.
+- **Controles:** mover (WASD / joystick), **básico** (clic / Espacio) con combo de 3 golpes, **4 movimientos** (1-4) con recarga, **esquivar** (Shift), **técnica especial** (R; los legendarios también T), **cambiar** (Q/E o tocando su retrato), **emotes** (C).
+- Si un Primal cae, entra el siguiente. Gana quien deja al rival sin Primales; si se acaba el tiempo, quien tenga más vida total.
+- **Puntería [decisión del dueño]:** no se apunta. Los ataques salen **hacia donde mira el Primal**; si el rival está enfrente (±40°, a menos de 460 px), el ataque lo busca. Flecha azul = hacia dónde mira; dorada = fijada en el rival.
+- **Formas de ataque [decisión del dueño]:** nada cae en sitios al azar. Todo sale en formas fijas delante del Primal: línea recta (rayos), abanico (ráfagas), círculo a tu alrededor (áreas), círculo delante (zonas, sobre el rival si lo tienes enfrente) o **tres pasos en línea** (Erupción, Rayo trueno, Pico glaciar). Las técnicas especiales también: filas, abanicos y zigzag hacia delante.
+- **Combos:** cada 5 golpes seguidos +10 % de daño (máx. +30 %). **Enlace:** un movimiento justo después del tercer golpe básico pega +30 %.
+- **Técnicas especiales [decisión del dueño]:** una por elemento, con varias fases (Supernova atrae, explota, lanza un anillo de fuego y deja lava). Se cargan golpeando y recibiendo golpes. Los **legendarios tienen dos** (R y T) y pueden guardar dos cargas.
+- **Campos en el suelo:** lava, remolinos que atraen, hielo, espinas, lluvia: dañan o frenan mientras duran.
+- **Emotes [decisión del dueño]:** 8 stickers de Cuyi (el cuy mascota) y 6 frases rápidas; se puede silenciar al rival.
 
 ## 3. Elementos
-Fuego, Agua, Planta, Eléctrico, Roca, Viento, Sombra. Ataque fuerte = ×1,5; débil = ×0,67; mismo elemento que el Primal = ×1,2.
+Fuego, Agua, Planta, Eléctrico, Roca, Viento, Sombra, **Hielo** y **Luz**. Un Primal puede tener **dos tipos**: la efectividad se multiplica (de ×0,45 a ×2,25). Mismo tipo que el Primal = ×1,2.
 
-## 4. Los 15 Primales (v0.1) **[decisión del dueño: empezar con 15]**
-| Primal | Elemento | Etapa | Evoluciona | Captura (Domador nv. / monedas) |
-|---|---|---|---|---|
-| Chispi → Llamarak → Infernox | Fuego | 1-2-3 | nv. 12 / nv. 28 | inicial · 22/3000 · 38/12000 |
-| Gotín → Marejón → Abisaurio | Agua | 1-2-3 | nv. 12 / nv. 28 | inicial · 22/3000 · 38/12000 |
-| Brotín → Espinardo → Selvagor | Planta | 1-2-3 | nv. 12 / nv. 28 | inicial · 22/3000 · 38/12000 |
-| Voltirón → Tormentauro | Eléctrico | 1-2 | nv. 20 | 3/250 · 30/8000 |
-| Pedrusco → Golemón | Roca | 1-2 | nv. 20 | 2/150 · 30/8000 |
-| Céfiro | Viento | — | — | 12/1400 |
-| Umbraz | Sombra | — | — | 16/2200 |
+## 4. Los 100 Primales **[decisión del dueño: 100, inspirados en Ecuador, tipos combinados]**
+- **Rarezas [decisión del dueño]:** Común (49), Raro (28), Épico (18), Legendario (5). Cuanto más raros, más caros de retar, más nivel de Domador piden y más lista es la IA al defenderse.
+- **Iniciales [decisión del dueño]:** al empezar eliges **3** entre 9 comunes que **evolucionan dos veces** (Tunguri, Yakupi, Cacaíto, Chispez, Quindito, Galapito, Chusik, Ukumarito, Morfito).
+- **Legendarios [decisión del dueño]:** Taitachimbo (Chimborazo), Mamatungura (Tungurahua), Inti (el Sol), Apukuntur (el cóndor) y Cuichi (el arcoíris). Más fuertes, no invencibles; **solo uno por equipo**; dos técnicas especiales; aura dorada y entrada épica. Solo se puede retar al **Legendario del día** (rota cada día).
+- La ficha de cada uno está en `assets/criaturas/criaturas.json`; `scripts/construir_especies.py` calcula estadísticas, movimientos y capturas.
 
 ## 5. Progreso **[decisión del dueño]**
-- **Inicio:** eliges 1 de 3 iniciales (Chispi, Gotín o Brotín).
-- **Capturas:** para retar a un Primal salvaje necesitas un **nivel de Domador** y pagar **monedas**. Si lo vences con tu equipo, se une a ti; si pierdes, pierdes la entrada.
-- **Experiencia de batalla:** **solo al ganar [decisión del dueño]**; perder no da experiencia (ni al Domador ni a los Primales). Los Primales que pelearon reciben toda la experiencia; el resto del equipo, la mitad. Suben de nivel y **evolucionan** solos al llegar al nivel indicado.
-- **Domador:** gana experiencia en cada victoria (nivel máx. 50). Cada nivel da **1 punto de habilidad**.
-- **Habilidades de Domador:** Entrenador nato (+exp), Negociante (+monedas), Vínculo (+vida del equipo), Relevo veloz (cambios más rápidos), Instinto (−recarga), Capturador (capturas más baratas). 5 niveles cada una.
-- **Medallas** al llegar a ciertos niveles de Domador (3, 6, 10, 14, 18, 23, 28, 35); cada una da +3 % de experiencia a tus Primales.
+- **Capturas:** pagas la entrada y vences al Primal salvaje. Antes ves su **ficha** con estadísticas y un medidor **"¿Vale la pena retarlo?"** (Fácil / Parejo / Difícil / Muy difícil) que compara tu equipo con el salvaje y dice qué tipos le ganan.
+- **Ficha de cada Primal:** descripción, estadísticas, habilidad, movimientos, técnicas especiales y **línea evolutiva** con los niveles.
+- **Movimientos por nivel [decisión del dueño]:** el 1.º se tiene desde el nivel 1, el 2.º en el 4, el 3.º en el 9 y el 4.º en el 15. Al aprenderlo sale un aviso al final del combate.
+- **Experiencia:** solo al ganar. Los Primales que pelearon reciben toda la experiencia; el resto, la mitad.
+- **Domador:** nivel máx. 50; cada nivel da 1 punto de habilidad; medallas en los niveles 3, 6, 10, 14, 18, 23, 28 y 35.
 
-## 6. Liga
+## 6. Liga y justicia **[propuesta de Claude, pendiente de que el dueño la pruebe]**
 - Ganar: +30 trofeos, 25 monedas. Perder: −18 trofeos, 6 monedas.
-- Ligas: Bronce (0), Plata (400), Oro (1000), Platino (1800), Diamante (2800), Maestro (4000), Campeón (5500).
-- Emparejamiento por trofeos; si no hay rival humano en 12 s, pelea contra la IA (dificultad según la liga).
-- Ranking mundial (top 50).
+- Ligas y estadios: Bronce (Estadio Malecón), Plata (Coliseo Amazónico), Oro (Arena Cotopaxi), Platino (Estadio Galápagos), Diamante (Plaza Quito Colonial), Maestro (Glaciar Chimborazo), Campeón (Mitad del Mundo).
+- **Para que sea justo:**
+  1. El emparejamiento es por trofeos.
+  2. **Tope de nivel por liga:** en la Liga tus Primales pelean como mucho a nivel 12 (Bronce), 16, 20, 25, 30, 35 o 40 (Campeón). Un veterano no aplasta a un novato y subir de liga se nota.
+  3. El nivel pesa menos que antes: del nivel 5 al 40 las estadísticas crecen un 48 % (antes casi ×3). Lo que más cuenta es evolucionar, la ventaja de tipo y la habilidad del jugador.
+  4. Solo un legendario por equipo.
+- **Cuando no hay nadie en línea:** si en 12 s no aparece un rival humano, juegas contra la IA, con un equipo y una dificultad acordes a tu liga. Así nadie se queda esperando.
+- **Retos amistosos:** creas un código de 5 letras y lo compartes por WhatsApp; tu amigo entra con el enlace. No se ganan ni pierden trofeos.
 
-## 7. Interfaz e idiomas **[decisión del dueño]**
-- Juego en **español e inglés**; botón de idioma en la entrada y en la barra superior (se recuerda en el navegador).
-- Interfaz cuidada: iconos propios (sin emojis), emblema por liga, tarjetas con estadísticas, botones de batalla en arco con recarga circular, ficha de cada movimiento al pasar el ratón.
+## 7. Cómo atraer jugadores (propuesta)
+- Lanzarlo primero en un círculo pequeño (amigos, grupos de WhatsApp, comunidades gamer de Ecuador). Los retos amistosos por enlace hacen que cada jugador invite a otros.
+- Contenido local que dé orgullo y conversación: Primales de Ecuador, estadios reconocibles.
+- Siguientes ideas: misiones diarias, temporadas de un mes con recompensas, torneos de fin de semana con premio, y un modo espectador o clips para compartir en TikTok.
 
-## 8. Arte **[decisión del dueño: pixel art animado, estilo tipo Pokémon Reloaded]**
-- Primales en pixel art (48–86 px de alto), vista 3/4 mirando a la derecha, contorno oscuro y paleta limitada.
-- Generados con IA y convertidos a pixel art real por `assets/criaturas/generar.py` (ver CLAUDE.md para agregar más).
-- Animación en el juego: rebote al caminar, respiración, estirón al atacar, destello al recibir golpe.
+## 8. Móvil y Android
+- Ya se juega desde el navegador del móvil (Chrome): joystick y botones táctiles, y pide girar el teléfono a horizontal.
+- Es una **app web instalable**: en Android, Chrome ofrece "Añadir a pantalla de inicio" y se abre a pantalla completa como una app.
+- Más adelante, para Google Play: empaquetarla como TWA (la misma web dentro de una app) sin rehacer nada.
 
-## 9. Pendiente / siguientes pasos
-- Más Primales y arenas por liga.
-- Temporadas de liga con recompensas, cofres, amigos y batallas amistosas.
+## 9. Tutorial **[decisión del dueño]**
+- Al empezar se ofrece un combate guiado de 7 pasos contra un muñeco: moverse, golpear (los ataques salen hacia donde miras), usar un movimiento, esquivar, técnica especial, cambiar de Primal y ganar. Da 200 monedas la primera vez. Se puede saltar y repetir desde la pestaña Domador.
+
+## 10. Interfaz e idiomas **[decisión del dueño]**
+- Español e inglés; iconos propios, emblema por liga, botones de batalla en arco con recarga circular.
+
+## 11. Arte **[decisión del dueño: pixel art animado, estilo tipo Pokémon Reloaded]**
+- Primales en pixel art (48–120 px de alto), mirando a la derecha, contorno oscuro y paleta limitada. Generados con FLUX y convertidos a pixel art real (`assets/criaturas/generar.py`).
+- Caminar: cada pata gira desde la cadera, alternándose, con bote del cuerpo.
+- Estadios dibujados en código (`client/src/arenas.ts`) con público animado, banderines tricolor, focos y un paisaje de fondo.
+
+## 12. Pendiente
+- Terminar de generar el arte de las 100 criaturas y rehacer los stickers de emotes.
+- Misiones diarias y temporadas.
 - Balance tras jugar.

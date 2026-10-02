@@ -6,7 +6,7 @@
 
 import Phaser from 'phaser';
 import {
-  ARENA, CARGA_MAX, ELEMENTOS, EMOTES, ESPECIES, FRASES, MOVIMIENTOS, TICK_MS, especialesDe, moverEnArena, statsPrimal, tipos, velocidadMover,
+  ARENA, CARGA_MAX, DESBLOQUEO, ELEMENTOS, EMOTES, ESPECIES, FRASES, MOVIMIENTOS, TICK_MS, esLegendario, especialesDe, movDesbloqueado, moverEnArena, statsPrimal, tipos, velocidadMover,
   type Fx, type InicioBatalla, type Movimiento, type Snapshot, type UnidadSnap,
 } from '../../shared/src';
 import animMeta from '../../assets/criaturas/sprites/anim/animaciones.json';
@@ -30,7 +30,7 @@ const ANIM = animMeta as unknown as Record<string, AnimMeta>;
 
 interface Vista {
   spr: Phaser.GameObjects.Sprite; sombra: Phaser.GameObjects.Ellipse; anillo: Phaser.GameObjects.Ellipse;
-  esp: string; x: number; y: number; flip: number; inclina: number;
+  esp: string; x: number; y: number; flip: number; inclina: number; aura: Phaser.GameObjects.GameObject[];
   anim: string; bloqueo: number; ultAn: string; estocada: number; estAng: number; golpe: number; polvo: number; mira: number; vuelo: number;
 }
 
@@ -46,6 +46,7 @@ export class BatallaScene extends Phaser.Scene {
   campos = new Map<number, FX.VistaCampo>();
   estadio: Estadio | null = null;
   silenciado = false;
+  tuto: { pasos: string[]; i: number; cuenta: number; mov: number } | null = null;
   keys!: Record<string, Phaser.Input.Keyboard.Key>;
   joy = { x: 0, y: 0, activo: false };
   seq = 0;
@@ -168,6 +169,8 @@ export class BatallaScene extends Phaser.Scene {
     this.net.on('emote', (m: { lado: 0 | 1; id: string }) => this.mostrarEmote(m.lado, m.id));
     this.armarHud();
     this.intro();
+    this.tuto = this.init0.modo === 'tutorial' ? { pasos: ['mover', 'golpear', 'mov', 'esquivar', 'especial', 'cambiar', 'final'], i: 0, cuenta: 0, mov: 0 } : null;
+    this.pintarTuto();
   }
 
   private esTactil() {
@@ -202,7 +205,7 @@ export class BatallaScene extends Phaser.Scene {
   private vista(l: 0 | 1, esp: string): Vista {
     const v = this.vistas[l];
     if (v && v.esp === esp) return v;
-    v?.spr.destroy(); v?.sombra.destroy(); v?.anillo.destroy();
+    v?.spr.destroy(); v?.sombra.destroy(); v?.anillo.destroy(); v?.aura.forEach((o) => o.destroy());
     const soy = l === this.init0.lado;
     const m = ANIM[esp];
     const sc = this.escala(esp);
@@ -211,7 +214,18 @@ export class BatallaScene extends Phaser.Scene {
     const anillo = this.add.ellipse(0, 0, ancho + 8, (ancho + 8) * 0.36).setStrokeStyle(3, soy ? 0x4aa8ff : 0xff5a6a, 0.9);
     const spr = m ? this.add.sprite(0, 0, 'pa_' + esp, 0).setOrigin(0.5, m.pies / m.h) : this.add.sprite(0, 0, 'p_' + esp).setOrigin(0.5, 0.92);
     spr.setScale(sc);
-    const nv: Vista = { spr, sombra, anillo, esp, x: 0, y: 0, flip: l === 0 ? 1 : -1, inclina: 0, anim: '', bloqueo: 0, ultAn: '', estocada: 0, estAng: 0, golpe: 0, polvo: 0, mira: l === 0 ? 1 : -1, vuelo: 0 };
+    // los legendarios llevan un aura dorada con chispas que suben
+    const aura: Phaser.GameObjects.GameObject[] = [];
+    if (esLegendario(esp)) {
+      const [c0, c1] = FX.pal(ESPECIES[esp].elemento);
+      const brillo = this.add.ellipse(0, 0, ancho * 1.6, ancho * 0.6, 0xffc940, 0.22).setBlendMode('ADD');
+      const chispas = this.add.particles(0, 0, 'chispa', {
+        emitZone: { type: 'random', source: new Phaser.Geom.Ellipse(0, 0, ancho * 1.2, ancho * 0.5) } as any,
+        lifespan: 900, speedY: { min: -70, max: -30 }, scale: { start: 1.4, end: 0 }, alpha: { start: 1, end: 0 }, tint: [0xffe080, c0, c1], frequency: 45, blendMode: 'ADD',
+      });
+      aura.push(brillo, chispas);
+    }
+    const nv: Vista = { spr, sombra, anillo, esp, aura, x: 0, y: 0, flip: l === 0 ? 1 : -1, inclina: 0, anim: '', bloqueo: 0, ultAn: '', estocada: 0, estAng: 0, golpe: 0, polvo: 0, mira: l === 0 ? 1 : -1, vuelo: 0 };
     this.vistas[l] = nv;
     this.reproducir(nv, 'idle');
     return nv;
@@ -300,6 +314,7 @@ export class BatallaScene extends Phaser.Scene {
     const d = this.dir();
     const me = this.ultimo?.u[this.init0.lado];
     if ((d.x || d.y) && me && me.an !== 'basico' && me.an !== 'mov') { this.faLocal = Math.atan2(d.y, d.x); this.ultMovio = Date.now(); }
+    if ((d.x || d.y) && this.tuto && (this.tuto.mov += TICK) > 1.2) this.tutoPaso('mover');
     const inp = { s: ++this.seq, x: Math.round(d.x * 100) / 100, y: Math.round(d.y * 100) / 100 };
     this.net.send('in', { ...inp, ax: 0, ay: 0 });
     this.pend.push(inp);
@@ -319,6 +334,8 @@ export class BatallaScene extends Phaser.Scene {
 
   accion(i: number) {
     if (this.fin || !this.ultimo) return;
+    if (i === 1) this.tutoPaso('mov');
+    if (i === 5) this.tutoPaso('esquivar');
     this.net.send('acc', { i });
     const b = document.querySelector<HTMLElement>(`#bh-moves .ab[data-i="${i}"]`);
     if (b) { b.classList.add('press'); setTimeout(() => b.classList.remove('press'), 110); }
@@ -417,6 +434,11 @@ export class BatallaScene extends Phaser.Scene {
       const somb = alto ? Math.max(0.25, 1 - alto / 300) : 1 - (salto ? 0.25 : 0);
       v.sombra.setPosition(x + ox, y + 3).setDepth(y - 1).setScale(somb);
       v.anillo.setPosition(x + ox, y + 3).setDepth(y - 1);
+      if (v.aura.length) {
+        const [brillo, chispas] = v.aura as [Phaser.GameObjects.Ellipse, Phaser.GameObjects.Particles.ParticleEmitter];
+        brillo.setPosition(x + ox, y + 2).setDepth(y - 2).setScale(1 + Math.sin(now / 260) * 0.08).setAlpha(alto ? 0 : 1);
+        chispas.setPosition(x + ox, y - 10).setDepth(y + 12);
+      }
       if (s.sh > 0) v.anillo.setStrokeStyle(4, 0xa0dcff, 1); else v.anillo.setStrokeStyle(3, l === this.init0.lado ? 0x4aa8ff : 0xff5a6a, 0.9);
       // polvo al correr
       if (rapidez > 60 && now > v.polvo && s.an !== 'caido') {
@@ -482,10 +504,11 @@ export class BatallaScene extends Phaser.Scene {
     const cm = col(ELEMENTOS[m.elemento].color);
     const f = 0.7;
     if (m.tipo === 'zona') {
-      const d = asiste ? Math.min(m.alcance, Math.hypot(rx - x, ry - y)) : Math.min(m.alcance, 200);
-      g.lineStyle(2, 0xffffff, 0.2).strokeCircle(x, y, m.alcance);
-      g.fillStyle(cm, 0.22).fillCircle(x + ux * d, y + uy * d, m.radio ?? 60);
-      g.lineStyle(3, cm, f).strokeCircle(x + ux * d, y + uy * d, m.radio ?? 60);
+      const ds = m.patron === 'pasos' ? [0.35, 0.65, 0.95].map((k) => m.alcance * k) : [asiste ? Math.min(m.alcance, Math.hypot(rx - x, ry - y)) : m.alcance * 0.65];
+      for (const d of ds) {
+        g.fillStyle(cm, 0.22).fillCircle(x + ux * d, y + uy * d, m.radio ?? 60);
+        g.lineStyle(3, cm, f).strokeCircle(x + ux * d, y + uy * d, m.radio ?? 60);
+      }
     } else if (m.tipo === 'area') {
       g.fillStyle(cm, 0.18).fillCircle(x, y, m.alcance);
       g.lineStyle(3, cm, f).strokeCircle(x, y, m.alcance);
@@ -571,6 +594,7 @@ export class BatallaScene extends Phaser.Scene {
   private onFx(f: Fx) {
     switch (f.k) {
       case 'dano': {
+        if (f.lado !== this.init0.lado && this.tuto && this.tuto.pasos[this.tuto.i] === 'golpear' && ++this.tuto.cuenta >= 3) this.tutoPaso('golpear');
         const color = f.ef > 1 ? '#ffcf4a' : f.ef < 1 ? '#b0b0c8' : '#ffffff';
         const num = this.add.text(f.x + (Math.random() - 0.5) * 20, f.y - 50, `${f.n}${f.crit ? '!' : ''}`, { fontFamily: 'Lilita One', fontSize: f.crit || f.ef > 1 ? '30px' : '22px', color, stroke: '#1a1030', strokeThickness: 6 }).setOrigin(0.5).setDepth(5000).setScale(1.5);
         this.tweens.add({ targets: num, scale: 1, duration: 160, ease: 'Back.easeOut' });
@@ -610,6 +634,7 @@ export class BatallaScene extends Phaser.Scene {
         break;
       }
       case 'especial':
+        if (f.lado === this.init0.lado) this.tutoPaso('especial');
         this.especial(f);
         break;
       case 'combo':
@@ -617,6 +642,8 @@ export class BatallaScene extends Phaser.Scene {
         break;
       case 'cambio': {
         if (f.silencioso) break;
+        if (f.lado === this.init0.lado) this.tutoPaso('cambiar');
+        if (esLegendario(f.esp)) this.entradaLegendaria(f.lado, f.esp);
         const r = this.add.circle(f.x, f.y - 20, 50, 0xffffff, 0.6).setDepth(3000);
         this.tweens.add({ targets: r, scale: 1.8, alpha: 0, duration: 400, onComplete: () => r.destroy() });
         this.etiqueta(f.x, f.y - 100, t('hud.goPrimal', { n: ESPECIES[f.esp].nombre }), f.lado === this.init0.lado ? '#7ab8ff' : '#ff8a9a');
@@ -700,6 +727,19 @@ export class BatallaScene extends Phaser.Scene {
     if (f.id === 'arcoiris') this.arcoiris(f.x, f.y);
   }
 
+  /** Entrada de un legendario: temblor, rayo de luz y cartel dorado. */
+  private entradaLegendaria(lado: 0 | 1, esp: string) {
+    const v = this.vistas[lado];
+    const x = v?.x ?? ARENA.w / 2, y = v?.y ?? ARENA.h / 2;
+    $('bh-banner').innerHTML = `<div class="banner legend"><small>${t('misc.legendary')}</small>${ESPECIES[esp].nombre}</div>`;
+    this.cameras.main.shake(500, 0.01);
+    this.velo(0xffb020, 0.15, 900);
+    const rayo = this.add.rectangle(x, y - 400, 90, 800, 0xffe080, 0.6).setDepth(4300).setBlendMode('ADD');
+    this.tweens.add({ targets: rayo, scaleX: 0, alpha: 0, duration: 700, ease: 'Cubic.easeIn', onComplete: () => rayo.destroy() });
+    FX.estallido(this, x, y - 30, ESPECIES[esp].elemento, 24, 2);
+    this.estadio?.vitorear();
+  }
+
   /** Velo de color sobre toda la pantalla (oscurece para tormentas y eclipses, ilumina para el sol). */
   private velo(color: number, alpha: number, ms: number) {
     const cam = this.cameras.main;
@@ -713,6 +753,33 @@ export class BatallaScene extends Phaser.Scene {
       const a = this.add.ellipse(x, y - 30, 120 + i * 30, 70 + i * 18).setStrokeStyle(6, c, 0.85).setDepth(4400).setBlendMode('ADD').setScale(0.2);
       this.tweens.add({ targets: a, scale: 2.4, alpha: 0, delay: i * 70, duration: 900, ease: 'Cubic.easeOut', onComplete: () => a.destroy() });
     });
+  }
+
+  // ---------------------------------------------------------------- tutorial guiado
+  private pintarTuto() {
+    const el = $('bh-tuto');
+    el.classList.toggle('hidden', !this.tuto);
+    $('bh-help').classList.toggle('hidden', !!this.tuto);
+    if (!this.tuto) return;
+    const tu = this.tuto;
+    if (tu.i >= tu.pasos.length) { el.innerHTML = `<b>${t('tuto.done')}</b>`; return; }
+    el.innerHTML = `<small>${t('tuto.step', { n: tu.i + 1, t: tu.pasos.length })}</small>
+      <div class="tuto-dots">${tu.pasos.map((_, k) => `<i class="${k < tu.i ? 'ok' : k === tu.i ? 'on' : ''}"></i>`).join('')}</div>
+      <p>${t(`tuto.${tu.pasos[tu.i]}` as Parameters<typeof t>[0])}</p>`;
+    el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+  }
+
+  /** Marca un paso del tutorial como hecho si es el actual. */
+  private tutoPaso(id: string) {
+    const tu = this.tuto;
+    if (!tu || tu.pasos[tu.i] !== id) return;
+    tu.i++;
+    tu.cuenta = 0;
+    const sig = tu.pasos[tu.i];
+    if (sig === 'especial') this.net.send('tutorial', { paso: 'carga' });
+    if (sig === 'final') this.net.send('tutorial', { paso: 'final' });
+    this.etiqueta(this.pred.x, this.pred.y - 110, '✓', '#4ee08a', 30);
+    this.pintarTuto();
   }
 
   // ---------------------------------------------------------------- emotes
@@ -855,7 +922,11 @@ export class BatallaScene extends Phaser.Scene {
       const sps = especialesDe(u.esp);
       $('bh-moves').innerHTML =
         btn(0, 'basic', icono(e.basico === 'cuerpo' ? 'golpe' : 'orbe'), t('hud.basic'), t('key.space'), '#b4a8e8') +
-        e.movimientos.map((id, k) => { const m = MOVIMIENTOS[id]; return btn(k + 1, 'm', icono(m.tipo), nombreMov(id), String(k + 1), ELEMENTOS[m.elemento].color); }).join('') +
+        e.movimientos.map((id, k) => {
+          const m = MOVIMIENTOS[id];
+          if (!movDesbloqueado(u.esp, k + 1, u.nv)) return btn(k + 1, 'm locked', icono('candado'), t('misc.level', { n: DESBLOQUEO[k] }), String(k + 1), '#5a5070');
+          return btn(k + 1, 'm', icono(m.tipo), nombreMov(id), String(k + 1), ELEMENTOS[m.elemento].color);
+        }).join('') +
         btn(5, 'dodge', icono('esquiva'), t('hud.dodge'), 'Shift', '#5a8ae0') +
         sps.map((sp, k) => btn(6 + k, 'sp', icono(sp.elemento), nombreEspecial(u.esp, k), k ? 'T' : 'R', ELEMENTOS[sp.elemento].color, '<span class="ring"></span>')).join('');
       $('bh-moves').querySelectorAll<HTMLElement>('.ab').forEach((el) => {
@@ -888,7 +959,7 @@ export class BatallaScene extends Phaser.Scene {
       const total = i === 0 ? 0.55 : i === 5 ? 1.6 : (MOVIMIENTOS[e.movimientos[i - 1]]?.enfriamiento ?? 1);
       o.style.setProperty('--p', `${Math.min(100, (cd / total) * 100)}%`);
       o.textContent = cd > 0.3 && i !== 0 ? String(Math.ceil(cd)) : '';
-      el.classList.toggle('cool', cd > 0.05 && i !== 0);
+      el.classList.toggle('cool', cd > 0.05 && i !== 0 && !el.classList.contains('locked'));
       if (i !== 0 && (this.cdsPrev[i] ?? 0) > 0.05 && cd <= 0.05) this.destello(el);
     });
     this.cdsPrev = [...s.cds];
@@ -928,7 +999,9 @@ export class BatallaScene extends Phaser.Scene {
   private mostrarTip(el: HTMLElement, i: number, movId: string | undefined, esp: string) {
     el.querySelector('.tip')?.remove();
     let html = '';
-    if (i >= 1 && i <= 4 && movId) {
+    if (i >= 1 && i <= 4 && movId && !movDesbloqueado(esp, i, this.ultimo?.u[this.init0.lado].nv ?? 1)) {
+      html = `<b>${esc(nombreMov(movId))}</b>${t('hud.locked', { n: DESBLOQUEO[i - 1] })}`;
+    } else if (i >= 1 && i <= 4 && movId) {
       const m = MOVIMIENTOS[movId];
       html = `<b>${esc(nombreMov(movId))}</b>${esc(descMov(movId))}<div class="meta"><span class="el" style="--c:${ELEMENTOS[m.elemento].color}">${icono(m.elemento)}${nombreElemento(m.elemento)}</span><span class="el" style="--c:#8a7cff">${icono('reloj')}${m.enfriamiento}s</span></div>`;
     } else if (i === 6 || i === 7) {

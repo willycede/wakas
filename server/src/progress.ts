@@ -21,6 +21,7 @@ export function perfil(d: Domador): Perfil {
     id: d.id, nombre: d.nombre, nivel: d.nivel, xp: d.xp, xpSig: d.nivel >= NIVEL_MAX_DOMADOR ? 0 : xpDomador(d.nivel),
     monedas: d.monedas, trofeos: d.trofeos, mejorTrofeos: d.mejorTrofeos, victorias: d.victorias, derrotas: d.derrotas,
     primales: d.primales, equipo: d.equipo, habilidades: d.habilidades, puntosLibres: puntosHabilidad(d.nivel) - usados, capturados: d.capturados,
+    tutorial: !!d.tutorial,
   };
 }
 

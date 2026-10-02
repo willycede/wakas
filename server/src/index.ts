@@ -80,6 +80,10 @@ function nivelMinimo(e: Especie) {
   return e.rareza === 'epico' ? 12 : e.rareza === 'raro' ? 5 : 1;
 }
 
+// ------------------------------------------------------------------ retos entre amigos
+const amistosas = new Map<string, { d: Domador; resolver: (r: { roomId: string } | { error: string }) => void; vence: number }>();
+const esperas = new Map<string, Promise<{ roomId: string } | { error: string }>>();
+
 // ------------------------------------------------------------------ cola de la Liga
 interface EnCola { d: Domador; desde: number; resolver: (r: { roomId: string } | { error: string }) => void }
 const cola: EnCola[] = [];
@@ -183,6 +187,57 @@ async function main() {
     const d = await auth(req);
     const i = d ? cola.findIndex((x) => x.d.id === d.id) : -1;
     if (i >= 0) cola.splice(i, 1)[0].resolver({ error: 'Búsqueda cancelada.' });
+    res.json({ ok: true });
+  });
+
+  // Tutorial: combate guiado contra un muñeco de práctica
+  app.post('/api/tutorial', async (req, res) => {
+    const d = await auth(req);
+    if (!d) return res.status(401).json({ error: 'Sesión no válida.' });
+    if (!d.equipo.length) return res.status(400).json({ error: 'Primero elige tus Primales iniciales.' });
+    const muneco: Participante = { id: null, nombre: 'Muñeco de práctica', trofeos: 0, equipo: [{ uid: 'muneco', esp: 'capibaron', nivel: 5 }], ia: 0, pasivo: true };
+    res.json({ roomId: await crearBatalla({ modo: 'tutorial', lados: [participante(d), muneco] }) });
+  });
+  app.post('/api/tutorial/saltar', accion((d) => { d.tutorial = true; return null; }));
+
+  // Batallas amistosas: uno crea un código, el otro lo usa (por ejemplo, desde un enlace de WhatsApp)
+  app.post('/api/amistosa/crear', async (req, res) => {
+    const d = await auth(req);
+    if (!d) return res.status(401).json({ error: 'Sesión no válida.' });
+    if (!d.equipo.length) return res.status(400).json({ error: 'Primero elige tus Primales iniciales.' });
+    for (const [c, a] of amistosas) if (a.d.id === d.id || a.vence < Date.now()) { a.resolver({ error: 'Reto cancelado.' }); amistosas.delete(c); }
+    let codigo = '';
+    do codigo = Array.from({ length: 5 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)]).join(''); while (amistosas.has(codigo));
+    const espera = new Promise<{ roomId: string } | { error: string }>((resolver) => amistosas.set(codigo, { d, resolver, vence: Date.now() + 10 * 60_000 }));
+    esperas.set(codigo, espera);
+    res.json({ codigo });
+  });
+  app.post('/api/amistosa/esperar', async (req, res) => {
+    const codigo = String(req.body?.codigo ?? '').toUpperCase();
+    const e = esperas.get(codigo);
+    if (!e) return res.status(404).json({ error: 'Ese código no existe o ya caducó.' });
+    const r = await e;
+    esperas.delete(codigo);
+    if ('error' in r) return res.status(409).json(r);
+    res.json(r);
+  });
+  app.post('/api/amistosa/unirse', async (req, res) => {
+    const d = await auth(req);
+    if (!d) return res.status(401).json({ error: 'Sesión no válida.' });
+    if (!d.equipo.length) return res.status(400).json({ error: 'Primero elige tus Primales iniciales.' });
+    const codigo = String(req.body?.codigo ?? '').toUpperCase();
+    const a = amistosas.get(codigo);
+    if (!a || a.vence < Date.now()) return res.status(404).json({ error: 'Ese código no existe o ya caducó.' });
+    if (a.d.id === d.id) return res.status(400).json({ error: 'No puedes retarte a ti mismo.' });
+    amistosas.delete(codigo);
+    const roomId = await crearBatalla({ modo: 'amistosa', lados: [participante(a.d), participante(d)] });
+    a.resolver({ roomId });
+    res.json({ roomId });
+  });
+  app.post('/api/amistosa/cancelar', async (req, res) => {
+    const codigo = String(req.body?.codigo ?? '').toUpperCase();
+    const a = amistosas.get(codigo);
+    if (a) { a.resolver({ error: 'Reto cancelado.' }); amistosas.delete(codigo); }
     res.json({ ok: true });
   });
 

@@ -6,6 +6,7 @@ import {
 } from '../../shared/src';
 import { api, spriteUrl } from './api';
 import { emblemaLiga, icono } from './iconos';
+import { abrirFicha } from './ficha';
 import { descEspecial, descEspecie, descHab, habDomador, medalla, nombreElemento, nombreEspecial, nombreHab, nombreLiga, nombreMov, nombreRareza, t, tError } from './i18n';
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -58,6 +59,8 @@ export class Menu {
   onBatalla: (roomId: string) => void = () => {};
   private buscando = false;
   private filtro: Rareza | 'todos' = 'todos';
+  private reto: string | null = null; // código del reto amistoso que estamos esperando
+  onTutorial: () => void = () => {};
 
   constructor() {
     document.querySelectorAll<HTMLButtonElement>('#tabs button').forEach((b) => (b.onclick = () => this.show(b.dataset.tab as Tab)));
@@ -119,6 +122,16 @@ export class Menu {
         <div><b>${p.victorias}</b>${t('battle.wins')}</div><div><b>${p.derrotas}</b>${t('battle.losses')}</div><div><b>${p.mejorTrofeos}</b>${t('battle.best')}</div>
       </div>
       <div class="rules">${t('battle.rules')}</div>
+      <div class="rules">${icono('candado')} ${t('hud.capLevel', { n: l.nivelMax })}</div>
+      <div class="amis">
+        <div class="amis-head">${icono('huella')}<div><b>${t('amis.title')}</b><small>${t('amis.txt')}</small></div></div>
+        ${this.reto ? `<div class="amis-codigo"><span>${t('amis.code')}</span><b>${this.reto}</b></div>
+          <div class="amis-acciones"><a class="btn primary" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(t('amis.msg', { u: this.enlaceReto() }))}">${t('amis.share')}</a>
+          <button class="btn ghost" id="amis-copiar">${t('amis.copy')}</button><button class="btn ghost" id="amis-cancelar">${t('battle.cancel')}</button></div>
+          <small class="muted dots-anim">${t('amis.waiting')}</small>`
+        : `<div class="amis-acciones"><button class="btn" id="amis-crear">${t('amis.create')}</button>
+          <input id="amis-input" maxlength="5" placeholder="${t('amis.placeholder')}"><button class="btn" id="amis-unirse">${t('amis.join')}</button></div>`}
+      </div>
     </div>`;
   }
 
@@ -172,7 +185,7 @@ export class Menu {
       const conocido = visto || okNivel || tengo;
       const hoyNo = e.rareza === 'legendario' && e.id !== hoy.id;
       const puede = okNivel && okMonedas && !hoyNo;
-      return `<div class="card ${conocido ? '' : 'locked'} r-${e.rareza}" style="--c:${conocido ? ELEMENTOS[e.elemento].color : '#555'}" title="${conocido ? esc(descEspecie(e.id)) : ''}">
+      return `<div class="card ${conocido ? '' : 'locked'} r-${e.rareza}" style="--c:${conocido ? ELEMENTOS[e.elemento].color : '#555'}" ${conocido ? `data-ficha="${e.id}"` : ''}>
         ${tengo ? `<span class="tag owned">${t('capture.owned')}</span>` : ''}
         <div class="top">${conocido ? `<span class="tipos">${tiposTag(e.id)}</span>` : `<span class="el" style="--c:#777">${icono('candado')}${t('capture.locked')}</span>`}<span class="lv">${t('capture.wild', { n: e.captura.nivelSalvaje })}</span></div>
         <div class="stage"><img class="sprite" src="${spriteUrl(e.id)}" alt="" loading="lazy"></div>
@@ -189,7 +202,7 @@ export class Menu {
     const costoLeg = costoDe(leg);
     const puedeLeg = p.nivel >= leg.captura.nivel && p.monedas >= costoLeg;
     const destacado = `<div class="leg-hoy" style="--c:${ELEMENTOS[leg.elemento].color}">
-      <div class="leg-arte"><img src="${spriteUrl(leg.id)}" alt=""></div>
+      <div class="leg-arte" data-ficha="${leg.id}"><img src="${spriteUrl(leg.id)}" alt=""></div>
       <div class="leg-info">
         <div class="leg-kicker">${icono('corona')}${t('capture.legendTitle')}</div>
         <h3>${leg.nombre}</h3>
@@ -240,6 +253,7 @@ export class Menu {
     return `<div class="page">
       <div class="trainer-head"><div class="tb-level">${p.nivel}</div><div class="info"><b>${esc(p.nombre)}</b><br><small>${t('trainer.level', { n: p.nivel })} · ${p.xpSig ? `${p.xp} / ${p.xpSig} XP` : 'MAX'}</small>
         <div class="xpbar"><div style="width:${p.xpSig ? (p.xp / p.xpSig) * 100 : 100}%"></div></div></div></div>
+      <button class="btn ghost" id="btn-tuto" style="margin-top:12px">${icono('mira')}${t('tuto.again')}</button>
       <div class="section-title">${t('trainer.medals')} · ${MEDALLAS.filter((m) => p.nivel >= m.nivel).length}/${MEDALLAS.length}</div>
       <p class="muted" style="margin-top:-4px;font-size:13px">${t('trainer.medalsHint')}</p>
       <div class="medals">${medals}</div>
@@ -268,13 +282,60 @@ export class Menu {
     const body = $('menu-body');
     body.querySelector<HTMLButtonElement>('#btn-buscar')?.addEventListener('click', () => void this.buscar());
     body.querySelector<HTMLButtonElement>('#btn-cancelar')?.addEventListener('click', () => { void api.cancelar(); this.buscando = false; this.show('batalla'); });
-    body.querySelectorAll<HTMLElement>('[data-poner]').forEach((el) => (el.onclick = () => this.cambiarEquipo(el.dataset.poner!, true)));
-    body.querySelectorAll<HTMLElement>('[data-quitar]').forEach((el) => (el.onclick = () => this.cambiarEquipo(el.dataset.quitar!, false)));
+    body.querySelectorAll<HTMLElement>('[data-poner], [data-quitar]').forEach((el) => (el.onclick = () => this.fichaPropia(el.dataset.poner ?? el.dataset.quitar!)));
+    body.querySelectorAll<HTMLElement>('[data-ficha]').forEach((el) => (el.onclick = (ev) => {
+      if ((ev.target as HTMLElement).closest('button')) return;
+      const esp = el.dataset.ficha!;
+      abrirFicha(esp, { perfil: this.perfil, captura: true, acciones: [{ texto: `${icono('espadas')}${t('capture.go')}`, clase: 'primary', fn: () => void this.retar(esp) }] });
+    }));
+    body.querySelector<HTMLButtonElement>('#amis-crear')?.addEventListener('click', () => void this.crearReto());
+    body.querySelector<HTMLButtonElement>('#amis-unirse')?.addEventListener('click', () => void this.unirseReto(body.querySelector<HTMLInputElement>('#amis-input')!.value));
+    body.querySelector<HTMLButtonElement>('#amis-copiar')?.addEventListener('click', () => { void navigator.clipboard?.writeText(this.enlaceReto()); toast(t('amis.copied')); });
+    body.querySelector<HTMLButtonElement>('#amis-cancelar')?.addEventListener('click', () => { if (this.reto) void api.amistosaCancelar(this.reto); this.reto = null; this.show('batalla'); });
+    body.querySelector<HTMLButtonElement>('#btn-tuto')?.addEventListener('click', () => this.onTutorial());
     body.querySelectorAll<HTMLButtonElement>('[data-capturar]').forEach((b) => (b.onclick = () => void this.retar(b.dataset.capturar!)));
     body.querySelectorAll<HTMLButtonElement>('[data-filtro]').forEach((b) => (b.onclick = () => { this.filtro = b.dataset.filtro as Rareza | 'todos'; this.show('capturar'); }));
     body.querySelectorAll<HTMLButtonElement>('[data-hab]').forEach((b) => (b.onclick = async () => {
       try { this.setPerfil(await api.habilidad(b.dataset.hab!)); this.show('domador'); } catch (e: any) { toast(e.message, true); }
     }));
+  }
+
+  /** Ficha de un Primal tuyo con acciones de equipo. */
+  private fichaPropia(uid: string) {
+    const x = this.perfil.primales.find((p) => p.uid === uid);
+    if (!x) return;
+    const enEquipo = this.perfil.equipo.includes(uid);
+    const acciones = enEquipo
+      ? [...(this.perfil.equipo[0] !== uid ? [{ texto: t('ficha.lead'), clase: 'primary', fn: () => void this.cambiarEquipo(uid, true) }] : []),
+        { texto: t('ficha.remove'), clase: 'ghost', fn: () => void this.cambiarEquipo(uid, false) }]
+      : [{ texto: t('ficha.add'), clase: 'primary', fn: () => void this.cambiarEquipo(uid, true) }];
+    abrirFicha(x.esp, { perfil: this.perfil, uid, acciones });
+  }
+
+  private enlaceReto() {
+    return `${location.origin}/?reto=${this.reto}`;
+  }
+
+  private async crearReto() {
+    try {
+      const { codigo } = await api.amistosaCrear();
+      this.reto = codigo;
+      this.show('batalla');
+      const r = await api.amistosaEsperar(codigo);
+      this.reto = null;
+      this.onBatalla(r.roomId);
+    } catch (e: any) {
+      this.reto = null;
+      if (!/cancelado/.test(e.message)) toast(e.message, true);
+      if (this.tab === 'batalla') this.show('batalla');
+    }
+  }
+
+  async unirseReto(codigo: string) {
+    try {
+      const r = await api.amistosaUnirse(codigo.trim().toUpperCase());
+      this.onBatalla(r.roomId);
+    } catch (e: any) { toast(e.message, true); }
   }
 
   private async cambiarEquipo(uid: string, poner: boolean) {
@@ -324,7 +385,7 @@ export function pantallaInicial(onElegido: (p: Perfil) => void): () => void {
       const k = sel.indexOf(id);
       const final = ESPECIES[ESPECIES[e.evoluciona!.a].evoluciona?.a ?? e.evoluciona!.a];
       return `<div class="starter ${k >= 0 ? 'sel' : ''}" style="--c:${ELEMENTOS[e.elemento].color}" data-id="${id}">
-        ${k >= 0 ? `<span class="pick-n">${k + 1}</span>` : ''}
+        ${k >= 0 ? `<span class="pick-n">${k + 1}</span>` : ''}<button class="info-btn" data-info="${id}" aria-label="Info">i</button>
         <div class="stage"><img class="sprite" src="${spriteUrl(id)}" alt=""></div>
         <h3>${e.nombre}</h3>${elTag(e.elemento)}<p>${esc(descEspecie(id))}</p>
         <div class="evo-chain"><img src="${spriteUrl(e.evoluciona!.a)}" alt="" title="${ESPECIES[e.evoluciona!.a].nombre}"><img src="${spriteUrl(final.id)}" alt="" title="${final.nombre}"></div></div>`;
@@ -333,6 +394,7 @@ export function pantallaInicial(onElegido: (p: Perfil) => void): () => void {
     const faltan = NUM_INICIALES - sel.length;
     b.disabled = faltan > 0;
     b.textContent = faltan > 0 ? t('starter.pick', { n: faltan }) : t('starter.confirm');
+    document.querySelectorAll<HTMLElement>('.info-btn').forEach((b) => (b.onclick = (ev) => { ev.stopPropagation(); abrirFicha(b.dataset.info!); }));
     document.querySelectorAll<HTMLElement>('.starter').forEach((el) => (el.onclick = () => {
       const id = el.dataset.id!;
       const k = sel.indexOf(id);

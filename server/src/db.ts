@@ -22,6 +22,7 @@ export interface Domador {
   habilidades: Record<string, number>;
   capturados: string[];
   medallas: string[];
+  tutorial?: boolean;
 }
 
 export interface Store {

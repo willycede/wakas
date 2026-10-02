@@ -31,6 +31,12 @@ export const api = {
   buscar: () => call<{ roomId: string }>('POST', '/api/buscar'),
   cancelar: () => call<{ ok: boolean }>('POST', '/api/cancelar'),
   capturar: (especie: string) => call<{ roomId: string; perfil: Perfil }>('POST', '/api/capturar', { especie }),
+  tutorial: () => call<{ roomId: string }>('POST', '/api/tutorial'),
+  saltarTutorial: () => call<Perfil>('POST', '/api/tutorial/saltar'),
+  amistosaCrear: () => call<{ codigo: string }>('POST', '/api/amistosa/crear'),
+  amistosaEsperar: (codigo: string) => call<{ roomId: string }>('POST', '/api/amistosa/esperar', { codigo }),
+  amistosaUnirse: (codigo: string) => call<{ roomId: string }>('POST', '/api/amistosa/unirse', { codigo }),
+  amistosaCancelar: (codigo: string) => call<{ ok: boolean }>('POST', '/api/amistosa/cancelar', { codigo }),
 };
 
 export const V = `?v=${__BUILD_ID__}`;

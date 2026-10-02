@@ -25,6 +25,7 @@ export interface Perfil {
   habilidades: Record<string, number>;
   puntosLibres: number;
   capturados: string[]; // especies vistas/capturadas alguna vez
+  tutorial: boolean; // ya hizo (o saltó) el tutorial
 }
 
 export interface UnidadSnap {
@@ -79,13 +80,14 @@ export type Fx =
 
 export interface InicioBatalla {
   lado: 0 | 1;
-  modo: 'liga' | 'captura';
+  modo: 'liga' | 'captura' | 'tutorial' | 'amistosa';
   rivalIA: boolean;
   nombres: [string, string];
   trofeos: [number, number];
   obstaculos: Obstaculo[];
   movimientos: string[][]; // por slot de tu equipo: ids de movimientos
   liga: string; // estadio de la batalla (según los trofeos)
+  nivelMax?: number; // en la Liga: nivel máximo con el que pelean los Primales
 }
 
 /** Emotes que se pueden enviar al rival (stickers y frases rápidas). */

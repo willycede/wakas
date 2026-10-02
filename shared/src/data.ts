@@ -96,6 +96,8 @@ export interface Movimiento {
   atraviesa?: boolean; // el proyectil no se detiene al golpear
   intangible?: boolean; // embestida invulnerable
   mejora?: 'vel' | 'dano';
+  /** Zonas: 'pasos' = tres círculos que avanzan en línea recta delante del Primal. */
+  patron?: 'pasos';
 }
 
 type M = Omit<Movimiento, 'id' | 'elemento'>;
@@ -107,7 +109,7 @@ export const MOVIMIENTOS: Record<string, Movimiento> = {
     ascuas: { nombre: 'Ascuas', tipo: 'rafaga', desc: 'Tres brasas en abanico.', poder: 0.7, enfriamiento: 2.5, alcance: 260, radio: 9, velocidad: 380, cantidad: 3, apertura: 14, estado: 'quemadura', probEstado: 0.25 },
     bola_fuego: { nombre: 'Bola de fuego', tipo: 'proyectil', desc: 'Una bola ardiente que quema.', poder: 1.0, enfriamiento: 2.4, alcance: 300, radio: 14, velocidad: 400, estado: 'quemadura', probEstado: 0.3 },
     llamarada: { nombre: 'Llamarada', tipo: 'rayo', desc: 'Un chorro de fuego en línea recta.', poder: 1.6, enfriamiento: 6, alcance: 240, radio: 26, preparacion: 0.45, estado: 'quemadura', probEstado: 0.5 },
-    erupcion: { nombre: 'Erupción', tipo: 'zona', desc: 'El suelo estalla frente a ti.', poder: 2.2, enfriamiento: 9, alcance: 320, radio: 80, preparacion: 0.9, estado: 'quemadura', probEstado: 0.6 },
+    erupcion: { nombre: 'Erupción', tipo: 'zona', desc: 'El suelo estalla en tres pasos frente a ti.', poder: 1.0, enfriamiento: 9, alcance: 300, radio: 62, preparacion: 0.6, estado: 'quemadura', probEstado: 0.5, patron: 'pasos' },
     embestida_ignea: { nombre: 'Embestida ígnea', tipo: 'embestida', desc: 'Se lanza envuelto en llamas.', poder: 1.3, enfriamiento: 5, alcance: 200, radio: 26, estado: 'quemadura', probEstado: 0.35, empuje: 60 },
     ardor: { nombre: 'Ardor', tipo: 'mejora', desc: '+30% de daño por un rato.', poder: 0.3, enfriamiento: 12, alcance: 0, duracion: 6, mejora: 'dano' },
   }),
@@ -131,7 +133,7 @@ export const MOVIMIENTOS: Record<string, Movimiento> = {
     chispazo: { nombre: 'Chispazo', tipo: 'proyectil', desc: 'Rayo rápido que puede paralizar.', poder: 0.85, enfriamiento: 2, alcance: 320, radio: 10, velocidad: 560, estado: 'paralisis', probEstado: 0.25 },
     bola_voltio: { nombre: 'Bola voltio', tipo: 'proyectil', desc: 'Esfera eléctrica lenta y poderosa.', poder: 1.2, enfriamiento: 3.2, alcance: 300, radio: 16, velocidad: 300, estado: 'paralisis', probEstado: 0.35 },
     descarga: { nombre: 'Descarga', tipo: 'rayo', desc: 'Una descarga en línea recta.', poder: 1.6, enfriamiento: 6, alcance: 280, radio: 20, preparacion: 0.35, estado: 'paralisis', probEstado: 0.4 },
-    rayo_trueno: { nombre: 'Rayo trueno', tipo: 'zona', desc: 'Un relámpago cae del cielo.', poder: 2.0, enfriamiento: 8, alcance: 340, radio: 60, preparacion: 0.8, estado: 'paralisis', probEstado: 0.5 },
+    rayo_trueno: { nombre: 'Rayo trueno', tipo: 'zona', desc: 'Tres relámpagos caen avanzando frente a ti.', poder: 0.95, enfriamiento: 8, alcance: 320, radio: 55, preparacion: 0.55, estado: 'paralisis', probEstado: 0.35, patron: 'pasos' },
     carga_voltio: { nombre: 'Carga voltio', tipo: 'embestida', desc: 'Una carga eléctrica veloz.', poder: 1.2, enfriamiento: 4.5, alcance: 240, radio: 24, estado: 'paralisis', probEstado: 0.3, empuje: 40 },
     aceleron: { nombre: 'Acelerón', tipo: 'mejora', desc: '+40% de velocidad por un rato.', poder: 0.4, enfriamiento: 12, alcance: 0, duracion: 5, mejora: 'vel' },
   }),
@@ -163,7 +165,7 @@ export const MOVIMIENTOS: Record<string, Movimiento> = {
     granizo: { nombre: 'Granizo', tipo: 'rafaga', desc: 'Tres granizos que pueden frenar.', poder: 0.7, enfriamiento: 2.5, alcance: 270, radio: 10, velocidad: 400, cantidad: 3, apertura: 13, estado: 'lento', probEstado: 0.3 },
     carambano: { nombre: 'Carámbano', tipo: 'proyectil', desc: 'Una punta de hielo que atraviesa.', poder: 0.95, enfriamiento: 2.3, alcance: 330, radio: 10, velocidad: 600, atraviesa: true, estado: 'lento', probEstado: 0.2 },
     aliento_helado: { nombre: 'Aliento helado', tipo: 'rayo', desc: 'Un soplo congelante en línea.', poder: 1.5, enfriamiento: 6, alcance: 260, radio: 26, preparacion: 0.45, estado: 'lento', probEstado: 0.8 },
-    pico_glaciar: { nombre: 'Pico glaciar', tipo: 'zona', desc: 'Un pico de hielo brota del suelo y congela.', poder: 2.1, enfriamiento: 9, alcance: 320, radio: 75, preparacion: 0.9, estado: 'paralisis', probEstado: 0.5 },
+    pico_glaciar: { nombre: 'Pico glaciar', tipo: 'zona', desc: 'Picos de hielo brotan en tres pasos frente a ti.', poder: 1.0, enfriamiento: 9, alcance: 300, radio: 60, preparacion: 0.6, estado: 'paralisis', probEstado: 0.35, patron: 'pasos' },
     patinazo: { nombre: 'Patinazo', tipo: 'embestida', desc: 'Se desliza sobre hielo y embiste.', poder: 1.15, enfriamiento: 4.5, alcance: 260, radio: 24, estado: 'lento', probEstado: 0.4 },
     muro_hielo: { nombre: 'Muro de hielo', tipo: 'escudo', desc: 'Una coraza de hielo.', poder: 0.35, enfriamiento: 13, alcance: 0, duracion: 5 },
   }),
@@ -256,9 +258,16 @@ export interface Especie {
 
 export const NIVEL_MAX_PRIMAL = 40;
 
-/** Estadísticas de un Primal en un nivel. */
+/** Movimientos que se desbloquean al subir de nivel (huecos 1-4). Los legendarios los traen todos. */
+export const DESBLOQUEO = [1, 4, 9, 15];
+export function movDesbloqueado(esp: string, slot: number, nivel: number) {
+  return ESPECIES[esp]?.rareza === 'legendario' || nivel >= DESBLOQUEO[slot - 1];
+}
+
+/** Estadísticas de un Primal en un nivel. El nivel ayuda, pero no decide solo: la evolución y la
+ * habilidad del jugador pesan más (del nivel 5 al 40 las estadísticas crecen un 48%). */
 export function statsPrimal(esp: Especie, nivel: number) {
-  const f = 0.6 + 0.04 * nivel;
+  const f = 0.85 + 0.0125 * nivel;
   return {
     vida: Math.round(esp.base.vida * 10 * f),
     ataque: Math.round(esp.base.ataque * f),
