@@ -75,3 +75,7 @@ th { color: var(--text-muted); font-weight: 900; }
 .clave { max-width: 380px; margin: 60px auto; text-align: center; }
 .clave input { width: 100%; margin: 12px 0; }
 @media (max-width: 520px) { .grid2 { grid-template-columns: 1fr; } .barra { grid-template-columns: 90px 1fr 40px; } }
+.acciones { display: flex; gap: 8px; }
+button[hidden] { display: none; }
+button.sec { background: transparent; color: var(--text-muted); }
+.clave .error { color: #ff8a7a; font-weight: 800; font-size: 13px; min-height: 18px; }

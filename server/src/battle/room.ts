@@ -176,6 +176,7 @@ export class BatallaRoom extends Room {
   /** 20 segundos para elegir equipo viendo la ficha del rival. */
   private preparar() {
     this.preparando = true;
+    for (const p of this.opts.lados) if (p.id !== null) stats.horaJuego(domadores.cache.get(p.id)?.zonaMin);
     const ms = SEGUNDOS_PREPARACION * 1000;
     for (const c of this.clients) {
       const l = this.clientes.get(c.sessionId)!;

@@ -32,6 +32,9 @@ export interface Domador {
   creado?: number; // fecha de registro (ms)
   dias?: number[]; // días en que jugó (para la retención)
   segundosJugados?: number;
+  pais?: string; // aproximado (zona horaria / idioma del navegador)
+  zonaMin?: number; // diferencia horaria del jugador respecto a UTC, en minutos
+  legal?: { version: string; fecha: number }; // términos aceptados
 }
 
 export interface Store {

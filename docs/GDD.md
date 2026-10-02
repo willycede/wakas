@@ -76,6 +76,11 @@ Fuego, Agua, Planta, Eléctrico, Roca, Viento, Sombra, **Hielo** y **Luz**. Un P
 - Caminar: cada pata gira desde la cadera, alternándose, con bote del cuerpo.
 - Estadios dibujados en código (`client/src/arenas.ts`) con público animado, banderines tricolor, focos y un paisaje de fondo.
 
+## 11b. Panel del dueño y aspectos legales **[decisión del dueño]**
+- Panel `/admin` privado con clave (ADMIN_KEY) y sesión de 12 h: jugadores en línea, activos, nuevos, batallas, horas, retención, ligas, Primales, **países** (por zona horaria, sin IP) y **horas de juego** (hora local).
+- Registro con aceptación de Términos y Política de Privacidad (13+; menores necesitan permiso para comprar). Borradores en `shared/src/legal.ts`, a revisar por un abogado antes de vender.
+- Compras con tarjeta (futuro): solo mediante un procesador de pagos (Stripe, PayPhone, Kushki…); el juego nunca guarda datos de tarjetas. Facturación SRI y política de reembolsos antes de cobrar.
+
 ## 12. Pendiente
 - Música: tema de menú, batalla (estilo combates clásicos, metales y bajo galopante), tema legendario épico (un tono por legendario), fanfarrias. Original, sintetizada en el navegador.
 - Terminar de generar el arte de las 100 criaturas y rehacer los stickers de emotes.

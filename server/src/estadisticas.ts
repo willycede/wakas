@@ -14,9 +14,11 @@ export interface DiaStats {
   esperaMs: number; // espera total en la cola de la Liga
   esperas: number;
   pico: number; // máximo de Entrenadores en línea a la vez
+  horas?: number[]; // batallas empezadas por hora local del jugador (0-23)
+  paises?: Record<string, number>; // jugadores activos por país
 }
 
-const vacio = (): DiaStats => ({ activos: [], nuevos: 0, batallas: {}, vsIA: 0, vsHumano: 0, segundos: 0, esperaMs: 0, esperas: 0, pico: 0 });
+const vacio = (): DiaStats => ({ activos: [], nuevos: 0, batallas: {}, vsIA: 0, vsHumano: 0, segundos: 0, esperaMs: 0, esperas: 0, pico: 0, horas: Array(24).fill(0), paises: {} });
 
 export class Estadisticas {
   private dias = new Map<number, DiaStats>();
@@ -41,7 +43,12 @@ export class Estadisticas {
   /** Un Entrenador hizo algo hoy (entró, jugó...). Devuelve true si es su primera vez hoy. */
   activo(d: Domador) {
     const h = this.hoy();
-    if (!h.activos.includes(d.id)) h.activos.push(d.id);
+    if (!h.activos.includes(d.id)) {
+      h.activos.push(d.id);
+      h.paises ??= {};
+      const p = d.pais ?? '??';
+      h.paises[p] = (h.paises[p] ?? 0) + 1;
+    }
     const dia = diaActual();
     d.creado ??= Date.now();
     d.dias ??= [];
@@ -54,6 +61,13 @@ export class Estadisticas {
     h.batallas[modo] = (h.batallas[modo] ?? 0) + 1;
     h.segundos += segundos * humanos;
     if (modo === 'liga') contraIA ? h.vsIA++ : h.vsHumano++;
+  }
+  /** Una batalla empezó: se anota la hora local del jugador. */
+  horaJuego(zonaMin: number | undefined) {
+    const h = this.hoy();
+    h.horas ??= Array(24).fill(0);
+    const local = new Date(Date.now() + (zonaMin ?? 0) * 60_000).getUTCHours();
+    h.horas[local]++;
   }
   espera(ms: number) { const h = this.hoy(); h.esperaMs += ms; h.esperas++; }
   enLinea(n: number) { const h = this.hoy(); if (n > h.pico) h.pico = n; }

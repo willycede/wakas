@@ -2,7 +2,8 @@
 
 import Phaser from 'phaser';
 import { DESBLOQUEO, ESPECIES, xpPrimal, type FinBatalla, type InicioBatalla, type Perfil } from '../../shared/src';
-import { dialogo } from './ficha';
+import { dialogo, enlazarLegal, textoAcepto } from './ficha';
+import { LEGAL_VERSION } from '../../shared/src';
 import { mostrarEvoluciones } from './evolucion';
 import { mostrarIntro } from './intro';
 import { mostrarPreparacion } from './preparacion';
@@ -32,6 +33,7 @@ function pintarIdioma() {
 }
 alCambiarIdioma(() => {
   pintarIdioma();
+  pintarAcepto();
   menu.refrescar();
   repintarInicial?.();
   (game?.scene.getScene('batalla') as BatallaScene | undefined)?.refrescarIdioma?.();
@@ -49,14 +51,21 @@ document.documentElement.lang = idioma;
 aplicarHtml();
 pintarIdioma();
 
+function pintarAcepto() {
+  $('acepto-txt').innerHTML = textoAcepto();
+  enlazarLegal($('acepto-txt'));
+}
+
 function mostrarLogin() {
   $('login').classList.remove('hidden');
+  pintarAcepto();
   const go = async (registro: boolean) => {
     const u = ($('login-user') as HTMLInputElement).value.trim();
     const c = ($('login-pass') as HTMLInputElement).value;
     $('login-error').textContent = '';
     try {
-      const r = registro ? await api.registro(u, c) : await api.entrar(u, c);
+      if (registro && !($('login-acepto') as HTMLInputElement).checked) { $('login-error').textContent = t('legal.falta'); return; }
+      const r = registro ? await api.registro(u, c, LEGAL_VERSION) : await api.entrar(u, c);
       setToken(r.token);
       $('login').classList.add('hidden');
       await arrancar();
@@ -116,6 +125,16 @@ async function arrancar() {
     return mostrarLogin();
   }
   menu.setPerfil(p);
+  // cuentas anteriores (o términos actualizados): aceptar una vez
+  if (!p.legalOk) {
+    await new Promise<void>((ok) => {
+      const pedir = () => {
+        dialogo(t('legal.titulo'), textoAcepto(), [{ texto: t('legal.aceptar'), clase: 'primary big', fn: () => void api.aceptarLegal(LEGAL_VERSION).then((np) => { menu.setPerfil(np); ok(); }) }]);
+        enlazarLegal($('ficha-body'), pedir); // al cerrar el texto legal se vuelve a esta ventana
+      };
+      pedir();
+    });
+  }
   if (!p.primales.length) {
     await mostrarIntro(); // la primera vez: por qué jugar
     repintarInicial = pantallaInicial((np) => {

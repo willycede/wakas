@@ -28,9 +28,18 @@ Luego abre http://localhost:2600
 
 Abre `https://TU-JUEGO.up.railway.app/admin` para ver cuántos juegan, cuánto juegan y si vuelven.
 
-Para protegerlo con una clave (hazlo una sola vez):
+El panel está protegido: **sin la clave no se ve nada**. Para ponerle tu clave (hazlo una sola vez):
 1. En Railway, entra a tu servicio del juego → pestaña **Variables**.
-2. Pulsa **New Variable**. Nombre: `ADMIN_KEY`. Valor: una clave que solo tú sepas (por ejemplo `primal-2026-secreta`).
-3. Railway vuelve a desplegar solo. Al abrir `/admin`, te pedirá esa clave una vez.
+2. Pulsa **New Variable**. Nombre: `ADMIN_KEY`. Valor: una clave larga que solo tú sepas (mínimo 12 letras y números).
+3. Railway vuelve a desplegar solo. Al abrir `/admin` escribe esa clave. La sesión dura 12 horas; el botón **Cerrar sesión** la termina antes.
+
+Si no pones `ADMIN_KEY`, el panel queda cerrado para todos (nadie puede entrar).
+
+El panel muestra también **de qué país** juegan (aproximado, por la zona horaria del navegador; no se guarda la IP) y **a qué hora** juegan.
+
+## Términos y Política de Privacidad
+
+Al crear cuenta, cada jugador marca "Tengo al menos 13 años y acepto los Términos y la Política de Privacidad". Las cuentas antiguas lo aceptan una vez al entrar.
+Los textos están en `shared/src/legal.ts` y son un **borrador**: antes de cobrar con tarjeta, pide a un abogado que los revise y completa los datos entre corchetes: `[Nombre del titular o empresa]`, `[ciudad]`, `[correo de contacto]`. Si los cambias, se sube la fecha de versión y todos los jugadores los aceptan de nuevo.
 
 Para ver cómo se verá con muchos jugadores (datos inventados): `/admin?demo`.

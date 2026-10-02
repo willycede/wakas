@@ -17,7 +17,7 @@ async function call(method, path, body, token) {
 class Bot {
   constructor(name) { this.name = name + Math.random().toString(36).slice(2, 6); }
   async setup(inicial) {
-    this.token = (await call('POST', '/api/registro', { usuario: this.name, clave: 'botbot' })).token;
+    this.token = (await call('POST', '/api/registro', { usuario: this.name, clave: 'botbot', acepto: '2026-10-02' })).token;
     this.perfil = await call('POST', '/api/inicial', { especies: inicial }, this.token);
   }
   async pelear(roomId) {

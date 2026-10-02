@@ -9,7 +9,8 @@ import { spriteUrl } from './api';
 import { icono } from './iconos';
 import { descEspecial, descEspecie, descHab, descMov, nombreElemento, nombreEspecial, nombreHab, nombreMov, t } from './i18n';
 import { avatarUrl } from './avatar';
-import { NUM_ENTRENADORES, type Avatar } from '../../shared/src';
+import { LEGAL, NUM_ENTRENADORES, type Avatar } from '../../shared/src';
+import { idioma } from './i18n';
 import { esc, rarezaTag, tiposTag } from './menu';
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -168,4 +169,25 @@ export function editarAvatar(actual: Avatar, onGuardar: (a: Avatar) => void) {
   $('ficha').classList.remove('hidden');
   $('ficha').onclick = (ev) => { if (ev.target === $('ficha')) $('ficha').classList.add('hidden'); };
   pintar();
+}
+
+/** Términos o Política de Privacidad en una ventana. */
+export function mostrarLegal(tipo: 'terminos' | 'privacidad', alCerrar?: () => void) {
+  const doc = LEGAL[idioma][tipo];
+  $('ficha-body').innerHTML = `<button class="f-cerrar">✕</button><div class="legal"><h2 class="display">${doc.titulo}</h2>
+    ${doc.secciones.map(([h, p]) => `<h3>${esc(h)}</h3><p>${esc(p)}</p>`).join('')}</div>`;
+  $('ficha').classList.remove('hidden');
+  const cerrar = () => { $('ficha').classList.add('hidden'); alCerrar?.(); };
+  $('ficha-body').querySelector<HTMLElement>('.f-cerrar')!.onclick = cerrar;
+  $('ficha').onclick = (ev) => { if (ev.target === $('ficha')) cerrar(); };
+  $('ficha-body').scrollTop = 0;
+}
+
+/** Texto de "acepto" con enlaces a los dos documentos. */
+export function textoAcepto() {
+  const L = LEGAL[idioma];
+  return esc(L.acepto).replace('{t}', `<a href="#" data-legal="terminos">${L.terminos.titulo}</a>`).replace('{p}', `<a href="#" data-legal="privacidad">${L.privacidad.titulo}</a>`);
+}
+export function enlazarLegal(raiz: HTMLElement, alCerrar?: () => void) {
+  raiz.querySelectorAll<HTMLElement>('[data-legal]').forEach((a) => (a.onclick = (ev) => { ev.preventDefault(); ev.stopPropagation(); mostrarLegal(a.dataset.legal as 'terminos' | 'privacidad', alCerrar); }));
 }

@@ -13,6 +13,8 @@ import { BatallaRoom, type OpcionesBatalla, type Participante } from './battle/r
 import type { Domador } from './db';
 import { avatarDe, cobrarMision, costoCaptura, elegirIniciales, fichaDe, perfil, ponerEquipo, puedeCapturar, subirHabilidad } from './progress';
 import { domadores, salas, stats, store } from './services';
+import { paisDe } from './pais';
+import { LEGAL_VERSION } from '../../shared/src';
 
 const scrypt = promisify(scryptCb) as (pw: string, salt: Buffer, len: number) => Promise<Buffer>;
 const PORT = Number(process.env.PORT ?? 2600);
@@ -127,6 +129,13 @@ async function resumenAdmin() {
     primales: Object.entries(uso).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([esp, n]) => ({ esp, nombre: ESPECIES[esp]?.nombre ?? esp, n })),
     iniciales: Object.entries(iniciales).sort((a, b) => b[1] - a[1]).map(([esp, n]) => ({ esp, nombre: ESPECIES[esp]?.nombre ?? esp, n })),
     ligas,
+    paises: (() => {
+      // jugadores distintos por país en los últimos 30 días
+      const p: Record<string, number> = {};
+      for (const d of todos) if (d.dias?.some((x) => x > hoy - 30)) p[d.pais ?? '??'] = (p[d.pais ?? '??'] ?? 0) + 1;
+      return Object.entries(p).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([codigo, n]) => ({ codigo, n }));
+    })(),
+    horas: dias.reduce((acc, d) => { (d.horas ?? []).forEach((v, i) => (acc[i] += v)); return acc; }, Array(24).fill(0) as number[]),
   };
 }
 
@@ -187,6 +196,11 @@ async function main() {
     const id = token ? await store.sesion(token) : null;
     if (id) visto.set(id, Date.now());
     const d = id ? await domadores.get(id) : null;
+    if (d) {
+      const zona = String(req.headers['x-zona'] ?? ''), min = Number(req.headers['x-zona-min']);
+      if (zona) d.pais = paisDe(zona, String(req.headers['x-idioma'] ?? ''));
+      if (Number.isFinite(min) && Math.abs(min) <= 840) d.zonaMin = min;
+    }
     if (d && stats.activo(d)) await domadores.guardar(d); // primera vez hoy: se guarda el día
     return d;
   };
@@ -197,11 +211,12 @@ async function main() {
     const clave = String(req.body?.clave ?? '');
     if (!/^[A-Za-z0-9_]{3,16}$/.test(usuario)) return res.status(400).json({ error: 'El nombre debe tener de 3 a 16 letras o números.' });
     if (clave.length < 6) return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres.' });
+    if (req.body?.acepto !== LEGAL_VERSION) return res.status(400).json({ error: 'Debes aceptar los Términos y la Política de Privacidad.' });
     const id = await store.crearCuenta(usuario, await hash(clave));
     if (!id) return res.status(409).json({ error: 'Ese nombre ya está en uso.' });
     stats.nuevo();
     const nd = await domadores.get(id);
-    if (nd) { nd.creado = Date.now(); stats.activo(nd); await domadores.guardar(nd); }
+    if (nd) { nd.creado = Date.now(); nd.legal = { version: LEGAL_VERSION, fecha: Date.now() }; stats.activo(nd); await domadores.guardar(nd); }
     const token = randomBytes(32).toString('hex');
     await store.crearSesion(token, id);
     res.json({ token });
@@ -234,6 +249,7 @@ async function main() {
   app.post('/api/equipo', accion((d, b) => ponerEquipo(d, Array.isArray(b.equipo) ? b.equipo.map(String) : [])));
   app.post('/api/habilidad', accion((d, b) => subirHabilidad(d, String(b.id))));
   app.post('/api/mision', accion((d, b) => cobrarMision(d, String(b.id))));
+  app.post('/api/legal/aceptar', accion((d, b) => { if (b.version !== LEGAL_VERSION) return 'Versión no válida.'; d.legal = { version: LEGAL_VERSION, fecha: Date.now() }; return null; }));
   app.post('/api/avatar', accion((d, b) => { const a = avatarValido(b.avatar); if (!a) return 'Avatar no válido.'; d.avatar = a; return null; }));
 
   app.get('/api/ranking', async (_req, res) => res.json(await store.ranking(50)));
@@ -384,12 +400,32 @@ async function main() {
     res.json({ roomId, perfil: perfil(d) });
   });
 
-  // ------------------------------------------------------------------ panel del dueño
-  // En Railway hace falta la variable ADMIN_KEY; en local se puede entrar sin clave.
+  // ------------------------------------------------------------------ panel del dueño (con inicio de sesión)
+  // La clave es la variable ADMIN_KEY (en Railway). En local, si no está puesta, la clave es "local".
+  const enLocal = !process.env.DATABASE_URL && !process.env.RAILWAY_ENVIRONMENT;
+  const claveAdmin = () => process.env.ADMIN_KEY || (enLocal ? 'local' : '');
+  const sesionesAdmin = new Map<string, number>(); // token -> vence
+  const tokenAdmin = (req: express.Request) => /(?:^|;\s*)pc_admin=([a-f0-9]{64})/.exec(String(req.headers.cookie ?? ''))?.[1];
+  const esAdmin = (req: express.Request) => { const t = tokenAdmin(req); return !!t && (sesionesAdmin.get(t) ?? 0) > Date.now(); };
+  app.post('/api/admin/entrar', async (req, res) => {
+    if (limitado('admin:' + (req.ip ?? ''))) return res.status(429).json({ error: 'Demasiados intentos. Espera un minuto.' });
+    const k = claveAdmin();
+    if (!k) return res.status(503).json({ error: 'Falta configurar ADMIN_KEY en Railway.' });
+    const dada = Buffer.from(String(req.body?.clave ?? '')), buena = Buffer.from(k);
+    if (dada.length !== buena.length || !timingSafeEqual(dada, buena)) return res.status(401).json({ error: 'Clave incorrecta.' });
+    const t = randomBytes(32).toString('hex');
+    sesionesAdmin.set(t, Date.now() + 12 * 3_600_000);
+    res.setHeader('Set-Cookie', `pc_admin=${t}; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200${req.secure ? '; Secure' : ''}`);
+    res.json({ ok: true });
+  });
+  app.post('/api/admin/salir', (req, res) => {
+    const t = tokenAdmin(req);
+    if (t) sesionesAdmin.delete(t);
+    res.setHeader('Set-Cookie', 'pc_admin=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0');
+    res.json({ ok: true });
+  });
   app.get('/api/admin/estadisticas', async (req, res) => {
-    const clave = process.env.ADMIN_KEY;
-    const enLocal = !process.env.DATABASE_URL && !process.env.RAILWAY_ENVIRONMENT;
-    if (!enLocal && (!clave || req.query.clave !== clave)) return res.status(403).json({ error: clave ? 'Clave incorrecta.' : 'Falta configurar ADMIN_KEY en Railway.' });
+    if (!esAdmin(req)) return res.status(401).json({ error: 'Inicia sesión.' });
     await stats.guardar();
     res.json(await resumenAdmin());
   });

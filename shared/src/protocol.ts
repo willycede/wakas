@@ -29,6 +29,7 @@ export interface Perfil {
   capturados: string[]; // especies vistas/capturadas alguna vez
   tutorial: boolean; // ya hizo (o saltó) el tutorial
   avatar: Avatar;
+  legalOk: boolean; // aceptó la versión vigente de los Términos
   misiones: { id: string; progreso: number; meta: number; premio: number; cobrada: boolean }[];
   bonoDiario: boolean; // la primera victoria de hoy aún da el doble de monedas
 }

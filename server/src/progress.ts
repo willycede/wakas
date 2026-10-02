@@ -1,7 +1,7 @@
 // Progreso de un Domador: perfil, recompensas, evolución, medallas, habilidades y capturas.
 
 import {
-  BONO_MEDALLA_XP, avatarAleatorio, avatarValido, ESPECIES, ESPERA_CAMBIO, HABILIDADES_DOMADOR, INICIALES, MAX_LEGENDARIOS, NIVEL_MAX_DOMADOR, NIVEL_MAX_PRIMAL, NUM_INICIALES,
+  BONO_MEDALLA_XP, LEGAL_VERSION, avatarAleatorio, avatarValido, ESPECIES, ESPERA_CAMBIO, HABILIDADES_DOMADOR, INICIALES, MAX_LEGENDARIOS, NIVEL_MAX_DOMADOR, NIVEL_MAX_PRIMAL, NUM_INICIALES,
   BONO_PRIMERA_VICTORIA, MISIONES, RECOMPENSAS, TAM_EQUIPO, diaActual, esLegendario, misionesDelDia, legendarioDelDia, medallasDe, puntosHabilidad, xpDomador, xpPrimal, type FichaRival, type FinBatalla, type Perfil, type PrimalGuardado,
 } from '../../shared/src';
 import type { Domador } from './db';
@@ -23,6 +23,7 @@ export function perfil(d: Domador): Perfil {
     primales: d.primales, equipo: d.equipo, habilidades: d.habilidades, puntosLibres: puntosHabilidad(d.nivel) - usados, capturados: d.capturados,
     tutorial: !!d.tutorial,
     avatar: avatarDe(d),
+    legalOk: d.legal?.version === LEGAL_VERSION,
     misiones: misionesHoy(d).map((m) => {
       const def = MISIONES.find((x) => x.id === m.id)!;
       return { id: m.id, progreso: m.progreso, meta: def.meta, premio: def.premio, cobrada: m.cobrada };

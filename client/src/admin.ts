@@ -1,7 +1,6 @@
 // Panel del dueño: cuántos juegan, cuánto juegan y si vuelven. Se actualiza solo cada 30 s.
 
 const $ = (id: string) => document.getElementById(id)!;
-const KEY = 'primal_admin_clave';
 const tip = $('tip');
 
 interface Resumen {
@@ -14,7 +13,14 @@ interface Resumen {
   primales: { esp: string; nombre: string; n: number }[];
   iniciales: { esp: string; nombre: string; n: number }[];
   ligas: { id: string; nombre: string; jugadores: number }[];
+  paises: { codigo: string; n: number }[];
+  horas: number[]; // batallas por hora local del jugador, últimos 30 días
 }
+
+const nombresPais = (() => { try { return new Intl.DisplayNames(['es'], { type: 'region' }); } catch { return null; } })();
+const bandera = (c: string) => (/^[A-Z]{2}$/.test(c) ? String.fromCodePoint(...[...c].map((l) => 0x1f1e6 + l.charCodeAt(0) - 65)) : '🌐');
+const pais = (c: string) => (c === '??' ? 'Desconocido' : `${bandera(c)} ${nombresPais?.of(c) ?? c}`);
+const hora = (h: number) => `${String(h).padStart(2, '0')}:00`;
 
 const fecha = (dia: number) => new Date(dia * 86_400_000).toLocaleDateString('es', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 const num = (n: number) => n.toLocaleString('es');
@@ -31,7 +37,7 @@ function mostrarTip(ev: MouseEvent, html: string) {
 const ocultarTip = () => (tip.hidden = true);
 
 /** Columnas (apiladas si hay varias series) con eje, cuadrícula y tooltip por columna. */
-function columnas(series: { nombre: string; color: string; valores: number[] }[], dias: number[], unidad = ''): string {
+function columnas(series: { nombre: string; color: string; valores: number[] }[], dias: number[], unidad = '', etq: (d: number) => string = fecha): string {
   const W = 600, H = 200, mi = 34, ab = 22, ar = 8;
   const n = dias.length;
   const totales = dias.map((_, i) => series.reduce((s, x) => s + x.valores[i], 0));
@@ -57,14 +63,14 @@ function columnas(series: { nombre: string; color: string; valores: number[] }[]
         : `<rect x="${x}" y="${y1}" width="${w}" height="${h}" fill="${s.color}"/>`;
       base += v;
     });
-    if (i % Math.ceil(n / 6) === 0 || i === n - 1) svg += `<text x="${x + w / 2}" y="${H - 6}" text-anchor="middle">${fecha(d)}</text>`;
+    if (i % Math.ceil(n / 6) === 0 || i === n - 1) svg += `<text x="${x + w / 2}" y="${H - 6}" text-anchor="middle">${etq(d)}</text>`;
     svg += `<rect class="hit" x="${mi + i * bw}" y="0" width="${bw}" height="${H - ab}" data-i="${i}"/>`;
   });
   const id = `c${Math.random().toString(36).slice(2)}`;
   setTimeout(() => {
     document.querySelectorAll<SVGRectElement>(`#${id} .hit`).forEach((r) => {
       const i = Number(r.dataset.i);
-      r.onmousemove = (ev) => mostrarTip(ev, `<b>${fecha(dias[i])}</b>${series.map((s) => `<div><i style="background:${s.color}"></i>${esc(s.nombre)}: ${num(s.valores[i])}${unidad}</div>`).join('')}${series.length > 1 ? `<div>Total: ${num(totales[i])}${unidad}</div>` : ''}`);
+      r.onmousemove = (ev) => mostrarTip(ev, `<b>${etq(dias[i])}</b>${series.map((s) => `<div><i style="background:${s.color}"></i>${esc(s.nombre)}: ${num(s.valores[i])}${unidad}</div>`).join('')}${series.length > 1 ? `<div>Total: ${num(totales[i])}${unidad}</div>` : ''}`);
       r.onmouseleave = ocultarTip;
     });
   });
@@ -170,6 +176,14 @@ function pintar(r: Resumen) {
       <div class="card"><h2>Primales más usados en la Liga</h2><p class="sub">Batallas en las que pelearon · top 10</p>${barras(r.primales)}
         <p class="ayuda">Si uno aparece muy por encima del resto, puede estar demasiado fuerte.</p></div>
       <div class="card"><h2>Iniciales favoritos</h2><p class="sub">Cuántos jugadores eligieron cada inicial</p>${barras(r.iniciales)}</div>
+    </section>
+    <section class="grid2">
+      <div class="card"><h2>¿De dónde juegan?</h2><p class="sub">Jugadores activos en los últimos 30 días por país (aproximado, según la zona horaria)</p>
+        ${barras(r.paises.map((x) => ({ nombre: pais(x.codigo), n: x.n })))}</div>
+      <div class="card"><h2>¿A qué hora juegan?</h2><p class="sub">Batallas por hora del día (hora local de cada jugador) · últimos 30 días</p>
+        ${columnas([{ nombre: 'Batallas', color: 'var(--series-1)', valores: r.horas }], r.horas.map((_, h) => h), '', hora)}
+        <p class="ayuda">Útil para elegir a qué hora hacer eventos o mantenimiento.</p>
+        ${tabla(['Hora', 'Batallas'], r.horas.map((v, h) => [hora(h), v]))}</div>
     </section>`;
   $('actualizado').textContent = `Actualizado a las ${new Date().toLocaleTimeString('es')} · se actualiza solo cada 30 s`;
 }
@@ -188,28 +202,53 @@ function demo(): Resumen {
     retencion: { d1: { base: 610, vuelven: 262, pct: 0.43 }, d7: { base: 420, vuelven: 88, pct: 0.21 } }, serie,
     primales: [['Tungurak', 410], ['Yakulobo', 365], ['Quindazo', 330], ['Chusikar', 290], ['Galapón', 251], ['Anguilampo', 230], ['Cacaoso', 199], ['Ukumari', 180], ['Crisalux', 150], ['Otorongo', 98]].map(([nombre, n]) => ({ esp: String(nombre), nombre: String(nombre), n: Number(n) })),
     iniciales: [['Tunguri', 310], ['Quindito', 280], ['Yakupi', 250], ['Chusik', 190], ['Chispez', 170], ['Galapito', 150], ['Cacaíto', 140], ['Ukumarito', 120], ['Morfito', 110]].map(([nombre, n]) => ({ esp: String(nombre), nombre: String(nombre), n: Number(n) })),
+    paises: [['EC', 410], ['CO', 160], ['PE', 120], ['MX', 80], ['ES', 45], ['AR', 30], ['CL', 18], ['US', 7]].map(([codigo, n]) => ({ codigo: String(codigo), n: Number(n) })),
+    horas: Array.from({ length: 24 }, (_, h) => Math.round(40 + 500 * Math.exp(-((h - 20) ** 2) / 8) + 220 * Math.exp(-((h - 13) ** 2) / 4) + (h < 7 ? -30 : 0) + Math.random() * 20)).map((v) => Math.max(0, v)),
     ligas: [['Liga Bronce', 420], ['Liga Plata', 230], ['Liga Oro', 120], ['Liga Platino', 55], ['Liga Diamante', 25], ['Liga Maestro', 8], ['Liga Campeón', 2]].map(([nombre, n]) => ({ id: String(nombre), nombre: String(nombre), jugadores: Number(n) })),
   };
 }
 
 async function cargar() {
   if (new URLSearchParams(location.search).has('demo')) { pintar(demo()); $('actualizado').textContent = 'DATOS DE EJEMPLO (inventados) · así se verá con jugadores'; return; }
-  const clave = (() => { try { return localStorage.getItem(KEY) ?? ''; } catch { return ''; } })();
+  if (!sesion && document.getElementById('clave')) return; // en la pantalla de entrada no se recarga sola
   try {
-    const res = await fetch(`/api/admin/estadisticas?clave=${encodeURIComponent(clave)}`);
+    const res = await fetch('/api/admin/estadisticas', { credentials: 'same-origin' });
     const data = await res.json();
-    if (res.status === 403) return pedirClave(data.error);
+    if (res.status === 401) return pedirClave('');
+    sesion = true;
+    $('salir').hidden = false;
     pintar(data as Resumen);
   } catch {
     $('actualizado').textContent = 'No se pudo conectar con el servidor.';
   }
 }
 
+let sesion = false;
+/** Pantalla de entrada: la clave se manda una vez y el servidor da una sesión de 12 horas (cookie). */
 function pedirClave(msg: string) {
-  $('panel').innerHTML = `<div class="clave"><h2>Panel protegido</h2><p>${esc(msg)}</p>
-    <input id="clave" type="password" placeholder="Clave del panel (ADMIN_KEY)"><button id="entrar">Entrar</button></div>`;
-  $('entrar').onclick = () => { try { localStorage.setItem(KEY, ($('clave') as HTMLInputElement).value); } catch { /* sin almacenamiento */ } void cargar(); };
+  sesion = false;
+  $('salir').hidden = true;
+  $('actualizado').textContent = 'Necesitas iniciar sesión';
+  $('panel').innerHTML = `<form class="clave" id="form-clave"><h2>Panel protegido</h2><p>Escribe la clave del panel (la variable ADMIN_KEY de Railway).</p>
+    <input id="clave" type="password" autocomplete="current-password" placeholder="Clave del panel" autofocus>
+    <button id="entrar" type="submit">Entrar</button><p class="error" id="clave-error">${esc(msg)}</p></form>`;
+  ($('form-clave') as HTMLFormElement).onsubmit = async (ev) => {
+    ev.preventDefault();
+    const clave = ($('clave') as HTMLInputElement).value;
+    try {
+      const res = await fetch('/api/admin/entrar', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ clave }), credentials: 'same-origin' });
+      const data = await res.json();
+      if (!res.ok) { $('clave-error').textContent = data.error ?? 'No se pudo entrar.'; return; }
+      sesion = true;
+      void cargar();
+    } catch { $('clave-error').textContent = 'No se pudo conectar con el servidor.'; }
+  };
 }
+
+$('salir').onclick = async () => {
+  try { await fetch('/api/admin/salir', { method: 'POST', credentials: 'same-origin' }); } catch { /* da igual */ }
+  pedirClave('Sesión cerrada.');
+};
 
 $('refrescar').onclick = () => void cargar();
 void cargar();

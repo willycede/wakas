@@ -11,7 +11,11 @@ export function setToken(t: string | null) {
 }
 
 async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const headers: Record<string, string> = { 'content-type': 'application/json' };
+  // zona horaria e idioma del navegador: solo para saber el país aproximado (no se usa la IP)
+  const headers: Record<string, string> = {
+    'content-type': 'application/json', 'x-zona': Intl.DateTimeFormat().resolvedOptions().timeZone ?? '',
+    'x-zona-min': String(-new Date().getTimezoneOffset()), 'x-idioma': navigator.language ?? '',
+  };
   const t = getToken();
   if (t) headers.authorization = `Bearer ${t}`;
   const res = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : undefined });
@@ -21,7 +25,8 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
 }
 
 export const api = {
-  registro: (usuario: string, clave: string) => call<{ token: string }>('POST', '/api/registro', { usuario, clave }),
+  registro: (usuario: string, clave: string, acepto: string) => call<{ token: string }>('POST', '/api/registro', { usuario, clave, acepto }),
+  aceptarLegal: (version: string) => call<Perfil>('POST', '/api/legal/aceptar', { version }),
   entrar: (usuario: string, clave: string) => call<{ token: string }>('POST', '/api/entrar', { usuario, clave }),
   perfil: () => call<Perfil>('GET', '/api/perfil'),
   inicial: (especies: string[]) => call<Perfil>('POST', '/api/inicial', { especies }),
