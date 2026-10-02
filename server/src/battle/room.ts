@@ -2,14 +2,14 @@
 // Captura: un Domador contra un Primal salvaje (con IA). 20 ticks por segundo.
 
 import { Room, type Client } from 'colyseus';
-import { ARENA, EMOTES, ESPECIES, FRASES, TICK_MS, ligaDe, type FinBatalla, type InicioBatalla, type Obstaculo } from '../../../shared/src';
+import { ARENA, EMOTES, ESPECIES, FRASES, SEGUNDOS_PREPARACION, TICK_MS, ligaDe, type FichaRival, type FinBatalla, type InicioBatalla, type Obstaculo, type Preparacion } from '../../../shared/src';
 import type { Domador } from '../db';
-import { avanzarMision, mods, recompensar } from '../progress';
+import { avanzarMision, equipoValido, mods, recompensar } from '../progress';
 import { domadores, store } from '../services';
 import { IA } from './ai';
 import { Batalla, crearUnidad, type Unidad } from './engine';
 
-export interface Participante { id: number | null; nombre: string; trofeos: number; equipo: { uid: string; esp: string; nivel: number }[]; ia?: number; pasivo?: boolean }
+export interface Participante { id: number | null; nombre: string; trofeos: number; equipo: { uid: string; esp: string; nivel: number }[]; ia?: number; pasivo?: boolean; ficha?: FichaRival }
 
 export interface OpcionesBatalla {
   modo: 'liga' | 'captura' | 'tutorial' | 'amistosa';
@@ -51,12 +51,25 @@ export class BatallaRoom extends Room {
   private nivelMax = 99;
   private inicio = 0;
   private uids: [Set<string>, Set<string>] = [new Set(), new Set()];
+  private preparando = false;
+  private listos = new Set<number>();
 
   onCreate(opts: OpcionesBatalla) {
     this.opts = opts;
     this.setPrivate(true);
     // en la Liga y en las amistosas los Primales pelean como mucho al nivel máximo de la liga
     this.nivelMax = opts.modo === 'liga' || opts.modo === 'amistosa' ? ligaDe(Math.max(opts.lados[0].trofeos, opts.lados[1].trofeos)).nivelMax : 99;
+    this.registrarMensajes();
+    // tutorial: sin preparación
+    if (opts.modo === 'tutorial') this.armar();
+    // si nadie entra en 30 s, la sala se cierra
+    this.clock.setTimeout(() => { if (!this.clientes.size) this.disconnect(); }, 30_000);
+  }
+
+  /** Arma la batalla con los equipos elegidos. */
+  private armar() {
+    if (this.b) return;
+    const opts = this.opts;
     const equipos = opts.lados.map((p) => p.equipo.map((e) => crearUnidad(e.esp, Math.min(e.nivel, this.nivelMax), this.modsDe(p)))) as [Unidad[], Unidad[]];
     this.b = new Batalla(equipos[0], equipos[1], this.modsDe(opts.lados[0]), this.modsDe(opts.lados[1]), opts.modo === 'tutorial' ? [] : obstaculos(ligaDe(Math.max(opts.lados[0].trofeos, opts.lados[1].trofeos)).id));
     opts.lados.forEach((p, l) => { if (p.ia !== undefined && !p.pasivo) this.ias.push(new IA(this.b, l as 0 | 1, p.ia)); });
@@ -66,15 +79,39 @@ export class BatallaRoom extends Room {
       m.mhp *= 8; m.hp = m.mhp;
     }
     opts.lados.forEach((p, l) => { if (p.equipo[0]) this.uids[l].add(p.equipo[0].uid); });
+    this.setSimulationInterval(() => this.tick(), TICK_MS);
+  }
+
+  private registrarMensajes() {
+    // preparación: cambiar el equipo elegido y avisar que estás listo
+    this.onMessage('prep_equipo', async (c, m) => {
+      const l = this.clientes.get(c.sessionId);
+      const p = l !== undefined ? this.opts.lados[l] : null;
+      if (!this.preparando || !p || p.id === null) return;
+      const d = await domadores.get(p.id);
+      const u = d ? equipoValido(d, m?.uids) : null;
+      if (!d || !u) return;
+      p.equipo = u.map((x) => d.primales.find((y) => y.uid === x)!).map((y) => ({ uid: y.uid, esp: y.esp, nivel: y.nivel }));
+      d.equipo = u; // se recuerda para la próxima
+      await domadores.guardar(d);
+    });
+    this.onMessage('prep_listo', (c) => {
+      const l = this.clientes.get(c.sessionId);
+      if (!this.preparando || l === undefined) return;
+      this.listos.add(l);
+      this.broadcast('prep_listo', { lado: l });
+      const humanos = this.opts.lados.filter((p) => p.id !== null).length;
+      if (this.listos.size >= humanos) this.comenzar();
+    });
     this.onMessage('in', (c, m) => {
       const l = this.clientes.get(c.sessionId);
-      if (l === undefined || typeof m !== 'object') return;
+      if (l === undefined || typeof m !== 'object' || !this.b) return;
       this.b.encolar(l, num(m.s), num(m.x), num(m.y), num(m.ax), num(m.ay));
       this.acks[l] = num(m.s);
     });
     this.onMessage('acc', (c, m) => {
       const l = this.clientes.get(c.sessionId);
-      if (l === undefined || this.inicio > Date.now()) return;
+      if (l === undefined || !this.b || this.inicio > Date.now()) return;
       this.b.accion(l, Math.max(0, Math.min(7, Math.floor(num(m.i)))));
     });
     // emotes al rival (como mucho uno cada 1,5 s)
@@ -89,7 +126,7 @@ export class BatallaRoom extends Room {
     });
     this.onMessage('cambio', (c, m) => {
       const l = this.clientes.get(c.sessionId);
-      if (l === undefined) return;
+      if (l === undefined || !this.b) return;
       this.b.cambiar(l, Math.floor(num(m.slot)));
       const u = this.b.lados[l].unidades[this.b.lados[l].activo];
       const eq = this.opts.lados[l].equipo[this.b.lados[l].activo];
@@ -98,7 +135,7 @@ export class BatallaRoom extends Room {
     // tutorial: llenar la barra para practicar la técnica especial y debilitar al muñeco al final
     this.onMessage('tutorial', (c, m) => {
       const l = this.clientes.get(c.sessionId);
-      if (l === undefined || this.opts.modo !== 'tutorial') return;
+      if (l === undefined || this.opts.modo !== 'tutorial' || !this.b) return;
       if (m?.paso === 'carga') this.b.lados[l].carga = 100;
       if (m?.paso === 'final') { const u = this.b.lados[1].unidades[0]; u.mhp = Math.round(u.mhp / 8); u.hp = Math.min(u.hp, Math.round(u.mhp * 0.6)); }
     });
@@ -106,16 +143,13 @@ export class BatallaRoom extends Room {
     if (!process.env.DATABASE_URL && !process.env.RAILWAY_ENVIRONMENT) {
       this.onMessage('truco_carga', (c) => {
         const l = this.clientes.get(c.sessionId);
-        if (l !== undefined) this.b.lados[l].carga = 200;
+        if (l !== undefined && this.b) this.b.lados[l].carga = 200;
       });
     }
     this.onMessage('rendirse', (c) => {
       const l = this.clientes.get(c.sessionId);
-      if (l !== undefined && !this.b.terminado) this.b.terminado = { ganador: l === 0 ? 1 : 0, motivo: 'rendicion' };
+      if (l !== undefined && this.b && !this.b.terminado) this.b.terminado = { ganador: l === 0 ? 1 : 0, motivo: 'rendicion' };
     });
-    this.setSimulationInterval(() => this.tick(), TICK_MS);
-    // si nadie entra en 30 s, la sala se cierra
-    this.clock.setTimeout(() => { if (!this.clientes.size) this.disconnect(); }, 30_000);
   }
 
   private modsDe(p: Participante) {
@@ -133,7 +167,39 @@ export class BatallaRoom extends Room {
 
   onJoin(c: Client, _o: any, auth: { id: number; lado: 0 | 1 }) {
     this.clientes.set(c.sessionId, auth.lado);
+    const humanos = this.opts.lados.filter((p) => p.id !== null).length;
+    if (this.b) return this.enviarInicio(c, auth.lado);
+    if (this.clientes.size >= humanos) this.preparar();
+  }
+
+  /** 20 segundos para elegir equipo viendo la ficha del rival. */
+  private preparar() {
+    this.preparando = true;
+    const ms = SEGUNDOS_PREPARACION * 1000;
+    for (const c of this.clients) {
+      const l = this.clientes.get(c.sessionId)!;
+      const r = this.opts.lados[l === 0 ? 1 : 0];
+      const prep: Preparacion = {
+        ms, modo: this.opts.modo, equipo: this.opts.lados[l].equipo.map((e) => e.uid), nivelMax: this.nivelMax < 99 ? this.nivelMax : undefined,
+        rival: r.ficha ?? { nombre: r.nombre, trofeos: r.trofeos, nivel: 1, victorias: 0, derrotas: 0, mejorTrofeos: r.trofeos, favoritos: r.equipo.map((e) => ({ esp: e.esp, n: 0 })), ia: r.id === null },
+      };
+      c.send('preparar', prep);
+    }
+    this.clock.setTimeout(() => this.comenzar(), ms + 300);
+  }
+
+  private comenzar() {
+    if (this.b) return;
+    this.preparando = false;
+    this.armar();
+    for (const c of this.clients) this.enviarInicio(c, this.clientes.get(c.sessionId)!);
+    this.inicio = Date.now() + 3000;
+    this.broadcast('cuenta', { ms: 3000 });
+  }
+
+  private enviarInicio(c: Client, lado: 0 | 1) {
     const o = this.opts;
+    const auth = { lado };
     const init: InicioBatalla = {
       lado: auth.lado, modo: o.modo, rivalIA: o.lados[auth.lado === 0 ? 1 : 0].id === null,
       nombres: [o.lados[0].nombre, o.lados[1].nombre], trofeos: [o.lados[0].trofeos, o.lados[1].trofeos], obstaculos: this.b.obstaculos,
@@ -142,23 +208,20 @@ export class BatallaRoom extends Room {
       nivelMax: this.nivelMax < 99 ? this.nivelMax : undefined,
     };
     c.send('inicio', init);
-    // la batalla empieza 3 s después de que estén todos
-    const humanos = o.lados.filter((p) => p.id !== null).length;
-    if (this.clientes.size >= humanos) {
-      this.inicio = Date.now() + 3000;
-      this.broadcast('cuenta', { ms: 3000 });
-    }
+    // tutorial: empieza en cuanto entra
+    if (o.modo === 'tutorial' && !this.inicio) { this.inicio = Date.now() + 3000; this.broadcast('cuenta', { ms: 3000 }); }
   }
 
   onLeave(c: Client) {
     const l = this.clientes.get(c.sessionId);
     this.clientes.delete(c.sessionId);
-    // abandonar = perder
+    // abandonar = perder (también durante la preparación)
+    if (l !== undefined && !this.b) this.comenzar();
     if (l !== undefined && !this.b.terminado && !this.fin) this.b.terminado = { ganador: l === 0 ? 1 : 0, motivo: 'abandono' };
   }
 
   private tick() {
-    if (this.fin) return;
+    if (this.fin || !this.b) return;
     if (!this.inicio || Date.now() < this.inicio) {
       for (const c of this.clients) {
         const l = this.clientes.get(c.sessionId)!;

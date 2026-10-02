@@ -25,6 +25,9 @@ export interface Domador {
   tutorial?: boolean;
   misiones?: { dia: number; lista: { id: string; progreso: number; cobrada: boolean }[] };
   ultimaVictoriaDia?: number;
+  uso?: Record<string, number>; // veces que usó cada especie en la Liga
+  amigos?: number[];
+  solicitudes?: number[]; // ids que te pidieron amistad
 }
 
 export interface Store {

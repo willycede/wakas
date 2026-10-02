@@ -170,7 +170,15 @@ export class BatallaScene extends Phaser.Scene {
     this.net.on('snap', (s: Snapshot) => this.onSnap(s));
     this.net.on('fx', (list: Fx[]) => list.forEach((f) => this.onFx(f)));
     this.net.on('cuenta', (m: { ms: number }) => this.cuenta(m.ms));
-    this.net.on('fin', (r) => { this.fin = true; this.time.delayedCall(900, () => this.onFin(r)); });
+    this.net.on('fin', (r) => {
+      this.fin = true;
+      const c = $('bh-center');
+      c.textContent = r.motivo === 'tiempo' ? t('fin.tiempo') : t('fin.ko');
+      c.className = `sello ${r.gano ? 'gana' : r.empate ? '' : 'pierde'}`;
+      this.cameras.main.shake(400, 0.012);
+      this.tweens.timeScale = 0.3;
+      this.time.delayedCall(1500, () => { this.tweens.timeScale = 1; c.textContent = ''; c.className = ''; this.onFin(r); });
+    });
     this.net.on('emote', (m: { lado: 0 | 1; id: string }) => this.mostrarEmote(m.lado, m.id));
     this.armarHud();
     this.intro();
@@ -356,7 +364,7 @@ export class BatallaScene extends Phaser.Scene {
     const r = s.u[1 - this.init0.lado];
     const x = this.pred.x, y = this.pred.y;
     const angR = Math.atan2(r.y - y, r.x - x);
-    const asiste = r.hp > 0 && Math.hypot(r.x - x, r.y - y) < ASISTE_DIST && angDif(angR, fa) < ASISTE_ANG;
+    const asiste = r.hp > 0; // los ataques siempre apuntan al rival
     return { ang: asiste ? angR : fa, asiste, rx: r.x, ry: r.y };
   }
 
@@ -417,7 +425,12 @@ export class BatallaScene extends Phaser.Scene {
       const fa = l === this.init0.lado ? this.faLocal : s.fa;
       if (s.an === 'basico' || s.an === 'mov' || now < v.bloqueo) v.mira = Math.cos(s.fa) < 0 ? -1 : 1;
       else if (Math.abs(vx) > 45) v.mira = Math.sign(vx);
-      else if (rapidez < 25 && Math.abs(Math.cos(fa)) > 0.25) v.mira = Math.cos(fa) < 0 ? -1 : 1;
+      else if (rapidez < 25) {
+        // quieto: mira al rival
+        const otro = this.ultimo?.u[1 - l];
+        const ax = otro ? otro.x - x : Math.cos(fa);
+        if (Math.abs(ax) > 8) v.mira = ax < 0 ? -1 : 1;
+      }
       v.flip += (v.mira - v.flip) * Math.min(1, delta / 50);
       v.inclina += (Phaser.Math.Clamp(vx / 2400, -0.13, 0.13) - v.inclina) * Math.min(1, delta / 90);
       // estocada hacia el objetivo al atacar y retroceso al recibir golpe

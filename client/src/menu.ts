@@ -2,7 +2,7 @@
 
 import {
   ELEMENTOS, ESPECIES, HABILIDADES_DOMADOR, INICIALES, LEGENDARIOS, LIGAS, MEDALLAS, MOVIMIENTOS, NUM_INICIALES, RAREZAS, TAM_EQUIPO, diaActual,
-  legendarioDelDia, ligaDe, tipos, xpPrimal, type Especie, type Perfil, type Rareza,
+  legendarioDelDia, ligaDe, tipos, xpPrimal, type Especie, type Perfil, type Rareza, type Social,
 } from '../../shared/src';
 import { api, spriteUrl } from './api';
 import { emblemaLiga, icono } from './iconos';
@@ -60,6 +60,7 @@ export class Menu {
   private buscando = false;
   private filtro: Rareza | 'todos' = 'todos';
   private reto: string | null = null; // código del reto amistoso que estamos esperando
+  social: Social = { amigos: [], solicitudes: [], retos: [] };
   onTutorial: () => void = () => {};
   onHistoria: () => void = () => {};
 
@@ -295,16 +296,34 @@ export class Menu {
   }
 
   // ---------------------------------------------------------------- ranking
+  /** Amigos, solicitudes y búsqueda por nombre. */
+  private amigosHtml() {
+    const s = this.social;
+    const sol = s.solicitudes.map((x) => `<div class="amigo sol"><span class="av">${esc(x.nombre[0] ?? '?').toUpperCase()}</span>
+      <div class="am-info"><b>${esc(x.nombre)}</b><small>${icono('trofeo')}${x.trofeos}</small></div>
+      <button class="btn primary sm" data-aceptar="${x.id}">${t('amigos.accept')}</button><button class="btn ghost sm" data-rechazar="${x.id}">${t('amigos.reject')}</button></div>`).join('');
+    const lista = s.amigos.map((x) => `<div class="amigo"><span class="av ${x.enLinea ? 'on' : ''}">${esc(x.nombre[0] ?? '?').toUpperCase()}</span>
+      <div class="am-info"><b>${esc(x.nombre)}</b><small><i class="punto ${x.enLinea ? 'on' : ''}"></i>${x.enLinea ? t('amigos.online') : t('amigos.offline')} · ${icono('trofeo')}${x.trofeos} · ${t('misc.level', { n: x.nivel })}</small></div>
+      <button class="btn ${x.enLinea ? 'primary' : ''} sm" data-retar="${x.id}">${icono('espadas')}${t('amigos.challenge')}</button>
+      <button class="btn ghost sm am-quitar" data-quitar-amigo="${x.id}" title="${t('amigos.remove')}">✕</button></div>`).join('');
+    return `<div class="page-head"><h2>${t('amigos.title')}</h2><span class="count">${s.amigos.length}</span></div>
+      <div class="am-buscar"><input id="am-nombre" maxlength="16" placeholder="${t('amigos.placeholder')}"><button class="btn" id="am-agregar">${icono('mas')}${t('amigos.add')}</button></div>
+      ${sol ? `<div class="section-title">${t('amigos.requests')}</div>${sol}` : ''}
+      ${lista ? `<div class="am-lista">${lista}</div>` : `<p class="muted">${t('amigos.empty')}</p>`}`;
+  }
+
   private async ranking() {
     try {
-      const r = await api.ranking();
+      const [r, soc] = await Promise.all([api.ranking(), api.social().catch(() => this.social)]);
+      this.social = soc;
       if (this.tab !== 'ranking') return;
-      $('menu-body').innerHTML = `<div class="page"><div class="page-head"><h2>${t('ranking.title')}</h2></div><div class="rank">` + r.map((x, i) => {
+      $('menu-body').innerHTML = `<div class="page">${this.amigosHtml()}<div class="page-head" style="margin-top:22px"><h2>${t('ranking.title')}</h2></div><div class="rank">` + r.map((x, i) => {
         const l = ligaDe(x.trofeos);
         const yo = x.nombre === this.perfil.nombre;
         return `<div class="rank-row ${yo ? 'me' : ''}"><span class="pos">${i + 1}</span><span class="nm">${esc(x.nombre)}${yo ? ` · ${t('ranking.you')}` : ''}<small>${t('misc.level', { n: x.nivel })}</small></span>
           <span class="lg" style="color:${l.color}">${nombreLiga(l.id)}</span><span class="tr">${icono('trofeo')}${x.trofeos.toLocaleString()}</span></div>`;
       }).join('') + '</div></div>';
+      this.bindAmigos();
     } catch (e: any) {
       $('menu-body').innerHTML = `<p class="error">${esc(tError(e.message))}</p>`;
     }
@@ -375,6 +394,48 @@ export class Menu {
     } catch (e: any) { toast(e.message, true); }
   }
 
+  private bindAmigos() {
+    const body = $('menu-body');
+    const recargar = () => void this.ranking();
+    body.querySelector<HTMLButtonElement>('#am-agregar')?.addEventListener('click', async () => {
+      const nombre = body.querySelector<HTMLInputElement>('#am-nombre')!.value.trim();
+      if (!nombre) return;
+      try { const r = await api.amigoSolicitar({ nombre }); toast(r.amigos ? t('amigos.now') : t('amigos.sent')); recargar(); } catch (e: any) { toast(e.message, true); }
+    });
+    body.querySelectorAll<HTMLElement>('[data-aceptar], [data-rechazar]').forEach((b) => (b.onclick = async () => {
+      try { await api.amigoResponder(Number(b.dataset.aceptar ?? b.dataset.rechazar), !!b.dataset.aceptar); recargar(); } catch (e: any) { toast(e.message, true); }
+    }));
+    body.querySelectorAll<HTMLElement>('[data-quitar-amigo]').forEach((b) => (b.onclick = async () => { await api.amigoQuitar(Number(b.dataset.quitarAmigo)); recargar(); }));
+    body.querySelectorAll<HTMLElement>('[data-retar]').forEach((b) => (b.onclick = () => void this.retarAmigo(Number(b.dataset.retar))));
+  }
+
+  /** Reta a un amigo: le aparece la invitación en el juego. */
+  private async retarAmigo(id: number) {
+    try {
+      const { codigo } = await api.amistosaRetar(id);
+      this.reto = codigo;
+      this.show('batalla');
+      const r = await api.amistosaEsperar(codigo);
+      this.reto = null;
+      this.onBatalla(r.roomId);
+    } catch (e: any) {
+      this.reto = null;
+      if (!/cancelado/.test(e.message)) toast(e.message, true);
+      if (this.tab === 'batalla') this.show('batalla');
+    }
+  }
+
+  /** Revisa solicitudes y retos de amigos (cada pocos segundos mientras estás en el menú). */
+  async revisarSocial(onReto: (codigo: string, de: string) => void) {
+    try {
+      const s = await api.social();
+      const nuevos = s.retos.filter((r) => !this.social.retos.some((x) => x.codigo === r.codigo));
+      this.social = s;
+      document.querySelector('#tabs [data-tab=ranking]')!.classList.toggle('aviso', s.solicitudes.length > 0);
+      for (const r of nuevos) onReto(r.codigo, r.de);
+    } catch { /* sin conexión: se intenta luego */ }
+  }
+
   private async cambiarEquipo(uid: string, poner: boolean) {
     let eq = [...this.perfil.equipo];
     if (poner) {
@@ -386,6 +447,12 @@ export class Menu {
       eq = eq.filter((u) => u !== uid);
     }
     try { this.setPerfil(await api.equipo(eq)); this.show('equipo'); } catch (e: any) { toast(e.message, true); }
+  }
+
+  /** Buscar otra batalla de inmediato (botón Revancha). */
+  revancha() {
+    this.show('batalla');
+    void this.buscar();
   }
 
   private async buscar() {

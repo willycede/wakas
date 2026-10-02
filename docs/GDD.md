@@ -10,7 +10,7 @@ Ganas trofeos y subes de **liga** (como Clash Royale). Sin historia por ahora **
 - Cada Entrenador tiene un Primal en la arena; los otros dos esperan en el banco.
 - **Controles:** mover (WASD / joystick), **básico** (clic / Espacio) con combo de 3 golpes, **4 movimientos** (1-4) con recarga, **esquivar** (Shift), **técnica especial** (R; los legendarios también T), **cambiar** (Q/E o tocando su retrato), **emotes** (C).
 - Si un Primal cae, entra el siguiente. Gana quien deja al rival sin Primales; si se acaba el tiempo, quien tenga más vida total.
-- **Puntería [decisión del dueño]:** no se apunta. Los ataques salen **hacia donde mira el Primal**; si el rival está enfrente (±40°, a menos de 460 px), el ataque lo busca. Flecha azul = hacia dónde mira; dorada = fijada en el rival.
+- **Puntería [decisión del dueño, actualizada]:** todos los ataques (básico, movimientos y técnicas) apuntan **siempre al rival**; quieto, tu Primal lo mira. Antes: no se apunta. Los ataques salen **hacia donde mira el Primal**; si el rival está enfrente (±40°, a menos de 460 px), el ataque lo busca. Flecha azul = hacia dónde mira; dorada = fijada en el rival.
 - **Formas de ataque [decisión del dueño]:** nada cae en sitios al azar. Todo sale en formas fijas delante del Primal: línea recta (rayos), abanico (ráfagas), círculo a tu alrededor (áreas), círculo delante (zonas, sobre el rival si lo tienes enfrente) o **tres pasos en línea** (Erupción, Rayo trueno, Pico glaciar). Las técnicas especiales también: filas, abanicos y zigzag hacia delante.
 - **Combos:** cada 5 golpes seguidos +10 % de daño (máx. +30 %). **Enlace:** un movimiento justo después del tercer golpe básico pega +30 %.
 - **Técnicas especiales [decisión del dueño]:** una por elemento, con varias fases (Supernova atrae, explota, lanza un anillo de fuego y deja lava). Se cargan golpeando y recibiendo golpes. Los **legendarios tienen dos** (R y T) y pueden guardar dos cargas.
@@ -43,6 +43,11 @@ Fuego, Agua, Planta, Eléctrico, Roca, Viento, Sombra, **Hielo** y **Luz**. Un P
   4. Solo un legendario por equipo.
 - **Cuando no hay nadie en línea:** si en 12 s no aparece un rival humano, juegas contra la IA, con un equipo y una dificultad acordes a tu liga. Así nadie se queda esperando.
 - **Retos amistosos:** creas un código de 5 letras y lo compartes por WhatsApp; tu amigo entra con el enlace. No se ganan ni pierden trofeos.
+
+## 6b. Antes de cada batalla y amigos **[decisión del dueño]**
+- **Preparación de 20 s** (Liga, amistosas y capturas): ficha del rival (liga, trofeos, nivel, % de victorias, sus 3 Primales más usados) y eliges tus 3 Primales; cada uno marca Ventaja/Desventaja contra los favoritos del rival. Si los dos pulsan Listo, empieza antes.
+- **Amigos:** agregar rivales al terminar la batalla o en la preparación, o buscar por nombre; solicitudes, quién está en línea y retos directos (al amigo le aparece la invitación).
+- **Victoria y derrota animadas:** sello de K.O./TIEMPO, confeti y rayos al ganar, lluvia y botón Revancha al perder.
 
 ## 7. Motivación para jugar **[decisión del dueño]**
 - **Historia de entrada** (la primera vez, se puede saltar y volver a ver desde la pestaña Entrenador): los Primales despertaron en Ecuador, la Liga Primal busca al mejor Entrenador del mundo, cinco legendarios vigilan desde lo alto y tu misión es llegar a la Mitad del Mundo y ser Campeón.

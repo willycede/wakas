@@ -92,6 +92,25 @@ export interface InicioBatalla {
   nivelMax?: number; // en la Liga: nivel máximo con el que pelean los Primales
 }
 
+/** Lo que se sabe del rival antes de la batalla. */
+export interface FichaRival {
+  id?: number; // para agregarlo como amigo
+  nombre: string; trofeos: number; nivel: number; victorias: number; derrotas: number; mejorTrofeos: number;
+  favoritos: { esp: string; n: number }[]; // los Primales que más usa
+  ia: boolean; salvaje?: string; // captura: la especie salvaje
+}
+
+/** Amigos: lista, solicitudes recibidas y retos que te han enviado. */
+export interface Social {
+  amigos: { id: number; nombre: string; trofeos: number; nivel: number; enLinea: boolean }[];
+  solicitudes: { id: number; nombre: string; trofeos: number }[];
+  retos: { codigo: string; de: string }[];
+}
+
+/** Fase de preparación: 20 s para elegir tus 3 Primales viendo la ficha del rival. */
+export interface Preparacion { ms: number; modo: string; rival: FichaRival; equipo: string[]; nivelMax?: number }
+export const SEGUNDOS_PREPARACION = 20;
+
 /** Emotes que se pueden enviar al rival (stickers y frases rápidas). */
 export const EMOTES = ['risa', 'pulgar', 'enojo', 'llanto', 'sorpresa', 'amor', 'dormido', 'fiesta'] as const;
 export const FRASES = ['gg', 'bien', 'ups', 'gracias', 'vamos', 'wow'] as const;

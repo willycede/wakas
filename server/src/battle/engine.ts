@@ -167,7 +167,7 @@ export class Batalla {
     const dr = Math.hypot(rival.x - u.x, rival.y - u.y);
     const angR = Math.atan2(rival.y - u.y, rival.x - u.x);
     if (objetivo) { ang = Math.atan2(objetivo.y - u.y, objetivo.x - u.x); tx = objetivo.x; ty = objetivo.y; }
-    else if (rival.hp > 0 && dr < 460 && angDif(angR, u.fa) < 0.7) { ang = angR; tx = rival.x; ty = rival.y; }
+    else if (rival.hp > 0) { ang = angR; tx = rival.x; ty = rival.y; } // los ataques siempre apuntan al rival
     else { tx = u.x + Math.cos(ang) * 200; ty = u.y + Math.sin(ang) * 200; }
     const apuntado = !!objetivo || (tx === rival.x && ty === rival.y);
     u.fa = ang;
@@ -212,7 +212,7 @@ export class Batalla {
     const r0 = rival();
     const angR = Math.atan2(r0.y - u.y, r0.x - u.x);
     const dr = Math.hypot(r0.x - u.x, r0.y - u.y);
-    const ang = angDif(angR, u.fa) < 1.2 && dr < 560 ? angR : u.fa;
+    const ang = r0.hp > 0 ? angR : u.fa; // las técnicas también apuntan al rival
     u.fa = ang;
     const mov = (f: number, extra: Partial<Movimiento> = {}): Movimiento =>
       ({ id: sp.id, nombre: sp.nombre, elemento: sp.elemento, tipo: 'zona', desc: '', poder: poder * f, enfriamiento: 0, alcance: 0, ...extra });
@@ -454,7 +454,7 @@ export class Batalla {
       // ayuda de puntería: si el rival está cerca y más o menos delante, el golpe se gira hacia él
       const rival = this.activa(l === 0 ? 1 : 0);
       const dr = Math.hypot(rival.x - u.x, rival.y - u.y), angR = Math.atan2(rival.y - u.y, rival.x - u.x);
-      if (rival.hp > 0 && dr < 240 && angDif(angR, ang) < 1.3) { ang = angR; u.fa = ang; }
+      if (rival.hp > 0) { ang = angR; u.fa = ang; }
       // zarpazo en arco delante del Primal, con buen alcance
       const cx = u.x + Math.cos(ang) * 45, cy = u.y + Math.sin(ang) * 45;
       const vidaAntes = rival.hp;

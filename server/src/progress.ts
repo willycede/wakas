@@ -2,7 +2,7 @@
 
 import {
   BONO_MEDALLA_XP, ESPECIES, ESPERA_CAMBIO, HABILIDADES_DOMADOR, INICIALES, MAX_LEGENDARIOS, NIVEL_MAX_DOMADOR, NIVEL_MAX_PRIMAL, NUM_INICIALES,
-  BONO_PRIMERA_VICTORIA, MISIONES, RECOMPENSAS, TAM_EQUIPO, diaActual, esLegendario, misionesDelDia, legendarioDelDia, medallasDe, puntosHabilidad, xpDomador, xpPrimal, type FinBatalla, type Perfil, type PrimalGuardado,
+  BONO_PRIMERA_VICTORIA, MISIONES, RECOMPENSAS, TAM_EQUIPO, diaActual, esLegendario, misionesDelDia, legendarioDelDia, medallasDe, puntosHabilidad, xpDomador, xpPrimal, type FichaRival, type FinBatalla, type Perfil, type PrimalGuardado,
 } from '../../shared/src';
 import type { Domador } from './db';
 import type { Mods } from './battle/engine';
@@ -158,6 +158,11 @@ export function recompensar(d: Domador, gano: boolean, empate: boolean, modo: 'l
   if (modo === 'liga') { avanzarMision(d, 'jugar'); if (gano) avanzarMision(d, 'ganar'); }
   if (st) { avanzarMision(d, 'especial', st.especiales); avanzarMision(d, 'ko', st.ko); if (st.comboMax >= 15) avanzarMision(d, 'combo'); }
   if (capturado) avanzarMision(d, 'captura');
+  // Primales que más usa (se muestran a sus rivales)
+  if (modo === 'liga') {
+    d.uso ??= {};
+    for (const uid of participaron) { const p = d.primales.find((x) => x.uid === uid); if (p) d.uso[p.esp] = (d.uso[p.esp] ?? 0) + 1; }
+  }
   const xpD = !gano ? 0 : modo === 'liga' ? base.xpDomador : RECOMPENSAS.captura.xpDomador;
   const ups = darXpDomador(d, xpD);
   const bonoXp = 1 + habilidad(d, 'entrenador') + medallasDe(d.nivel).length * BONO_MEDALLA_XP;
@@ -184,6 +189,22 @@ export function recompensar(d: Domador, gano: boolean, empate: boolean, modo: 'l
   return {
     gano, empate, motivo: '', trofeos, monedas, bonoDiario: bonoDiario || undefined, xpDomador: xpD, xpPrimales, capturado, medallasNuevas: nuevas, nivelDomador: d.nivel, subioDomador: ups,
   };
+}
+
+/** Ficha pública de un Entrenador (la ve su rival antes de pelear). */
+export function fichaDe(d: Domador): FichaRival {
+  const uso = Object.entries(d.uso ?? {}).filter(([e]) => ESPECIES[e]).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([esp, n]) => ({ esp, n }));
+  const favoritos = uso.length ? uso : d.equipo.map((u) => d.primales.find((p) => p.uid === u)).filter(Boolean).map((p) => ({ esp: p!.esp, n: 0 }));
+  return { id: d.id, nombre: d.nombre, trofeos: d.trofeos, nivel: d.nivel, victorias: d.victorias, derrotas: d.derrotas, mejorTrofeos: d.mejorTrofeos, favoritos, ia: false };
+}
+
+/** Equipo elegido en la preparación: Primales tuyos, de 1 a 3 y como mucho un legendario. */
+export function equipoValido(d: Domador, uids: unknown): string[] | null {
+  if (!Array.isArray(uids)) return null;
+  const u = [...new Set(uids.map(String))].filter((x) => d.primales.some((p) => p.uid === x));
+  if (!u.length || u.length > TAM_EQUIPO) return null;
+  if (u.filter((x) => esLegendario(d.primales.find((p) => p.uid === x)!.esp)).length > MAX_LEGENDARIOS) return null;
+  return u;
 }
 
 /** ¿Puede retar a un Primal salvaje? Devuelve el motivo si no. */

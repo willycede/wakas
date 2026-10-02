@@ -11,7 +11,7 @@ import { WebSocketTransport } from '@colyseus/ws-transport';
 import { ESPECIES, RAREZAS, TAM_EQUIPO, ligaDe, type Especie } from '../../shared/src';
 import { BatallaRoom, type OpcionesBatalla, type Participante } from './battle/room';
 import type { Domador } from './db';
-import { cobrarMision, costoCaptura, elegirIniciales, perfil, ponerEquipo, puedeCapturar, subirHabilidad } from './progress';
+import { cobrarMision, costoCaptura, elegirIniciales, fichaDe, perfil, ponerEquipo, puedeCapturar, subirHabilidad } from './progress';
 import { domadores, store } from './services';
 
 const scrypt = promisify(scryptCb) as (pw: string, salt: Buffer, len: number) => Promise<Buffer>;
@@ -40,6 +40,7 @@ function participante(d: Domador): Participante {
   return {
     id: d.id, nombre: d.nombre, trofeos: d.trofeos,
     equipo: d.equipo.map((u) => d.primales.find((p) => p.uid === u)!).filter(Boolean).map((p) => ({ uid: p.uid, esp: p.esp, nivel: p.nivel })),
+    ficha: fichaDe(d),
   };
 }
 
@@ -67,8 +68,12 @@ function rivalIA(d: Domador): Participante {
   });
   const nombres = ['Rival Kai', 'Entrenadora Ren', 'Rival Iker', 'Entrenadora Luma', 'Rival Taro', 'Entrenadora Nia'];
   const liga = ligaDe(d.trofeos);
-  return { id: null, nombre: nombres[Math.floor(Math.random() * nombres.length)], trofeos: Math.max(0, d.trofeos + Math.floor(Math.random() * 80) - 40), equipo,
-    ia: Math.min(0.95, 0.18 + d.trofeos / 6000 + Math.random() * 0.08) };
+  const nombre = nombres[Math.floor(Math.random() * nombres.length)], trofeos = Math.max(0, d.trofeos + Math.floor(Math.random() * 80) - 40);
+  const partidas = Math.floor(d.victorias + d.derrotas + 5 + Math.random() * 30);
+  const victorias = Math.floor(partidas * (0.45 + Math.random() * 0.15));
+  return { id: null, nombre, trofeos, equipo, ia: Math.min(0.95, 0.18 + d.trofeos / 6000 + Math.random() * 0.08),
+    ficha: { nombre, trofeos, nivel: Math.max(1, d.nivel + Math.floor(Math.random() * 3) - 1), victorias, derrotas: partidas - victorias, mejorTrofeos: trofeos + Math.floor(Math.random() * 60),
+      favoritos: equipo.map((e) => ({ esp: e.esp, n: 3 + Math.floor(Math.random() * 30) })), ia: true } };
   void liga;
 }
 
@@ -81,7 +86,10 @@ function nivelMinimo(e: Especie) {
 }
 
 // ------------------------------------------------------------------ retos entre amigos
-const amistosas = new Map<string, { d: Domador; resolver: (r: { roomId: string } | { error: string }) => void; vence: number }>();
+const amistosas = new Map<string, { d: Domador; resolver: (r: { roomId: string } | { error: string }) => void; vence: number; para?: number }>();
+/** Última vez que se vio a cada Entrenador (para saber quién está en línea). */
+const visto = new Map<number, number>();
+const enLinea = (id: number) => Date.now() - (visto.get(id) ?? 0) < 60_000;
 const esperas = new Map<string, Promise<{ roomId: string } | { error: string }>>();
 
 // ------------------------------------------------------------------ cola de la Liga
@@ -127,6 +135,7 @@ async function main() {
   const auth = async (req: express.Request) => {
     const token = (req.headers.authorization ?? '').replace(/^Bearer /, '');
     const id = token ? await store.sesion(token) : null;
+    if (id) visto.set(id, Date.now());
     return id ? domadores.get(id) : null;
   };
 
@@ -201,6 +210,62 @@ async function main() {
   });
   app.post('/api/tutorial/saltar', accion((d) => { d.tutorial = true; return null; }));
 
+  // ------------------------------------------------------------------ amigos
+  app.get('/api/social', async (req, res) => {
+    const d = await auth(req);
+    if (!d) return res.status(401).json({ error: 'Sesión no válida.' });
+    const amigos = [];
+    for (const id of d.amigos ?? []) { const a = await domadores.get(id); if (a) amigos.push({ id, nombre: a.nombre, trofeos: a.trofeos, nivel: a.nivel, enLinea: enLinea(id) }); }
+    amigos.sort((a, b) => Number(b.enLinea) - Number(a.enLinea) || b.trofeos - a.trofeos);
+    const solicitudes = [];
+    for (const id of d.solicitudes ?? []) { const a = await domadores.get(id); if (a) solicitudes.push({ id, nombre: a.nombre, trofeos: a.trofeos }); }
+    const retos = [...amistosas.entries()].filter(([, a]) => a.para === d.id && a.vence > Date.now()).map(([codigo, a]) => ({ codigo, de: a.d.nombre }));
+    res.json({ amigos, solicitudes, retos });
+  });
+  app.post('/api/amigos/solicitar', async (req, res) => {
+    const d = await auth(req);
+    if (!d) return res.status(401).json({ error: 'Sesión no válida.' });
+    let otro = req.body?.id ? await domadores.get(Number(req.body.id)) : null;
+    if (!otro && req.body?.nombre) { const c = await store.cuenta(String(req.body.nombre).trim()); otro = c ? await domadores.get(c.id) : null; }
+    if (!otro) return res.status(404).json({ error: 'No existe ningún Entrenador con ese nombre.' });
+    if (otro.id === d.id) return res.status(400).json({ error: 'No puedes agregarte a ti mismo.' });
+    if (d.amigos?.includes(otro.id)) return res.status(400).json({ error: 'Ya es tu amigo.' });
+    // si el otro ya te lo había pedido, quedan como amigos directamente
+    if (d.solicitudes?.includes(otro.id)) {
+      d.solicitudes = d.solicitudes.filter((x) => x !== otro!.id);
+      d.amigos = [...(d.amigos ?? []), otro.id];
+      otro.amigos = [...new Set([...(otro.amigos ?? []), d.id])];
+    } else if (!otro.solicitudes?.includes(d.id)) otro.solicitudes = [...(otro.solicitudes ?? []), d.id].slice(-50);
+    await domadores.guardar(otro);
+    await domadores.guardar(d);
+    res.json({ ok: true, amigos: d.amigos?.includes(otro.id) ?? false });
+  });
+  app.post('/api/amigos/responder', async (req, res) => {
+    const d = await auth(req);
+    if (!d) return res.status(401).json({ error: 'Sesión no válida.' });
+    const id = Number(req.body?.id);
+    if (!d.solicitudes?.includes(id)) return res.status(404).json({ error: 'Esa solicitud ya no existe.' });
+    d.solicitudes = d.solicitudes.filter((x) => x !== id);
+    const otro = await domadores.get(id);
+    if (req.body?.aceptar && otro) {
+      d.amigos = [...new Set([...(d.amigos ?? []), id])];
+      otro.amigos = [...new Set([...(otro.amigos ?? []), d.id])];
+      await domadores.guardar(otro);
+    }
+    await domadores.guardar(d);
+    res.json({ ok: true });
+  });
+  app.post('/api/amigos/quitar', async (req, res) => {
+    const d = await auth(req);
+    if (!d) return res.status(401).json({ error: 'Sesión no válida.' });
+    const id = Number(req.body?.id);
+    d.amigos = (d.amigos ?? []).filter((x) => x !== id);
+    const otro = await domadores.get(id);
+    if (otro) { otro.amigos = (otro.amigos ?? []).filter((x) => x !== d.id); await domadores.guardar(otro); }
+    await domadores.guardar(d);
+    res.json({ ok: true });
+  });
+
   // Batallas amistosas: uno crea un código, el otro lo usa (por ejemplo, desde un enlace de WhatsApp)
   app.post('/api/amistosa/crear', async (req, res) => {
     const d = await auth(req);
@@ -209,7 +274,9 @@ async function main() {
     for (const [c, a] of amistosas) if (a.d.id === d.id || a.vence < Date.now()) { a.resolver({ error: 'Reto cancelado.' }); amistosas.delete(c); }
     let codigo = '';
     do codigo = Array.from({ length: 5 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)]).join(''); while (amistosas.has(codigo));
-    const espera = new Promise<{ roomId: string } | { error: string }>((resolver) => amistosas.set(codigo, { d, resolver, vence: Date.now() + 10 * 60_000 }));
+    // reto directo a un amigo: le aparece en el juego
+    const para = req.body?.para && d.amigos?.includes(Number(req.body.para)) ? Number(req.body.para) : undefined;
+    const espera = new Promise<{ roomId: string } | { error: string }>((resolver) => amistosas.set(codigo, { d, resolver, vence: Date.now() + 10 * 60_000, para }));
     esperas.set(codigo, espera);
     res.json({ codigo });
   });
@@ -254,7 +321,9 @@ async function main() {
     await domadores.guardar(d);
     const e = ESPECIES[esp];
     // el salvaje es más listo cuanto más raro (los legendarios pelean con todo)
-    const salvaje: Participante = { id: null, nombre: e.nombre, trofeos: d.trofeos, equipo: [{ uid: 'salvaje', esp, nivel: e.captura.nivelSalvaje + 2 }], ia: RAREZAS[e.rareza].ia };
+    const nv = e.captura.nivelSalvaje + 2;
+    const salvaje: Participante = { id: null, nombre: e.nombre, trofeos: d.trofeos, equipo: [{ uid: 'salvaje', esp, nivel: nv }], ia: RAREZAS[e.rareza].ia,
+      ficha: { nombre: e.nombre, trofeos: 0, nivel: nv, victorias: 0, derrotas: 0, mejorTrofeos: 0, favoritos: [{ esp, n: 0 }], ia: true, salvaje: esp } };
     const roomId = await crearBatalla({ modo: 'captura', lados: [participante(d), salvaje], especieSalvaje: esp, costo });
     res.json({ roomId, perfil: perfil(d) });
   });

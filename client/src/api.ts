@@ -1,6 +1,6 @@
 // Llamadas al servidor (cuentas, perfil, Liga, capturas).
 
-import type { Perfil } from '../../shared/src';
+import type { Perfil, Social } from '../../shared/src';
 
 const KEY = 'primal_token';
 export function getToken(): string | null {
@@ -31,6 +31,11 @@ export const api = {
   buscar: () => call<{ roomId: string }>('POST', '/api/buscar'),
   cancelar: () => call<{ ok: boolean }>('POST', '/api/cancelar'),
   capturar: (especie: string) => call<{ roomId: string; perfil: Perfil }>('POST', '/api/capturar', { especie }),
+  social: () => call<Social>('GET', '/api/social'),
+  amigoSolicitar: (q: { id?: number; nombre?: string }) => call<{ ok: boolean; amigos: boolean }>('POST', '/api/amigos/solicitar', q),
+  amigoResponder: (id: number, aceptar: boolean) => call<{ ok: boolean }>('POST', '/api/amigos/responder', { id, aceptar }),
+  amigoQuitar: (id: number) => call<{ ok: boolean }>('POST', '/api/amigos/quitar', { id }),
+  amistosaRetar: (para: number) => call<{ codigo: string }>('POST', '/api/amistosa/crear', { para }),
   mision: (id: string) => call<Perfil>('POST', '/api/mision', { id }),
   tutorial: () => call<{ roomId: string }>('POST', '/api/tutorial'),
   saltarTutorial: () => call<Perfil>('POST', '/api/tutorial/saltar'),

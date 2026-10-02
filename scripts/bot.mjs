@@ -29,6 +29,9 @@ class Bot {
     room.onMessage('fin', (m) => (fin = m));
     room.onMessage('cuenta', () => {});
     room.onMessage('emote', () => {});
+    let prep = null;
+    room.onMessage('preparar', (m) => { prep = m; setTimeout(() => room.send('prep_listo'), 300 + Math.random() * 500); });
+    room.onMessage('prep_listo', () => {});
     let seq = 0, especiales = 0, comboMax = 0;
     room.onMessage('fx', (l) => { for (const f of l) if (f.k === 'combo' && f.lado === init?.lado) comboMax = Math.max(comboMax, f.n); });
     const t0 = Date.now();
@@ -50,6 +53,7 @@ class Bot {
       }
       await sleep(100);
     }
+    log('preparación:', prep ? `rival ${prep.rival.nombre} (favoritos: ${prep.rival.favoritos.map((f) => f.esp).join(', ')})` : 'no hubo');
     log('especiales usadas:', especiales, '· combo máximo:', comboMax);
     await room.leave().catch(() => {});
     return { init, fin };
