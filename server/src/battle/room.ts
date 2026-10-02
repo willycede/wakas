@@ -206,6 +206,8 @@ export class BatallaRoom extends Room {
       movimientos: o.lados[auth.lado].equipo.map((e) => ESPECIES[e.esp].movimientos),
       liga: ligaDe(Math.max(o.lados[0].trofeos, o.lados[1].trofeos)).id,
       nivelMax: this.nivelMax < 99 ? this.nivelMax : undefined,
+      // el salvaje no tiene Entrenador
+      avatares: o.lados.map((p) => (p.ficha?.salvaje ? null : p.ficha?.avatar ?? null)) as InicioBatalla['avatares'],
     };
     c.send('inicio', init);
     // tutorial: empieza en cuanto entra

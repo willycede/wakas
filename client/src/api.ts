@@ -36,6 +36,7 @@ export const api = {
   amigoResponder: (id: number, aceptar: boolean) => call<{ ok: boolean }>('POST', '/api/amigos/responder', { id, aceptar }),
   amigoQuitar: (id: number) => call<{ ok: boolean }>('POST', '/api/amigos/quitar', { id }),
   amistosaRetar: (para: number) => call<{ codigo: string }>('POST', '/api/amistosa/crear', { para }),
+  avatar: (avatar: unknown) => call<Perfil>('POST', '/api/avatar', { avatar }),
   mision: (id: string) => call<Perfil>('POST', '/api/mision', { id }),
   tutorial: () => call<{ roomId: string }>('POST', '/api/tutorial'),
   saltarTutorial: () => call<Perfil>('POST', '/api/tutorial/saltar'),

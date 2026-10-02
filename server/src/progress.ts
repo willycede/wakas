@@ -1,7 +1,7 @@
 // Progreso de un Domador: perfil, recompensas, evolución, medallas, habilidades y capturas.
 
 import {
-  BONO_MEDALLA_XP, ESPECIES, ESPERA_CAMBIO, HABILIDADES_DOMADOR, INICIALES, MAX_LEGENDARIOS, NIVEL_MAX_DOMADOR, NIVEL_MAX_PRIMAL, NUM_INICIALES,
+  BONO_MEDALLA_XP, avatarAleatorio, avatarValido, ESPECIES, ESPERA_CAMBIO, HABILIDADES_DOMADOR, INICIALES, MAX_LEGENDARIOS, NIVEL_MAX_DOMADOR, NIVEL_MAX_PRIMAL, NUM_INICIALES,
   BONO_PRIMERA_VICTORIA, MISIONES, RECOMPENSAS, TAM_EQUIPO, diaActual, esLegendario, misionesDelDia, legendarioDelDia, medallasDe, puntosHabilidad, xpDomador, xpPrimal, type FichaRival, type FinBatalla, type Perfil, type PrimalGuardado,
 } from '../../shared/src';
 import type { Domador } from './db';
@@ -22,6 +22,7 @@ export function perfil(d: Domador): Perfil {
     monedas: d.monedas, trofeos: d.trofeos, mejorTrofeos: d.mejorTrofeos, victorias: d.victorias, derrotas: d.derrotas,
     primales: d.primales, equipo: d.equipo, habilidades: d.habilidades, puntosLibres: puntosHabilidad(d.nivel) - usados, capturados: d.capturados,
     tutorial: !!d.tutorial,
+    avatar: avatarDe(d),
     misiones: misionesHoy(d).map((m) => {
       const def = MISIONES.find((x) => x.id === m.id)!;
       return { id: m.id, progreso: m.progreso, meta: def.meta, premio: def.premio, cobrada: m.cobrada };
@@ -191,11 +192,13 @@ export function recompensar(d: Domador, gano: boolean, empate: boolean, modo: 'l
   };
 }
 
+export const avatarDe = (d: Domador) => avatarValido(d.avatar) ?? avatarAleatorio(d.id);
+
 /** Ficha pública de un Entrenador (la ve su rival antes de pelear). */
 export function fichaDe(d: Domador): FichaRival {
   const uso = Object.entries(d.uso ?? {}).filter(([e]) => ESPECIES[e]).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([esp, n]) => ({ esp, n }));
   const favoritos = uso.length ? uso : d.equipo.map((u) => d.primales.find((p) => p.uid === u)).filter(Boolean).map((p) => ({ esp: p!.esp, n: 0 }));
-  return { id: d.id, nombre: d.nombre, trofeos: d.trofeos, nivel: d.nivel, victorias: d.victorias, derrotas: d.derrotas, mejorTrofeos: d.mejorTrofeos, favoritos, ia: false };
+  return { id: d.id, avatar: avatarDe(d), nombre: d.nombre, trofeos: d.trofeos, nivel: d.nivel, victorias: d.victorias, derrotas: d.derrotas, mejorTrofeos: d.mejorTrofeos, favoritos, ia: false };
 }
 
 /** Equipo elegido en la preparación: Primales tuyos, de 1 a 3 y como mucho un legendario. */

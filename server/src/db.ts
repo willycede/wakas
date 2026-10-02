@@ -26,6 +26,7 @@ export interface Domador {
   misiones?: { dia: number; lista: { id: string; progreso: number; cobrada: boolean }[] };
   ultimaVictoriaDia?: number;
   uso?: Record<string, number>; // veces que usó cada especie en la Liga
+  avatar?: import('../../shared/src').Avatar;
   amigos?: number[];
   solicitudes?: number[]; // ids que te pidieron amistad
 }

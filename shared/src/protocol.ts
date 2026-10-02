@@ -1,5 +1,7 @@
 // Mensajes entre cliente y servidor.
 
+import type { Avatar } from './avatar';
+
 export const TICK_MS = 50; // 20 ticks por segundo
 export const ARENA = { w: 1100, h: 700 };
 export const RADIO_PRIMAL = 18;
@@ -26,6 +28,7 @@ export interface Perfil {
   puntosLibres: number;
   capturados: string[]; // especies vistas/capturadas alguna vez
   tutorial: boolean; // ya hizo (o saltó) el tutorial
+  avatar: Avatar;
   misiones: { id: string; progreso: number; meta: number; premio: number; cobrada: boolean }[];
   bonoDiario: boolean; // la primera victoria de hoy aún da el doble de monedas
 }
@@ -90,11 +93,13 @@ export interface InicioBatalla {
   movimientos: string[][]; // por slot de tu equipo: ids de movimientos
   liga: string; // estadio de la batalla (según los trofeos)
   nivelMax?: number; // en la Liga: nivel máximo con el que pelean los Primales
+  avatares: [Avatar | null, Avatar | null]; // los Entrenadores a cada lado de la arena (null = Primal salvaje)
 }
 
 /** Lo que se sabe del rival antes de la batalla. */
 export interface FichaRival {
   id?: number; // para agregarlo como amigo
+  avatar?: Avatar;
   nombre: string; trofeos: number; nivel: number; victorias: number; derrotas: number; mejorTrofeos: number;
   favoritos: { esp: string; n: number }[]; // los Primales que más usa
   ia: boolean; salvaje?: string; // captura: la especie salvaje
@@ -102,8 +107,8 @@ export interface FichaRival {
 
 /** Amigos: lista, solicitudes recibidas y retos que te han enviado. */
 export interface Social {
-  amigos: { id: number; nombre: string; trofeos: number; nivel: number; enLinea: boolean }[];
-  solicitudes: { id: number; nombre: string; trofeos: number }[];
+  amigos: { id: number; nombre: string; trofeos: number; nivel: number; enLinea: boolean; avatar: Avatar }[];
+  solicitudes: { id: number; nombre: string; trofeos: number; avatar: Avatar }[];
   retos: { codigo: string; de: string }[];
 }
 

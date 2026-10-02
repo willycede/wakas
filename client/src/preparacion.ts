@@ -6,6 +6,7 @@ import { spriteUrl } from './api';
 import { abrirFicha } from './ficha';
 import { nombreLiga, t } from './i18n';
 import { emblemaLiga, icono } from './iconos';
+import { retrato } from './avatar';
 import { esc, rarezaTag, tiposTag } from './menu';
 import type { Conexion } from './net';
 
@@ -43,7 +44,7 @@ export function mostrarPreparacion(net: Conexion, prep: Preparacion, perfil: Per
       </div>
       <div class="prep-cuerpo">
         <div class="prep-rival">
-          <div class="pr-head">${r.salvaje ? '' : emblemaLiga(liga.color, LIGAS.indexOf(liga), 54)}
+          <div class="pr-head">${r.salvaje ? '' : r.avatar ? retrato(r.avatar, 'grande') : emblemaLiga(liga.color, LIGAS.indexOf(liga), 54)}
             <div><small>${r.salvaje ? t('dif.wild') : t('prep.rival')}</small><b>${esc(r.nombre)}</b>
               ${r.salvaje ? rarezaTag(r.salvaje) : `<span class="pr-liga" style="color:${liga.color}">${nombreLiga(liga.id)} · ${icono('trofeo')}${r.trofeos}</span>`}</div></div>
           ${r.salvaje ? '' : `<div class="pr-stats">

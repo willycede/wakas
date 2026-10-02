@@ -8,10 +8,10 @@ import { randomBytes, scrypt as scryptCb, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { Server, matchMaker } from 'colyseus';
 import { WebSocketTransport } from '@colyseus/ws-transport';
-import { ESPECIES, RAREZAS, TAM_EQUIPO, ligaDe, type Especie } from '../../shared/src';
+import { ESPECIES, RAREZAS, TAM_EQUIPO, avatarAleatorio, avatarValido, ligaDe, type Especie } from '../../shared/src';
 import { BatallaRoom, type OpcionesBatalla, type Participante } from './battle/room';
 import type { Domador } from './db';
-import { cobrarMision, costoCaptura, elegirIniciales, fichaDe, perfil, ponerEquipo, puedeCapturar, subirHabilidad } from './progress';
+import { avatarDe, cobrarMision, costoCaptura, elegirIniciales, fichaDe, perfil, ponerEquipo, puedeCapturar, subirHabilidad } from './progress';
 import { domadores, store } from './services';
 
 const scrypt = promisify(scryptCb) as (pw: string, salt: Buffer, len: number) => Promise<Buffer>;
@@ -72,7 +72,7 @@ function rivalIA(d: Domador): Participante {
   const partidas = Math.floor(d.victorias + d.derrotas + 5 + Math.random() * 30);
   const victorias = Math.floor(partidas * (0.45 + Math.random() * 0.15));
   return { id: null, nombre, trofeos, equipo, ia: Math.min(0.95, 0.18 + d.trofeos / 6000 + Math.random() * 0.08),
-    ficha: { nombre, trofeos, nivel: Math.max(1, d.nivel + Math.floor(Math.random() * 3) - 1), victorias, derrotas: partidas - victorias, mejorTrofeos: trofeos + Math.floor(Math.random() * 60),
+    ficha: { avatar: avatarAleatorio(Math.floor(Math.random() * 1e6)), nombre, trofeos, nivel: Math.max(1, d.nivel + Math.floor(Math.random() * 3) - 1), victorias, derrotas: partidas - victorias, mejorTrofeos: trofeos + Math.floor(Math.random() * 60),
       favoritos: equipo.map((e) => ({ esp: e.esp, n: 3 + Math.floor(Math.random() * 30) })), ia: true } };
   void liga;
 }
@@ -179,6 +179,7 @@ async function main() {
   app.post('/api/equipo', accion((d, b) => ponerEquipo(d, Array.isArray(b.equipo) ? b.equipo.map(String) : [])));
   app.post('/api/habilidad', accion((d, b) => subirHabilidad(d, String(b.id))));
   app.post('/api/mision', accion((d, b) => cobrarMision(d, String(b.id))));
+  app.post('/api/avatar', accion((d, b) => { const a = avatarValido(b.avatar); if (!a) return 'Avatar no válido.'; d.avatar = a; return null; }));
 
   app.get('/api/ranking', async (_req, res) => res.json(await store.ranking(50)));
 
@@ -215,10 +216,10 @@ async function main() {
     const d = await auth(req);
     if (!d) return res.status(401).json({ error: 'Sesión no válida.' });
     const amigos = [];
-    for (const id of d.amigos ?? []) { const a = await domadores.get(id); if (a) amigos.push({ id, nombre: a.nombre, trofeos: a.trofeos, nivel: a.nivel, enLinea: enLinea(id) }); }
+    for (const id of d.amigos ?? []) { const a = await domadores.get(id); if (a) amigos.push({ id, nombre: a.nombre, trofeos: a.trofeos, nivel: a.nivel, enLinea: enLinea(id), avatar: avatarDe(a) }); }
     amigos.sort((a, b) => Number(b.enLinea) - Number(a.enLinea) || b.trofeos - a.trofeos);
     const solicitudes = [];
-    for (const id of d.solicitudes ?? []) { const a = await domadores.get(id); if (a) solicitudes.push({ id, nombre: a.nombre, trofeos: a.trofeos }); }
+    for (const id of d.solicitudes ?? []) { const a = await domadores.get(id); if (a) solicitudes.push({ id, nombre: a.nombre, trofeos: a.trofeos, avatar: avatarDe(a) }); }
     const retos = [...amistosas.entries()].filter(([, a]) => a.para === d.id && a.vence > Date.now()).map(([codigo, a]) => ({ codigo, de: a.d.nombre }));
     res.json({ amigos, solicitudes, retos });
   });

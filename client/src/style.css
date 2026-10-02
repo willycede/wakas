@@ -881,3 +881,39 @@ input:focus { outline: none; box-shadow: inset 0 0 0 2px var(--gold), 0 0 0 4px 
 @media (max-height: 760px) { .xp-list { margin-top: 8px; } .xp-row { padding: 4px 8px; } }
 .result-title.win { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: inherit; }
 .result-title.win span { background: linear-gradient(180deg, #fff6c8, #ffc940 50%, #ff8a1f); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* ---------- avatar ---------- */
+.retrato { display: inline-block; width: 44px; height: 44px; border-radius: 50%; overflow: hidden; flex: none; position: relative;
+  background: radial-gradient(circle at 50% 30%, #5a4aa0, #2a2050); box-shadow: inset 0 0 0 2px var(--line-2); }
+.retrato img { position: absolute; width: 200%; left: -50%; top: -8%; image-rendering: pixelated; }
+.retrato.grande { width: 64px; height: 64px; }
+.retrato.av.on { box-shadow: inset 0 0 0 2px var(--good); }
+#tb-avatar { cursor: pointer; display: flex; }
+#tb-avatar .retrato { width: 46px; height: 46px; box-shadow: inset 0 0 0 2px var(--gold); }
+.tb-player .tb-level { width: 26px; height: 26px; font-size: 13px; margin-left: -18px; margin-top: 26px; z-index: 1; }
+.th-avatar { position: relative; width: 96px; height: 120px; border: 0; cursor: pointer; border-radius: 16px; flex: none;
+  background: radial-gradient(circle at 50% 75%, rgba(255,201,64,.35), transparent 65%), rgba(0,0,0,.25); box-shadow: inset 0 0 0 2px var(--line-2); }
+.th-avatar img { height: 112px; image-rendering: pixelated; margin-top: 4px; }
+.th-avatar span { position: absolute; right: -6px; bottom: -6px; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, #ffe07a, #f59a1a); color: #3b1f00; font-size: 16px; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
+.av-editor { display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: center; }
+.av-vista { position: relative; height: 300px; display: flex; align-items: flex-end; justify-content: center; border-radius: 18px;
+  background: radial-gradient(circle at 50% 85%, rgba(255,201,64,.35), transparent 60%), rgba(0,0,0,.25); box-shadow: inset 0 0 0 1px var(--line); }
+.av-vista img { height: 272px; image-rendering: pixelated; margin-bottom: 10px; animation: flota 3s ease-in-out infinite; }
+.av-opciones h2 { font-size: 30px; margin: 0 0 10px; }
+.av-fila { display: grid; grid-template-columns: 120px 36px 1fr 36px; gap: 8px; align-items: center; margin-bottom: 6px; }
+.av-fila > span { font-size: 12px; font-weight: 900; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
+.av-fila b { text-align: center; padding: 7px; border-radius: 10px; background: rgba(0,0,0,.25); font-size: 14px; display: flex; justify-content: center; }
+.av-flecha { border: 0; cursor: pointer; height: 34px; border-radius: 10px; font-size: 20px; font-weight: 900; color: var(--text); background: linear-gradient(180deg, #4a3c86, #362a66); }
+.av-flecha:hover { filter: brightness(1.2); }
+.av-color { display: inline-block; width: 42px; height: 18px; border-radius: 5px; box-shadow: inset 0 0 0 2px rgba(0,0,0,.35); }
+@media (max-width: 760px) { .av-editor { grid-template-columns: 1fr; } .av-vista { height: 200px; } .av-vista img { height: 180px; } .av-fila { grid-template-columns: 100px 32px 1fr 32px; } }
+.av-color.piel-0{background:#f6d2b0}.av-color.piel-1{background:#e8b48a}.av-color.piel-2{background:#c98d5f}.av-color.piel-3{background:#a8703f}.av-color.piel-4{background:#7a4a2a}.av-color.piel-5{background:#5a3420}.av-color.colorPelo-0{background:#2a1a12}.av-color.colorPelo-1{background:#4a2a18}.av-color.colorPelo-2{background:#7a4a24}.av-color.colorPelo-3{background:#c08a3a}.av-color.colorPelo-4{background:#e8c060}.av-color.colorPelo-5{background:#c03a2a}.av-color.colorPelo-6{background:#8a8a9a}.av-color.colorPelo-7{background:#3a6ad0}.av-color.colorRopa-0{background:#d8342a}.av-color.colorRopa-1{background:#2a6ad0}.av-color.colorRopa-2{background:#ffd100}.av-color.colorRopa-3{background:#3aa85a}.av-color.colorRopa-4{background:#8a3ad0}.av-color.colorRopa-5{background:#ff8a2a}.av-color.colorRopa-6{background:#2a2a3a}.av-color.colorRopa-7{background:#f0f0f0}.av-color.colorRopa-8{background:#e04a8a}.av-color.colorRopa-9{background:#20b0b0}
+
+.av-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; max-height: 340px; overflow-y: auto; padding: 2px; }
+.av-op { height: 96px; border: 0; cursor: pointer; border-radius: 12px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px;
+  background: radial-gradient(circle at 50% 80%, rgba(255,255,255,.08), transparent 70%), rgba(0,0,0,.25); box-shadow: inset 0 0 0 1px var(--line); transition: transform .12s; }
+.av-op:hover { transform: translateY(-2px); }
+.av-op img { height: 86px; image-rendering: pixelated; }
+.av-op.on { box-shadow: inset 0 0 0 3px var(--gold), 0 0 14px rgba(255,201,64,.35); }
+.retrato img { width: 150%; left: -25%; top: -2%; }

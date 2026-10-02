@@ -16,6 +16,7 @@ import * as FX from './efectos';
 import { icono } from './iconos';
 import { descEspecial, descMov, nombreArena, nombreElemento, nombreEspecial, nombreEspecialId, nombreMov, t } from './i18n';
 import { dibujarEstadio, type Estadio } from './arenas';
+import { avatarUrl } from './avatar';
 import { TONO_LEGENDARIO, alternarMusica, tocar } from './musica';
 import { esc } from './menu';
 
@@ -49,6 +50,7 @@ export class BatallaScene extends Phaser.Scene {
   silenciado = false;
   tuto: { pasos: string[]; i: number; cuenta: number; mov: number } | null = null;
   musicaLegendaria = '';
+  entrenadores: (Phaser.GameObjects.Image | null)[] = [null, null];
   keys!: Record<string, Phaser.Input.Keyboard.Key>;
   joy = { x: 0, y: 0, activo: false };
   seq = 0;
@@ -97,6 +99,7 @@ export class BatallaScene extends Phaser.Scene {
   }
 
   preload() {
+    (this.init0.avatares ?? []).forEach((a) => { if (a && !this.textures.exists(`entrenador_${a.modelo}`)) this.load.image(`entrenador_${a.modelo}`, avatarUrl(a)); });
     for (const id of Object.keys(ESPECIES)) {
       if (!this.textures.exists('p_' + id)) this.load.image('p_' + id, spriteUrl(id));
       const m = ANIM[id];
@@ -120,6 +123,7 @@ export class BatallaScene extends Phaser.Scene {
     }
     FX.crearTexturas(this);
     this.estadio = dibujarEstadio(this, this.init0.liga, this.init0.obstaculos);
+    this.ponerEntrenadores();
     this.gAvisos = this.add.graphics().setDepth(1);
     this.gApunte = this.add.graphics().setDepth(4000);
     this.keys = this.input.keyboard!.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,SHIFT,ONE,TWO,THREE,FOUR,Q,E,F,R,T,C,M') as any;
@@ -192,7 +196,32 @@ export class BatallaScene extends Phaser.Scene {
 
   private zoomJuego() {
     const w = this.scale.width, h = this.scale.height;
-    return Math.min(w / (ARENA.w + 80), h / (ARENA.h + 240));
+    return Math.min(w / (ARENA.w + 200), h / (ARENA.h + 240));
+  }
+
+  /** Cada Entrenador de pie a su lado de la arena, mirando el combate. */
+  private ponerEntrenadores() {
+    this.entrenadores = [null, null];
+    (this.init0.avatares ?? [null, null]).forEach((a, l) => {
+      if (!a) return;
+      const key = `entrenador_${a.modelo}`;
+      if (!this.textures.exists(key)) return;
+      const x = l === 0 ? -64 : ARENA.w + 64, y = ARENA.h / 2 + 40;
+      this.add.ellipse(x, y + 2, 60, 18, 0x000000, 0.35).setDepth(y - 1);
+      const img = this.add.image(x, y, key).setOrigin(0.5, 1).setScale(l === 0 ? 1.5 : -1.5, 1.5).setDepth(y);
+      // marca de color del lado
+      this.add.ellipse(x, y + 2, 70, 22).setStrokeStyle(3, l === this.init0.lado ? 0x4aa8ff : 0xff5a6a, 0.9).setDepth(y - 1);
+      this.tweens.add({ targets: img, scaleY: 1.54, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      this.entrenadores[l] = img;
+    });
+  }
+
+  /** El Entrenador reacciona: salta de alegría o se lamenta. */
+  private reaccion(l: number, tipo: 'salta' | 'lamenta') {
+    const e = this.entrenadores[l];
+    if (!e) return;
+    if (tipo === 'salta') this.tweens.add({ targets: e, y: e.y - 26, duration: 160, yoyo: true, repeat: 1, ease: 'Quad.easeOut' });
+    else this.tweens.add({ targets: e, angle: { from: -8, to: 8 }, duration: 90, yoyo: true, repeat: 3, onComplete: () => e.setAngle(0) });
   }
 
   private ajustar() {
@@ -655,6 +684,7 @@ export class BatallaScene extends Phaser.Scene {
         break;
       }
       case 'especial':
+        this.reaccion(f.lado, 'salta');
         if (f.lado === this.init0.lado) this.tutoPaso('especial');
         this.especial(f);
         break;
@@ -671,6 +701,8 @@ export class BatallaScene extends Phaser.Scene {
         break;
       }
       case 'caido':
+        this.reaccion(f.lado, 'lamenta');
+        this.reaccion(1 - f.lado, 'salta');
         this.estadio?.vitorear();
         this.etiqueta(f.x, f.y - 100, t('hud.fainted', { n: ESPECIES[f.esp].nombre }), '#ff8a9a');
         this.cameras.main.shake(250, 0.008);

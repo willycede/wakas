@@ -6,7 +6,8 @@ import {
 } from '../../shared/src';
 import { api, spriteUrl } from './api';
 import { emblemaLiga, icono } from './iconos';
-import { abrirFicha } from './ficha';
+import { abrirFicha, editarAvatar } from './ficha';
+import { avatarUrl, retrato } from './avatar';
 import { textoMision, descEspecial, descEspecie, descHab, habDomador, medalla, nombreElemento, nombreEspecial, nombreHab, nombreLiga, nombreMov, nombreRareza, t, tError } from './i18n';
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -71,6 +72,8 @@ export class Menu {
   setPerfil(p: Perfil) {
     this.perfil = p;
     $('tb-name').textContent = p.nombre;
+    $('tb-avatar').innerHTML = retrato(p.avatar);
+    $('tb-avatar').onclick = () => this.personalizar();
     $('tb-lv').textContent = String(p.nivel);
     ($('tb-xp') as HTMLElement).style.width = p.xpSig ? `${(p.xp / p.xpSig) * 100}%` : '100%';
     $('tb-trophies').textContent = p.trofeos.toLocaleString();
@@ -285,7 +288,8 @@ export class Menu {
     }).join('');
     const pts = p.puntosLibres;
     return `<div class="page">
-      <div class="trainer-head"><div class="tb-level">${p.nivel}</div><div class="info"><b>${esc(p.nombre)}</b><br><small>${t('trainer.level', { n: p.nivel })} · ${p.xpSig ? `${p.xp} / ${p.xpSig} XP` : 'MAX'}</small>
+      <div class="trainer-head"><button class="th-avatar" id="th-avatar" title="${t('av.edit')}"><img src="${avatarUrl(p.avatar)}" alt=""><span>${icono('mas')}</span></button>
+        <div class="tb-level">${p.nivel}</div><div class="info"><b>${esc(p.nombre)}</b><br><small>${t('trainer.level', { n: p.nivel })} · ${p.xpSig ? `${p.xp} / ${p.xpSig} XP` : 'MAX'}</small>
         <div class="xpbar"><div style="width:${p.xpSig ? (p.xp / p.xpSig) * 100 : 100}%"></div></div></div></div>
       <div class="row-btns"><button class="btn ghost" id="btn-tuto">${icono('mira')}${t('tuto.again')}</button><button class="btn ghost" id="btn-historia">${icono('estrella')}${t('intro.again')}</button></div>
       <div class="section-title">${t('trainer.medals')} · ${MEDALLAS.filter((m) => p.nivel >= m.nivel).length}/${MEDALLAS.length}</div>
@@ -299,10 +303,10 @@ export class Menu {
   /** Amigos, solicitudes y búsqueda por nombre. */
   private amigosHtml() {
     const s = this.social;
-    const sol = s.solicitudes.map((x) => `<div class="amigo sol"><span class="av">${esc(x.nombre[0] ?? '?').toUpperCase()}</span>
+    const sol = s.solicitudes.map((x) => `<div class="amigo sol">${retrato(x.avatar, 'av')}
       <div class="am-info"><b>${esc(x.nombre)}</b><small>${icono('trofeo')}${x.trofeos}</small></div>
       <button class="btn primary sm" data-aceptar="${x.id}">${t('amigos.accept')}</button><button class="btn ghost sm" data-rechazar="${x.id}">${t('amigos.reject')}</button></div>`).join('');
-    const lista = s.amigos.map((x) => `<div class="amigo"><span class="av ${x.enLinea ? 'on' : ''}">${esc(x.nombre[0] ?? '?').toUpperCase()}</span>
+    const lista = s.amigos.map((x) => `<div class="amigo">${retrato(x.avatar, `av ${x.enLinea ? 'on' : ''}`)}
       <div class="am-info"><b>${esc(x.nombre)}</b><small><i class="punto ${x.enLinea ? 'on' : ''}"></i>${x.enLinea ? t('amigos.online') : t('amigos.offline')} · ${icono('trofeo')}${x.trofeos} · ${t('misc.level', { n: x.nivel })}</small></div>
       <button class="btn ${x.enLinea ? 'primary' : ''} sm" data-retar="${x.id}">${icono('espadas')}${t('amigos.challenge')}</button>
       <button class="btn ghost sm am-quitar" data-quitar-amigo="${x.id}" title="${t('amigos.remove')}">✕</button></div>`).join('');
@@ -346,6 +350,7 @@ export class Menu {
     body.querySelector<HTMLButtonElement>('#amis-cancelar')?.addEventListener('click', () => { if (this.reto) void api.amistosaCancelar(this.reto); this.reto = null; this.show('batalla'); });
     body.querySelector<HTMLButtonElement>('#btn-tuto')?.addEventListener('click', () => this.onTutorial());
     body.querySelector<HTMLButtonElement>('#btn-historia')?.addEventListener('click', () => this.onHistoria());
+    body.querySelector<HTMLButtonElement>('#th-avatar')?.addEventListener('click', () => this.personalizar());
     body.querySelectorAll<HTMLButtonElement>('[data-mision]').forEach((b) => (b.onclick = async () => {
       try { const p = await api.mision(b.dataset.mision!); toast(`+${this.perfil.misiones.find((m) => m.id === b.dataset.mision)?.premio ?? ''} ${t('res.coins')}`); this.setPerfil(p); this.show('batalla'); } catch (e: any) { toast(e.message, true); }
     }));
@@ -447,6 +452,13 @@ export class Menu {
       eq = eq.filter((u) => u !== uid);
     }
     try { this.setPerfil(await api.equipo(eq)); this.show('equipo'); } catch (e: any) { toast(e.message, true); }
+  }
+
+  /** Editor del avatar. */
+  personalizar() {
+    editarAvatar(this.perfil.avatar, async (a) => {
+      try { this.setPerfil(await api.avatar(a)); toast(t('av.saved')); if (this.tab === 'domador') this.show('domador'); } catch (e: any) { toast(e.message, true); }
+    });
   }
 
   /** Buscar otra batalla de inmediato (botón Revancha). */

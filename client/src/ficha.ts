@@ -8,6 +8,8 @@ import {
 import { spriteUrl } from './api';
 import { icono } from './iconos';
 import { descEspecial, descEspecie, descHab, descMov, nombreElemento, nombreEspecial, nombreHab, nombreMov, t } from './i18n';
+import { avatarUrl } from './avatar';
+import { NUM_ENTRENADORES, type Avatar } from '../../shared/src';
 import { esc, rarezaTag, tiposTag } from './menu';
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -145,4 +147,25 @@ export function dialogo(titulo: string, texto: string, botones: { texto: string;
   $('ficha').classList.remove('hidden');
   $('ficha').onclick = null;
   $('ficha-body').querySelectorAll<HTMLElement>('[data-b]').forEach((el) => (el.onclick = () => { $('ficha').classList.add('hidden'); botones[Number(el.dataset.b)].fn(); }));
+}
+
+/** Editor del avatar: eliges tu entrenador entre los ilustrados. */
+export function editarAvatar(actual: Avatar, onGuardar: (a: Avatar) => void) {
+  let a = { ...actual };
+  const pintar = () => {
+    $('ficha-body').innerHTML = `<button class="f-cerrar">✕</button>
+      <div class="av-editor">
+        <div class="av-vista"><div class="av-foco"></div><img src="${avatarUrl(a)}" alt=""></div>
+        <div class="av-opciones"><h2 class="display">${t('av.title')}</h2>
+          <div class="av-grid">${Array.from({ length: NUM_ENTRENADORES }, (_, i) => `<button class="av-op ${i === a.modelo ? 'on' : ''}" data-m="${i}"><img src="${avatarUrl({ modelo: i })}" alt=""></button>`).join('')}</div>
+          <div class="f-acciones"><button class="btn primary big" id="av-guardar">${t('av.save')}</button></div>
+        </div>
+      </div>`;
+    $('ficha-body').querySelector<HTMLElement>('.f-cerrar')!.onclick = () => $('ficha').classList.add('hidden');
+    $('ficha-body').querySelectorAll<HTMLElement>('.av-op').forEach((b) => (b.onclick = () => { a = { modelo: Number(b.dataset.m) }; pintar(); }));
+    $('av-guardar').onclick = () => { $('ficha').classList.add('hidden'); onGuardar(a); };
+  };
+  $('ficha').classList.remove('hidden');
+  $('ficha').onclick = (ev) => { if (ev.target === $('ficha')) $('ficha').classList.add('hidden'); };
+  pintar();
 }
