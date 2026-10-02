@@ -23,3 +23,14 @@ npm run build
 npm start
 ```
 Luego abre http://localhost:2600
+
+## Panel de estadísticas (solo para ti)
+
+Abre `https://TU-JUEGO.up.railway.app/admin` para ver cuántos juegan, cuánto juegan y si vuelven.
+
+Para protegerlo con una clave (hazlo una sola vez):
+1. En Railway, entra a tu servicio del juego → pestaña **Variables**.
+2. Pulsa **New Variable**. Nombre: `ADMIN_KEY`. Valor: una clave que solo tú sepas (por ejemplo `primal-2026-secreta`).
+3. Railway vuelve a desplegar solo. Al abrir `/admin`, te pedirá esa clave una vez.
+
+Para ver cómo se verá con muchos jugadores (datos inventados): `/admin?demo`.

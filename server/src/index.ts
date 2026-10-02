@@ -8,11 +8,11 @@ import { randomBytes, scrypt as scryptCb, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { Server, matchMaker } from 'colyseus';
 import { WebSocketTransport } from '@colyseus/ws-transport';
-import { ESPECIES, RAREZAS, TAM_EQUIPO, avatarAleatorio, avatarValido, ligaDe, type Especie } from '../../shared/src';
+import { ESPECIES, INICIALES, LIGAS, NUM_INICIALES, RAREZAS, TAM_EQUIPO, avatarAleatorio, avatarValido, diaActual, ligaDe, type Especie } from '../../shared/src';
 import { BatallaRoom, type OpcionesBatalla, type Participante } from './battle/room';
 import type { Domador } from './db';
 import { avatarDe, cobrarMision, costoCaptura, elegirIniciales, fichaDe, perfil, ponerEquipo, puedeCapturar, subirHabilidad } from './progress';
-import { domadores, store } from './services';
+import { domadores, salas, stats, store } from './services';
 
 const scrypt = promisify(scryptCb) as (pw: string, salt: Buffer, len: number) => Promise<Buffer>;
 const PORT = Number(process.env.PORT ?? 2600);
@@ -85,6 +85,51 @@ function nivelMinimo(e: Especie) {
   return e.rareza === 'epico' ? 12 : e.rareza === 'raro' ? 5 : 1;
 }
 
+// ------------------------------------------------------------------ resumen para el panel
+async function resumenAdmin() {
+  const hoy = diaActual();
+  const todos = await store.todos();
+  const dias = stats.ultimosDias(30);
+  const unicos = (n: number) => new Set(dias.slice(-n).flatMap((d) => d.activos)).size;
+  // retención: de los que se registraron un día, ¿cuántos volvieron 1 y 7 días después?
+  const ret = (k: number) => {
+    let base = 0, vuelven = 0;
+    for (const d of todos) {
+      if (!d.creado) continue;
+      const dc = diaActual(d.creado);
+      if (dc + k > hoy || dc < hoy - 45) continue;
+      base++;
+      if (d.dias?.includes(dc + k)) vuelven++;
+    }
+    return { base, vuelven, pct: base ? vuelven / base : null };
+  };
+  // Primales más usados (y su % de victorias) en la Liga
+  const uso: Record<string, number> = {};
+  for (const d of todos) for (const [e, n] of Object.entries(d.uso ?? {})) uso[e] = (uso[e] ?? 0) + n;
+  const conPrimales = todos.filter((d) => d.primales.length);
+  const iniciales: Record<string, number> = {};
+  for (const d of conPrimales) for (const p of d.primales.slice(0, NUM_INICIALES)) if (INICIALES.includes(p.esp) || INICIALES.includes(p.esp)) iniciales[p.esp] = (iniciales[p.esp] ?? 0) + 1;
+  const ligas = LIGAS.map((l, i) => ({ id: l.id, nombre: l.nombre, color: l.color,
+    jugadores: conPrimales.filter((d) => d.trofeos >= l.trofeos && (i === LIGAS.length - 1 || d.trofeos < LIGAS[i + 1].trofeos)).length }));
+  const h = dias[dias.length - 1];
+  const totalBatallasHoy = Object.values(h.batallas).reduce((a, b) => a + b, 0);
+  return {
+    ahora: { enLinea: [...visto.values()].filter((t) => Date.now() - t < 60_000).length, enBatalla: salas.activas, enCola: cola.length },
+    totales: {
+      jugadores: todos.length, conEquipo: conPrimales.length, horas: Math.round(todos.reduce((s, d) => s + (d.segundosJugados ?? 0), 0) / 360) / 10,
+      batallas: todos.reduce((s, d) => s + d.victorias + d.derrotas, 0), tutorial: conPrimales.filter((d) => d.tutorial).length,
+    },
+    hoy: { activos: h.activos.length, nuevos: h.nuevos, batallas: totalBatallasHoy, horas: Math.round(h.segundos / 360) / 10, pico: h.pico,
+      esperaMedia: h.esperas ? Math.round(h.esperaMs / h.esperas / 100) / 10 : null },
+    dau: h.activos.length, wau: unicos(7), mau: unicos(30),
+    retencion: { d1: ret(1), d7: ret(7) },
+    serie: dias.map((d) => ({ dia: d.dia, activos: d.activos.length, nuevos: d.nuevos, batallas: d.batallas, horas: Math.round(d.segundos / 360) / 10, vsIA: d.vsIA, vsHumano: d.vsHumano })),
+    primales: Object.entries(uso).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([esp, n]) => ({ esp, nombre: ESPECIES[esp]?.nombre ?? esp, n })),
+    iniciales: Object.entries(iniciales).sort((a, b) => b[1] - a[1]).map(([esp, n]) => ({ esp, nombre: ESPECIES[esp]?.nombre ?? esp, n })),
+    ligas,
+  };
+}
+
 // ------------------------------------------------------------------ retos entre amigos
 const amistosas = new Map<string, { d: Domador; resolver: (r: { roomId: string } | { error: string }) => void; vence: number; para?: number }>();
 /** Última vez que se vio a cada Entrenador (para saber quién está en línea). */
@@ -114,12 +159,14 @@ setInterval(async () => {
       cola.splice(Math.max(i, j), 1);
       cola.splice(Math.min(i, j), 1);
       const roomId = await crearBatalla({ modo: 'liga', lados: [participante(a.d), participante(b.d)] });
+      stats.espera(now - a.desde); stats.espera(now - b.desde);
       a.resolver({ roomId }); b.resolver({ roomId });
       return;
     }
     if (now - a.desde > ESPERA_IA) {
       cola.splice(i, 1);
       const roomId = await crearBatalla({ modo: 'liga', lados: [participante(a.d), rivalIA(a.d)] });
+      stats.espera(now - a.desde);
       a.resolver({ roomId });
       return;
     }
@@ -128,6 +175,9 @@ setInterval(async () => {
 
 async function main() {
   await store.init();
+  await stats.init();
+  // pico de jugadores en línea (cada minuto)
+  setInterval(() => stats.enLinea([...visto.values()].filter((t) => Date.now() - t < 60_000).length), 60_000).unref();
   const app = express();
   app.set('trust proxy', true);
   app.use(express.json({ limit: '10kb' }));
@@ -136,7 +186,9 @@ async function main() {
     const token = (req.headers.authorization ?? '').replace(/^Bearer /, '');
     const id = token ? await store.sesion(token) : null;
     if (id) visto.set(id, Date.now());
-    return id ? domadores.get(id) : null;
+    const d = id ? await domadores.get(id) : null;
+    if (d && stats.activo(d)) await domadores.guardar(d); // primera vez hoy: se guarda el día
+    return d;
   };
 
   app.post('/api/registro', async (req, res) => {
@@ -147,6 +199,9 @@ async function main() {
     if (clave.length < 6) return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres.' });
     const id = await store.crearCuenta(usuario, await hash(clave));
     if (!id) return res.status(409).json({ error: 'Ese nombre ya está en uso.' });
+    stats.nuevo();
+    const nd = await domadores.get(id);
+    if (nd) { nd.creado = Date.now(); stats.activo(nd); await domadores.guardar(nd); }
     const token = randomBytes(32).toString('hex');
     await store.crearSesion(token, id);
     res.json({ token });
@@ -327,6 +382,20 @@ async function main() {
       ficha: { nombre: e.nombre, trofeos: 0, nivel: nv, victorias: 0, derrotas: 0, mejorTrofeos: 0, favoritos: [{ esp, n: 0 }], ia: true, salvaje: esp } };
     const roomId = await crearBatalla({ modo: 'captura', lados: [participante(d), salvaje], especieSalvaje: esp, costo });
     res.json({ roomId, perfil: perfil(d) });
+  });
+
+  // ------------------------------------------------------------------ panel del dueño
+  // En Railway hace falta la variable ADMIN_KEY; en local se puede entrar sin clave.
+  app.get('/api/admin/estadisticas', async (req, res) => {
+    const clave = process.env.ADMIN_KEY;
+    const enLocal = !process.env.DATABASE_URL && !process.env.RAILWAY_ENVIRONMENT;
+    if (!enLocal && (!clave || req.query.clave !== clave)) return res.status(403).json({ error: clave ? 'Clave incorrecta.' : 'Falta configurar ADMIN_KEY en Railway.' });
+    await stats.guardar();
+    res.json(await resumenAdmin());
+  });
+  app.get('/admin', (_req, res) => {
+    const f = resolve(process.cwd(), 'client/dist/admin.html');
+    if (existsSync(f)) res.sendFile(f); else res.send('Falta compilar el cliente: npm run build');
   });
 
   // Trucos de prueba (solo en local)

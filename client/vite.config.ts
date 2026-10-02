@@ -10,5 +10,7 @@ export default defineConfig({
     outDir: resolve(__dirname, 'dist'),
     emptyOutDir: true,
     chunkSizeWarningLimit: 2000,
+    // dos páginas: el juego y el panel del dueño (/admin)
+    rollupOptions: { input: { main: resolve(__dirname, 'index.html'), admin: resolve(__dirname, 'admin.html') } },
   },
 });

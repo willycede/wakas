@@ -29,6 +29,9 @@ export interface Domador {
   avatar?: import('../../shared/src').Avatar;
   amigos?: number[];
   solicitudes?: number[]; // ids que te pidieron amistad
+  creado?: number; // fecha de registro (ms)
+  dias?: number[]; // días en que jugó (para la retención)
+  segundosJugados?: number;
 }
 
 export interface Store {
@@ -40,6 +43,10 @@ export interface Store {
   domador(id: number): Promise<Domador | null>;
   guardar(d: Domador): Promise<void>;
   ranking(n: number): Promise<{ nombre: string; trofeos: number; nivel: number }[]>;
+  /** Todos los Entrenadores (para las estadísticas del panel). */
+  todos(): Promise<Domador[]>;
+  leerDias(desde: number): Promise<Record<number, any>>;
+  guardarDia(dia: number, datos: unknown): Promise<void>;
 }
 
 export function nuevoDomador(id: number, usuario: string): Domador {
@@ -65,6 +72,7 @@ class PgStore implements Store {
       );
       CREATE UNIQUE INDEX IF NOT EXISTS cuentas_usuario ON cuentas (lower(usuario));
       CREATE INDEX IF NOT EXISTS cuentas_trofeos ON cuentas (trofeos DESC);
+      CREATE TABLE IF NOT EXISTS estadisticas (dia INTEGER PRIMARY KEY, datos JSONB NOT NULL DEFAULT '{}');
       CREATE TABLE IF NOT EXISTS sesiones (
         token TEXT PRIMARY KEY,
         cuenta INTEGER NOT NULL REFERENCES cuentas(id) ON DELETE CASCADE,
@@ -102,13 +110,24 @@ class PgStore implements Store {
   async guardar(d: Domador) {
     await this.pool.query('UPDATE cuentas SET datos = $2, trofeos = $3 WHERE id = $1', [d.id, JSON.stringify(d), d.trofeos]);
   }
+  async todos() {
+    const r = await this.pool.query('SELECT id, usuario, datos, creado FROM cuentas');
+    return r.rows.map((x) => ({ ...nuevoDomador(x.id, x.usuario), ...x.datos, id: x.id, usuario: x.usuario, creado: x.datos?.creado ?? new Date(x.creado).getTime() }) as Domador);
+  }
+  async leerDias(desde: number) {
+    const r = await this.pool.query('SELECT dia, datos FROM estadisticas WHERE dia >= $1', [desde]);
+    return Object.fromEntries(r.rows.map((x) => [x.dia, x.datos]));
+  }
+  async guardarDia(dia: number, datos: unknown) {
+    await this.pool.query('INSERT INTO estadisticas (dia, datos) VALUES ($1, $2) ON CONFLICT (dia) DO UPDATE SET datos = EXCLUDED.datos', [dia, JSON.stringify(datos)]);
+  }
   async ranking(n: number) {
     const r = await this.pool.query("SELECT datos->>'nombre' AS nombre, trofeos, (datos->>'nivel')::int AS nivel FROM cuentas ORDER BY trofeos DESC LIMIT $1", [n]);
     return r.rows.map((x) => ({ nombre: x.nombre, trofeos: x.trofeos, nivel: x.nivel ?? 1 }));
   }
 }
 
-interface FileData { seq: number; cuentas: { id: number; usuario: string; hash: string }[]; sesiones: Record<string, number>; domadores: Domador[] }
+interface FileData { seq: number; cuentas: { id: number; usuario: string; hash: string }[]; sesiones: Record<string, number>; domadores: Domador[]; estadisticas?: Record<number, unknown> }
 
 class FileStore implements Store {
   private d: FileData = { seq: 0, cuentas: [], sesiones: {}, domadores: [] };
@@ -152,6 +171,17 @@ class FileStore implements Store {
   async guardar(d: Domador) {
     const i = this.d.domadores.findIndex((x) => x.id === d.id);
     if (i >= 0) this.d.domadores[i] = structuredClone(d);
+    this.persist();
+  }
+  async todos() {
+    return this.d.domadores.map((d) => structuredClone(d));
+  }
+  async leerDias(desde: number) {
+    return Object.fromEntries(Object.entries(this.d.estadisticas ?? {}).filter(([d]) => Number(d) >= desde)) as Record<number, any>;
+  }
+  async guardarDia(dia: number, datos: unknown) {
+    this.d.estadisticas ??= {};
+    this.d.estadisticas[dia] = structuredClone(datos);
     this.persist();
   }
   async ranking(n: number) {

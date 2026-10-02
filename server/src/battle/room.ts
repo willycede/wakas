@@ -5,7 +5,7 @@ import { Room, type Client } from 'colyseus';
 import { ARENA, EMOTES, ESPECIES, FRASES, SEGUNDOS_PREPARACION, TICK_MS, ligaDe, type FichaRival, type FinBatalla, type InicioBatalla, type Obstaculo, type Preparacion } from '../../../shared/src';
 import type { Domador } from '../db';
 import { avanzarMision, equipoValido, mods, recompensar } from '../progress';
-import { domadores, store } from '../services';
+import { domadores, salas, stats, store } from '../services';
 import { IA } from './ai';
 import { Batalla, crearUnidad, type Unidad } from './engine';
 
@@ -56,6 +56,7 @@ export class BatallaRoom extends Room {
 
   onCreate(opts: OpcionesBatalla) {
     this.opts = opts;
+    salas.activas++;
     this.setPrivate(true);
     // en la Liga y en las amistosas los Primales pelean como mucho al nivel máximo de la liga
     this.nivelMax = opts.modo === 'liga' || opts.modo === 'amistosa' ? ligaDe(Math.max(opts.lados[0].trofeos, opts.lados[1].trofeos)).nivelMax : 99;
@@ -264,14 +265,21 @@ export class BatallaRoom extends Room {
     }
   }
 
+  onDispose() {
+    salas.activas = Math.max(0, salas.activas - 1);
+  }
+
   private async terminar() {
     this.fin = true;
     const t = this.b.terminado!;
+    const humanos = this.opts.lados.filter((p) => p.id !== null).length;
+    stats.batalla(this.opts.modo, Math.round(this.b.t), humanos, humanos < 2);
     for (const l of [0, 1] as const) {
       const p = this.opts.lados[l];
       if (p.id === null) continue;
       const d = await domadores.get(p.id);
       if (!d) continue;
+      d.segundosJugados = (d.segundosJugados ?? 0) + Math.round(this.b.t);
       const gano = t.ganador === l;
       const empate = t.ganador === -1;
       if (this.opts.modo === 'amistosa' || this.opts.modo === 'tutorial') {
