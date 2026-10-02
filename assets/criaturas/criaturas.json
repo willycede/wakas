@@ -343,7 +343,8 @@
   "semilla": 333,
   "visual": "sleek shadow owl creature with midnight blue feathers, sharp claws and a mysterious smoky aura",
   "desc": "Caza sin hacer ruido. Dicen que trae mensajes de la noche.",
-  "desc_en": "It hunts without a sound. They say it carries messages from the night."
+  "desc_en": "It hunts without a sound. They say it carries messages from the night.",
+  "voltear": false
  },
  "chusikron": {
   "nombre": "Chusikrón",
@@ -535,7 +536,8 @@
   "semilla": 41188,
   "visual": "sleek poison dart frog creature with a vivid red and black pattern, dripping purple venom and a leaf-shaped crest",
   "desc": "Su piel tiene suficiente veneno para dormir a un jaguar.",
-  "desc_en": "Its skin has enough venom to put a jaguar to sleep."
+  "desc_en": "Its skin has enough venom to put a jaguar to sleep.",
+  "voltear": true
  },
  "pinzin": {
   "nombre": "Pinzín",
@@ -570,7 +572,8 @@
   "semilla": 52065,
   "visual": "large armored mangrove crab creature with a stone-like shell, mangrove roots growing on its back and two huge claws",
   "desc": "Sus pinzas parten troncos. Defiende el manglar como una fortaleza.",
-  "desc_en": "Its claws split logs. It defends the mangrove like a fortress."
+  "desc_en": "Its claws split logs. It defends the mangrove like a fortress.",
+  "voltear": true
  },
  "piranin": {
   "nombre": "Pirañín",
@@ -709,7 +712,8 @@
   "semilla": 10004,
   "visual": "elegant blue-footed booby bird creature with wings spread, white and brown feathers and vivid turquoise feet",
   "desc": "Se lanza en picada al mar como una flecha. Su baile es famoso en Galápagos.",
-  "desc_en": "It dives into the sea like an arrow. Its dance is famous in Galápagos."
+  "desc_en": "It dives into the sea like an arrow. Its dance is famous in Galápagos.",
+  "voltear": true
  },
  "iguanin": {
   "nombre": "Iguanín",
@@ -796,7 +800,8 @@
   "semilla": 70526,
   "visual": "small cute howler monkey creature with reddish fur, a curly tail and tiny sparks around its open mouth",
   "desc": "Su grito se oye a kilómetros. Se carga de electricidad al gritar.",
-  "desc_en": "Its howl can be heard for miles. Howling charges it with electricity."
+  "desc_en": "Its howl can be heard for miles. Howling charges it with electricity.",
+  "voltear": false
  },
  "aullatrueno": {
   "nombre": "Aullatrueno",
@@ -814,7 +819,8 @@
   "semilla": 38289,
   "visual": "large howler monkey creature with storm cloud fur, lightning bolts in its mane and a long thunder tail",
   "desc": "Cuando aúlla, empieza a llover. Es el dueño de las copas de los árboles.",
-  "desc_en": "When it howls, the rain begins. It owns the treetops."
+  "desc_en": "When it howls, the rain begins. It owns the treetops.",
+  "voltear": true
  },
  "tucanin": {
   "nombre": "Tucanín",
