@@ -1594,7 +1594,8 @@
   "semilla": 81568,
   "visual": "cute baby humpback whale creature with long white flippers, a bumpy head and a happy water spout",
   "desc": "Ballenato que llega a Puerto López cada año.",
-  "desc_en": "A whale calf that arrives at Puerto López every year."
+  "desc_en": "A whale calf that arrives at Puerto López every year.",
+  "voltear": true
  },
  "jorobalena": {
   "nombre": "Jorobalena",
@@ -1648,7 +1649,8 @@
   "semilla": 18667,
   "visual": "furious volcano beast creature with an always-erupting crater on its back, a black rock body and a constant ash cloud",
   "desc": "El volcán Sangay nunca descansa, y él tampoco.",
-  "desc_en": "Sangay volcano never rests, and neither does it."
+  "desc_en": "Sangay volcano never rests, and neither does it.",
+  "voltear": true
  },
  "chimbila": {
   "nombre": "Chimbilá",
@@ -1720,7 +1722,8 @@
   "semilla": 82139,
   "visual": "radiant sun god lion beast creature with a giant golden sun disk mane of blazing rays, body adorned with ancient Andean gold ornaments and masks, fiery tail, eyes glowing white, epic legendary boss creature, majestic and imposing, ornate details, glowing aura, intricate armor and patterns, dramatic pose, highly detailed",
   "desc": "El dios Sol de los Andes. Cada junio se le celebra en el Inti Raymi.",
-  "desc_en": "The Sun god of the Andes. Every June it is celebrated in the Inti Raymi."
+  "desc_en": "The Sun god of the Andes. Every June it is celebrated in the Inti Raymi.",
+  "voltear": true
  },
  "apukuntur": {
   "nombre": "Apukuntur",
