@@ -5,7 +5,7 @@
 //   batería: k = bombo, s = caja, h = platillo, t = tom, "." silencio.
 
 type Canal = 'lead' | 'arp' | 'bajo' | 'bat';
-interface Pista { bpm: number; bucle: boolean; compases: Partial<Record<Canal, string[]>>; vol?: number }
+interface Pista { bpm: number; bucle: boolean; compases: Partial<Record<Canal, string[]>>; vol?: number; timbre?: 'clasico' | 'metal'; intro?: number }
 
 const C = (s: string) => s.trim().split(/\s+/);
 const rep = (s: string, n: number) => Array(n).fill(s);
@@ -31,24 +31,54 @@ const PISTAS: Record<string, Pista> = {
       bat: rep('k . . . h . . . s . . . h . . .', 8),
     },
   },
-  // batalla: enérgica (Re menor)
+  // batalla: al estilo de los combates de las consolas clásicas (Mi menor, 178 bpm):
+  // escala cromática de entrada, bajo galopante, melodía de "metales" y estribillo que se eleva
   batalla: {
-    bpm: 152, bucle: true,
+    bpm: 178, bucle: true, timbre: 'metal', intro: 2,
     compases: {
       lead: [
-        'D5 - - - F5 - A5 - - - G5 - F5 - E5 -', 'D5 - - - - - - - A4 - D5 - F5 - - -',
-        'Bb4 - - - D5 - F5 - - - E5 - D5 - C5 -', 'C5 - - - E5 - - - A4 - - - - - - -',
-        'D5 - F5 - A5 - D6 - - - C6 - A5 - - -', 'Bb5 - - - A5 - G5 - F5 - - - E5 - - -',
-        'F5 - - - E5 - D5 - C5 - - - E5 - G5 -', 'A5 - - - - - - - C#5 - E5 - A5 - - -',
+        // entrada: carrera cromática hacia abajo y golpes
+        'E6 D#6 D6 C#6 C6 B5 A#5 A5 G#5 G5 F#5 F5 E5 D#5 D5 C#5', 'C5 . . . C5 . . . D5 . . . D5 . D#5 .',
+        // A: el tema
+        'E5 - - - - - B4 - E5 - G5 - - - F#5 -', 'E5 - D5 - E5 - - - - - - - B4 - D5 -',
+        'C5 - - - - - E5 - G5 - C6 - - - B5 -', 'A5 - G5 - A5 - - - - - - - - - - -',
+        'A5 - - - - - G5 - F#5 - D5 - - - A5 -', 'G5 - F#5 - G5 - - - D5 - G5 - B5 - D6 -',
+        'B5 - - - - - - - - - - - D#6 - - -', 'F#6 - - - E6 - - - D#6 - - - B5 - - -',
+        // B: se eleva
+        'C6 - - - - - - - B5 - - - A5 - - -', 'G5 - - - - - - - E5 - - - G5 - - -',
+        'A5 - - - B5 - - - C6 - - - D6 - - -', 'E6 - - - - - - - D6 - C6 - B5 - A5 -',
+        'C6 - - - - - - - B5 - - - A5 - - -', 'B5 - - - E5 - - - G5 - - - B5 - - -',
+        'F#5 - - - G5 - A5 - B5 - C6 - C#6 - D#6 -', 'E6 - - - - - - - . . . . . . . .',
       ],
-      arp: [arp('D4 F4 A4'), arp('D4 F4 A4'), arp('Bb3 D4 F4'), arp('C4 E4 G4'), arp('D4 F4 A4'), arp('G3 Bb3 D4'), arp('Bb3 D4 F4'), arp('A3 C#4 E4')],
-      bajo: [bajo8('D2', 'D3'), bajo8('D2', 'D3'), bajo8('Bb1', 'Bb2'), bajo8('C2', 'C3'), bajo8('D2', 'D3'), bajo8('G1', 'G2'), bajo8('Bb1', 'Bb2'), bajo8('A1', 'A2')],
-      bat: [...rep('k . h . s . h . k . k . s . h h', 7), 'k . s . s . t . t . t . s s s s'],
+      arp: [
+        '. . . . . . . . . . . . . . . .', 'C4 . . . C4 . . . D4 . . . D4 . D#4 .',
+        arp('E4 G4 B4 E5'), arp('E4 G4 B4 E5'), arp('C4 E4 G4 C5'), arp('C4 E4 G4 C5'),
+        arp('D4 F#4 A4 D5'), arp('D4 G4 B4 D5'), arp('B3 D#4 F#4 B4'), arp('B3 D#4 F#4 B4'),
+        arp('A3 C4 E4 A4'), arp('E4 G4 B4 E5'), arp('F4 A4 C5 F5'), arp('C4 E4 A4 C5'),
+        arp('A3 C4 E4 A4'), arp('E4 G4 B4 E5'), arp('B3 D#4 F#4 A4'), arp('B3 D#4 F#4 B4'),
+      ],
+      bajo: [
+        'E2 - - - - - - - - - - - - - - -', 'C2 . . . C2 . . . D2 . . . D2 . D#2 .',
+        ...rep('E2 E2 E3 E2 E2 E3 E2 E2 E3 E2 E2 E3 E2 E3 D3 B2', 2), ...rep('C2 C2 C3 C2 C2 C3 C2 C2 C3 C2 C2 C3 C2 C3 B2 G2', 2),
+        'D2 D2 D3 D2 D2 D3 D2 D2 D3 D2 D2 D3 D2 D3 C3 A2', 'G2 G2 G3 G2 G2 G3 G2 G2 G3 G2 G2 G3 G2 G3 F#3 D3',
+        ...rep('B1 B1 B2 B1 B1 B2 B1 B1 B2 B1 B1 B2 B1 B2 A2 F#2', 2),
+        'A1 A1 A2 A1 A1 A2 A1 A1 A2 A1 A1 A2 A1 A2 G2 E2', 'E2 E2 E3 E2 E2 E3 E2 E2 E3 E2 E2 E3 E2 E3 D3 B2',
+        'F2 F2 F3 F2 F2 F3 F2 F2 F3 F2 F2 F3 F2 F3 E3 C3', 'C2 C2 C3 C2 C2 C3 C2 C2 C3 C2 C2 C3 C2 C3 B2 A2',
+        'A1 A1 A2 A1 A1 A2 A1 A1 A2 A1 A1 A2 A1 A2 G2 E2', 'E2 E2 E3 E2 E2 E3 E2 E2 E3 E2 E2 E3 E2 E3 D3 B2',
+        ...rep('B1 B1 B2 B1 B1 B2 B1 B1 B2 B1 B1 B2 B1 B2 A2 F#2', 2),
+      ],
+      bat: [
+        's s s s s s s s s s s s t t t t', 'k . . . k . . . k . . . k . s .',
+        ...rep('k . h k s . h k k . h k s . h h', 3), 'k . h k s . h k s s t . t . s s',
+        ...rep('k . h k s . h k k . h k s . h h', 3), 'k . s . s . t . t t t t s s s s',
+        ...rep('k h s h k k s h k h s h k k s h', 3), 'k . s . s s t . t t s s s s s s',
+        ...rep('k h s h k k s h k h s h k k s h', 3), 's s s s t t t t s s s s t t t t',
+      ],
     },
   },
   // legendario: épico (La menor armónica), con introducción de tensión
   legendario: {
-    bpm: 168, bucle: true, vol: 1,
+    bpm: 168, bucle: true, vol: 1, timbre: 'metal', intro: 2,
     compases: {
       lead: [
         // introducción: el legendario se impone
@@ -159,15 +189,27 @@ const desbloquear = () => { iniciarAudio(); void ctx?.resume(); };
 window.addEventListener('pointerdown', desbloquear, { capture: true });
 window.addEventListener('keydown', desbloquear, { capture: true });
 
-function nota(canal: Canal, f: number, t: number, dur: number, vol: number) {
+function nota(canal: Canal, f: number, t: number, dur: number, vol: number, timbre = 'clasico') {
   if (!ctx || !master || !f) return;
+  const metal = timbre === 'metal';
+  if (metal && canal === 'lead') {
+    // segunda voz: sierra desafinada (suena más llena, como una sección de metales)
+    const o2 = ctx.createOscillator(), g2 = ctx.createGain(), fl = ctx.createBiquadFilter();
+    o2.type = 'sawtooth'; o2.frequency.value = f; o2.detune.value = 9;
+    fl.type = 'lowpass'; fl.Q.value = 2;
+    fl.frequency.setValueAtTime(900, t); fl.frequency.linearRampToValueAtTime(3600, t + 0.05); fl.frequency.linearRampToValueAtTime(2200, t + Math.max(0.06, dur));
+    const v2 = vol * 0.16;
+    g2.gain.setValueAtTime(0, t); g2.gain.linearRampToValueAtTime(v2, t + 0.01); g2.gain.linearRampToValueAtTime(v2 * 0.7, t + Math.min(dur, 0.12)); g2.gain.linearRampToValueAtTime(0, t + dur);
+    o2.connect(fl).connect(g2).connect(master);
+    o2.start(t); o2.stop(t + dur + 0.02);
+  }
   const o = ctx.createOscillator();
   const g = ctx.createGain();
-  if (canal === 'lead') o.type = 'square';
+  if (canal === 'lead') o.type = metal ? 'sawtooth' : 'square';
   else if (canal === 'arp' && pulso) o.setPeriodicWave(pulso);
-  else o.type = 'triangle';
+  else o.type = metal ? 'square' : 'triangle';
   o.frequency.value = f;
-  const v = vol * (canal === 'lead' ? 0.32 : canal === 'arp' ? 0.16 : 0.55);
+  const v = vol * (canal === 'lead' ? (metal ? 0.2 : 0.32) : canal === 'arp' ? 0.16 : metal ? 0.22 : 0.55);
   g.gain.setValueAtTime(0, t);
   g.gain.linearRampToValueAtTime(v, t + 0.006);
   g.gain.setValueAtTime(v * 0.75, t + Math.min(dur * 0.6, 0.08));
@@ -179,7 +221,12 @@ function nota(canal: Canal, f: number, t: number, dur: number, vol: number) {
     lfo.connect(lg).connect(o.frequency);
     lfo.start(t + 0.15); lfo.stop(t + dur);
   }
-  o.connect(g).connect(master);
+  if (metal && canal !== 'arp') {
+    const fl = ctx.createBiquadFilter();
+    fl.type = 'lowpass';
+    fl.frequency.value = canal === 'bajo' ? 700 : 2600;
+    o.connect(fl).connect(g).connect(master);
+  } else o.connect(g).connect(master);
   o.start(t);
   o.stop(t + dur + 0.02);
 }
@@ -218,7 +265,7 @@ function programar() {
     if (a.paso >= total) {
       if (!a.pista.bucle) { const f = a.fin; actual = null; f?.(); return; }
       // al repetir se salta la introducción del tema legendario
-      a.paso = a.id === 'legendario' ? 32 : 0;
+      a.paso = (a.pista.intro ?? 0) * 16;
     }
     const vol = a.pista.vol ?? 0.85;
     for (const canal of Object.keys(a.pista.compases) as Canal[]) {
@@ -232,7 +279,7 @@ function programar() {
       // duración: hasta que deja de haber "-"
       let n = 1;
       while (k + n < 16 && toks[k + n] === '-') n++;
-      nota(canal, freq(tok, a.transp), a.t, n * paso * 0.95, vol);
+      nota(canal, freq(tok, a.transp), a.t, n * paso * 0.95, vol, a.pista.timbre);
     }
     a.paso++;
     a.t += paso;

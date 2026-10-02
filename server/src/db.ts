@@ -23,6 +23,8 @@ export interface Domador {
   capturados: string[];
   medallas: string[];
   tutorial?: boolean;
+  misiones?: { dia: number; lista: { id: string; progreso: number; cobrada: boolean }[] };
+  ultimaVictoriaDia?: number;
 }
 
 export interface Store {

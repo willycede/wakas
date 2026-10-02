@@ -1,13 +1,13 @@
 // Menús fuera de la batalla: Liga, equipo, capturas, Domador (medallas y habilidades) y ranking.
 
 import {
-  ELEMENTOS, ESPECIES, HABILIDADES_DOMADOR, INICIALES, LIGAS, MEDALLAS, MOVIMIENTOS, NUM_INICIALES, RAREZAS, TAM_EQUIPO,
+  ELEMENTOS, ESPECIES, HABILIDADES_DOMADOR, INICIALES, LEGENDARIOS, LIGAS, MEDALLAS, MOVIMIENTOS, NUM_INICIALES, RAREZAS, TAM_EQUIPO, diaActual,
   legendarioDelDia, ligaDe, tipos, xpPrimal, type Especie, type Perfil, type Rareza,
 } from '../../shared/src';
 import { api, spriteUrl } from './api';
 import { emblemaLiga, icono } from './iconos';
 import { abrirFicha } from './ficha';
-import { descEspecial, descEspecie, descHab, habDomador, medalla, nombreElemento, nombreEspecial, nombreHab, nombreLiga, nombreMov, nombreRareza, t, tError } from './i18n';
+import { textoMision, descEspecial, descEspecie, descHab, habDomador, medalla, nombreElemento, nombreEspecial, nombreHab, nombreLiga, nombreMov, nombreRareza, t, tError } from './i18n';
 
 const $ = (id: string) => document.getElementById(id)!;
 export const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
@@ -61,6 +61,7 @@ export class Menu {
   private filtro: Rareza | 'todos' = 'todos';
   private reto: string | null = null; // código del reto amistoso que estamos esperando
   onTutorial: () => void = () => {};
+  onHistoria: () => void = () => {};
 
   constructor() {
     document.querySelectorAll<HTMLButtonElement>('#tabs button').forEach((b) => (b.onclick = () => this.show(b.dataset.tab as Tab)));
@@ -73,6 +74,8 @@ export class Menu {
     ($('tb-xp') as HTMLElement).style.width = p.xpSig ? `${(p.xp / p.xpSig) * 100}%` : '100%';
     $('tb-trophies').textContent = p.trofeos.toLocaleString();
     $('tb-coins').textContent = p.monedas.toLocaleString();
+    // punto rojo en Batalla si hay una misión lista para cobrar
+    document.querySelector('#tabs [data-tab=batalla]')!.classList.toggle('aviso', p.misiones.some((m) => m.progreso >= m.meta && !m.cobrada));
   }
 
   open() {
@@ -123,6 +126,7 @@ export class Menu {
       </div>
       <div class="rules">${t('battle.rules')}</div>
       <div class="rules">${icono('candado')} ${t('hud.capLevel', { n: l.nivelMax })}</div>
+      ${this.motivacion()}
       <div class="amis">
         <div class="amis-head">${icono('huella')}<div><b>${t('amis.title')}</b><small>${t('amis.txt')}</small></div></div>
         ${this.reto ? `<div class="amis-codigo"><span>${t('amis.code')}</span><b>${this.reto}</b></div>
@@ -133,6 +137,35 @@ export class Menu {
           <input id="amis-input" maxlength="5" placeholder="${t('amis.placeholder')}"><button class="btn" id="amis-unirse">${t('amis.join')}</button></div>`}
       </div>
     </div>`;
+  }
+
+  /** Bono diario, misiones de hoy y el camino a Campeón. */
+  private motivacion() {
+    const p = this.perfil;
+    const finDia = (diaActual() + 1) * 86_400_000 - Date.now();
+    const horas = `${Math.floor(finDia / 3_600_000)} h ${Math.floor((finDia % 3_600_000) / 60_000)} min`;
+    const bono = p.bonoDiario ? `<div class="bono">${icono('moneda')}<div><b>${t('bono.title')}</b><small>${t('bono.txt')}</small></div><span>×2</span></div>` : '';
+    const mis = p.misiones.map((m) => {
+      const lista = m.progreso >= m.meta;
+      return `<div class="mision ${m.cobrada ? 'hecha' : lista ? 'lista' : ''}">
+        <div class="m-info"><b>${textoMision(m.id, m.meta)}</b>
+          <div class="m-barra"><div style="width:${(m.progreso / m.meta) * 100}%"></div><span>${m.progreso}/${m.meta}</span></div></div>
+        ${m.cobrada ? `<span class="m-ok">${icono('check')}${t('mis.done')}</span>` : `<button class="btn ${lista ? 'primary' : ''}" data-mision="${m.id}" ${lista ? '' : 'disabled'}>${icono('moneda')}${m.premio}</button>`}
+      </div>`;
+    }).join('');
+    const ligaI = LIGAS.indexOf(ligaDe(p.mejorTrofeos));
+    const legs = LEGENDARIOS.filter((x) => p.primales.some((y) => y.esp === x)).length;
+    const total = Object.keys(ESPECIES).length;
+    const medallas = MEDALLAS.filter((m) => p.nivel >= m.nivel).length;
+    const meta = (ic: string, nombre: string, v: number, max: number) =>
+      `<div class="meta-item">${icono(ic)}<div><small>${nombre}</small><b>${v}<span>/${max}</span></b><div class="m-barra"><div style="width:${(v / max) * 100}%"></div></div></div></div>`;
+    return `${bono}
+      <div class="caja"><div class="caja-head"><b>${t('mis.title')}</b><small>${t('mis.new', { t: horas })}</small></div>${mis}</div>
+      <div class="caja camino">
+        <div class="caja-head"><b>${t('camino.title')}</b><small>${t('camino.sub')}</small></div>
+        <div class="escalera">${LIGAS.map((l, k) => `<div class="escalon ${k <= ligaI ? 'ok' : ''} ${k === ligaI ? 'aqui' : ''}" title="${nombreLiga(l.id)}">${emblemaLiga(l.color, k, 40)}</div>`).join('<i></i>')}</div>
+        <div class="metas">${meta('chakana', t('camino.dex'), p.capturados.length, total)}${meta('corona', t('camino.leg'), legs, LEGENDARIOS.length)}${meta('medalla', t('camino.medals'), medallas, MEDALLAS.length)}</div>
+      </div>`;
   }
 
   // ---------------------------------------------------------------- equipo
@@ -253,7 +286,7 @@ export class Menu {
     return `<div class="page">
       <div class="trainer-head"><div class="tb-level">${p.nivel}</div><div class="info"><b>${esc(p.nombre)}</b><br><small>${t('trainer.level', { n: p.nivel })} · ${p.xpSig ? `${p.xp} / ${p.xpSig} XP` : 'MAX'}</small>
         <div class="xpbar"><div style="width:${p.xpSig ? (p.xp / p.xpSig) * 100 : 100}%"></div></div></div></div>
-      <button class="btn ghost" id="btn-tuto" style="margin-top:12px">${icono('mira')}${t('tuto.again')}</button>
+      <div class="row-btns"><button class="btn ghost" id="btn-tuto">${icono('mira')}${t('tuto.again')}</button><button class="btn ghost" id="btn-historia">${icono('estrella')}${t('intro.again')}</button></div>
       <div class="section-title">${t('trainer.medals')} · ${MEDALLAS.filter((m) => p.nivel >= m.nivel).length}/${MEDALLAS.length}</div>
       <p class="muted" style="margin-top:-4px;font-size:13px">${t('trainer.medalsHint')}</p>
       <div class="medals">${medals}</div>
@@ -293,6 +326,10 @@ export class Menu {
     body.querySelector<HTMLButtonElement>('#amis-copiar')?.addEventListener('click', () => { void navigator.clipboard?.writeText(this.enlaceReto()); toast(t('amis.copied')); });
     body.querySelector<HTMLButtonElement>('#amis-cancelar')?.addEventListener('click', () => { if (this.reto) void api.amistosaCancelar(this.reto); this.reto = null; this.show('batalla'); });
     body.querySelector<HTMLButtonElement>('#btn-tuto')?.addEventListener('click', () => this.onTutorial());
+    body.querySelector<HTMLButtonElement>('#btn-historia')?.addEventListener('click', () => this.onHistoria());
+    body.querySelectorAll<HTMLButtonElement>('[data-mision]').forEach((b) => (b.onclick = async () => {
+      try { const p = await api.mision(b.dataset.mision!); toast(`+${this.perfil.misiones.find((m) => m.id === b.dataset.mision)?.premio ?? ''} ${t('res.coins')}`); this.setPerfil(p); this.show('batalla'); } catch (e: any) { toast(e.message, true); }
+    }));
     body.querySelectorAll<HTMLButtonElement>('[data-capturar]').forEach((b) => (b.onclick = () => void this.retar(b.dataset.capturar!)));
     body.querySelectorAll<HTMLButtonElement>('[data-filtro]').forEach((b) => (b.onclick = () => { this.filtro = b.dataset.filtro as Rareza | 'todos'; this.show('capturar'); }));
     body.querySelectorAll<HTMLButtonElement>('[data-hab]').forEach((b) => (b.onclick = async () => {

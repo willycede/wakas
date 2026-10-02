@@ -6,7 +6,7 @@ Llevas un equipo de **3 Primales** a cada batalla, uno a la vez en la arena: lo 
 Ganas trofeos y subes de **liga** (como Clash Royale). Sin historia por ahora **[decisión del dueño]**. Las 100 criaturas están **inspiradas en Ecuador** **[decisión del dueño]**: volcanes, Galápagos, Amazonía, páramo, leyendas y cultura andina.
 
 ## 2. Batalla **[decisión del dueño: tiempo real, no por turnos]**
-- Estadio con obstáculos simétricos. 3 minutos.
+- Estadios con terreno natural (no canchas) **[decisión del dueño]**: playa con charcas (Bronce), selva con río (Plata), volcán con grietas de lava y murallas (Oro), roca negra de Galápagos (Platino), plaza colonial de piedra con murallas (Diamante), nieve y lagos helados (Maestro) y tierra sagrada con anillo inca y la línea ecuatorial (Campeón). Obstáculos simétricos; las murallas cortan el paso. 3 minutos.
 - Cada Entrenador tiene un Primal en la arena; los otros dos esperan en el banco.
 - **Controles:** mover (WASD / joystick), **básico** (clic / Espacio) con combo de 3 golpes, **4 movimientos** (1-4) con recarga, **esquivar** (Shift), **técnica especial** (R; los legendarios también T), **cambiar** (Q/E o tocando su retrato), **emotes** (C).
 - Si un Primal cae, entra el siguiente. Gana quien deja al rival sin Primales; si se acaba el tiempo, quien tenga más vida total.
@@ -44,7 +44,13 @@ Fuego, Agua, Planta, Eléctrico, Roca, Viento, Sombra, **Hielo** y **Luz**. Un P
 - **Cuando no hay nadie en línea:** si en 12 s no aparece un rival humano, juegas contra la IA, con un equipo y una dificultad acordes a tu liga. Así nadie se queda esperando.
 - **Retos amistosos:** creas un código de 5 letras y lo compartes por WhatsApp; tu amigo entra con el enlace. No se ganan ni pierden trofeos.
 
-## 7. Cómo atraer jugadores (propuesta)
+## 7. Motivación para jugar **[decisión del dueño]**
+- **Historia de entrada** (la primera vez, se puede saltar y volver a ver desde la pestaña Entrenador): los Primales despertaron en Ecuador, la Liga Primal busca al mejor Entrenador del mundo, cinco legendarios vigilan desde lo alto y tu misión es llegar a la Mitad del Mundo y ser Campeón.
+- **Tu camino a Campeón:** escalera de ligas, Primaldex (x/100), legendarios (x/5) y medallas (x/8).
+- **Misiones diarias:** tres al día (una de Liga y dos que rotan), dan monedas; punto rojo cuando hay algo por cobrar.
+- **Primera victoria del día:** el doble de monedas.
+
+## 7b. Cómo atraer jugadores (propuesta)
 - Lanzarlo primero en un círculo pequeño (amigos, grupos de WhatsApp, comunidades gamer de Ecuador). Los retos amistosos por enlace hacen que cada jugador invite a otros.
 - Contenido local que dé orgullo y conversación: Primales de Ecuador, estadios reconocibles.
 - Siguientes ideas: misiones diarias, temporadas de un mes con recompensas, torneos de fin de semana con premio, y un modo espectador o clips para compartir en TikTok.
@@ -66,6 +72,7 @@ Fuego, Agua, Planta, Eléctrico, Roca, Viento, Sombra, **Hielo** y **Luz**. Un P
 - Estadios dibujados en código (`client/src/arenas.ts`) con público animado, banderines tricolor, focos y un paisaje de fondo.
 
 ## 12. Pendiente
+- Música: tema de menú, batalla (estilo combates clásicos, metales y bajo galopante), tema legendario épico (un tono por legendario), fanfarrias. Original, sintetizada en el navegador.
 - Terminar de generar el arte de las 100 criaturas y rehacer los stickers de emotes.
 - Misiones diarias y temporadas.
 - Balance tras jugar.

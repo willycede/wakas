@@ -344,7 +344,7 @@
   "visual": "sleek shadow owl creature with midnight blue feathers, sharp claws and a mysterious smoky aura",
   "desc": "Caza sin hacer ruido. Dicen que trae mensajes de la noche.",
   "desc_en": "It hunts without a sound. They say it carries messages from the night.",
-  "voltear": false
+  "voltear": true
  },
  "chusikron": {
   "nombre": "Chusikrón",
@@ -466,7 +466,8 @@
   "semilla": 1506,
   "visual": "magnificent giant blue morpho butterfly creature with shimmering electric-blue wings radiating light and an elegant body",
   "desc": "La mariposa morfo azul más grande del Amazonas. Sus alas deslumbran.",
-  "desc_en": "The largest blue morpho of the Amazon. Its wings are dazzling."
+  "desc_en": "The largest blue morpho of the Amazon. Its wings are dazzling.",
+  "voltear": false
  },
  "llamin": {
   "nombre": "Llamín",
@@ -573,7 +574,7 @@
   "visual": "large armored mangrove crab creature with a stone-like shell, mangrove roots growing on its back and two huge claws",
   "desc": "Sus pinzas parten troncos. Defiende el manglar como una fortaleza.",
   "desc_en": "Its claws split logs. It defends the mangrove like a fortress.",
-  "voltear": true
+  "voltear": false
  },
  "piranin": {
   "nombre": "Pirañín",
@@ -659,7 +660,8 @@
   "semilla": 97776,
   "visual": "small cute fuzzy tarantula creature with dark purple hair, many shiny eyes and tiny fangs",
   "desc": "Una tarántula peludita y tímida. Teje telarañas con forma de estrella.",
-  "desc_en": "A shy fuzzy tarantula. It weaves star-shaped webs."
+  "desc_en": "A shy fuzzy tarantula. It weaves star-shaped webs.",
+  "voltear": true
  },
  "taranton": {
   "nombre": "Tarantón",

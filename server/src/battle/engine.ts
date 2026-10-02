@@ -61,6 +61,7 @@ export interface Lado {
   cola: { s: number; x: number; y: number; ax: number; ay: number }[];
   carga: number; // barra de la técnica especial (100 por técnica; los legendarios guardan hasta 200)
   combo: number; // golpes seguidos acertados
+  stats: { especiales: number; ko: number; comboMax: number };
   comboHasta: number;
 }
 
@@ -105,8 +106,8 @@ export class Batalla {
   constructor(a: Unidad[], b: Unidad[], modsA: Mods, modsB: Mods, obstaculos: Obstaculo[]) {
     this.obstaculos = obstaculos;
     this.lados = [
-      { unidades: a, activo: 0, cambioListo: 0, mods: modsA, entrada: null, seq: 0, cola: [], carga: 0, combo: 0, comboHasta: 0 },
-      { unidades: b, activo: 0, cambioListo: 0, mods: modsB, entrada: null, seq: 0, cola: [], carga: 0, combo: 0, comboHasta: 0 },
+      { unidades: a, activo: 0, cambioListo: 0, mods: modsA, entrada: null, seq: 0, cola: [], carga: 0, combo: 0, comboHasta: 0, stats: { especiales: 0, ko: 0, comboMax: 0 } },
+      { unidades: b, activo: 0, cambioListo: 0, mods: modsB, entrada: null, seq: 0, cola: [], carga: 0, combo: 0, comboHasta: 0, stats: { especiales: 0, ko: 0, comboMax: 0 } },
     ];
     this.colocar(0);
     this.colocar(1);
@@ -202,6 +203,7 @@ export class Batalla {
     const sp = especialesDe(u.esp)[k];
     if (!sp || L.carga < CARGA_MAX) return;
     L.carga -= CARGA_MAX;
+    L.stats.especiales++;
     const esp = ESPECIES[u.esp];
     const etapa = esp.rareza === 'legendario' ? 3 : esp.etapa || 2;
     const poder = sp.poder * (0.85 + 0.12 * etapa);
@@ -568,6 +570,7 @@ export class Batalla {
       La.comboHasta = this.t + 1.8;
       dano *= 1 + Math.min(0.3, Math.floor(La.combo / 5) * 0.1);
       if (La.combo >= 2) this.fx.push({ k: 'combo', lado: l, n: La.combo });
+      La.stats.comboMax = Math.max(La.stats.comboMax, La.combo);
     }
     dano *= hDef.defensa ?? 1;
     const crit = !campo && Math.random() < (hAt.critico ?? 0.08);
@@ -614,6 +617,7 @@ export class Batalla {
     const L = this.lados[l];
     const u = this.activa(l);
     u.anim = 'caido';
+    this.lados[l === 0 ? 1 : 0].stats.ko++;
     this.fx.push({ k: 'caido', lado: l, esp: u.esp, x: r1(u.x), y: r1(u.y) });
     const siguiente = L.unidades.findIndex((x) => x.hp > 0);
     if (siguiente < 0) {

@@ -1,6 +1,6 @@
 // Idiomas: español e inglés. El idioma se guarda en el navegador.
 
-import { EN, ELEMENTOS, ESPECIALES, ESPECIALES_LEGENDARIOS, ESPECIES, HABILIDADES, HABILIDADES_DOMADOR, LIGAS, MEDALLAS, MOVIMIENTOS, RAREZAS, especialesDe, type Elemento, type Rareza } from '../../shared/src';
+import { EN, ELEMENTOS, MISIONES, ESPECIALES, ESPECIALES_LEGENDARIOS, ESPECIES, HABILIDADES, HABILIDADES_DOMADOR, LIGAS, MEDALLAS, MOVIMIENTOS, RAREZAS, especialesDe, type Elemento, type Rareza } from '../../shared/src';
 
 export type Idioma = 'es' | 'en';
 const KEY = 'primal_idioma';
@@ -81,6 +81,11 @@ const T = {
     'amis.code': 'Código', 'amis.share': 'Compartir por WhatsApp', 'amis.copy': 'Copiar enlace', 'amis.copied': 'Enlace copiado', 'amis.waiting': 'Esperando a tu amigo',
     'amis.msg': '¡Te reto en Primal Clash! Entra aquí: {u}', 'amis.placeholder': 'Código de 5 letras',
     'hud.locked': 'Se aprende en nv. {n}', 'hud.capLevel': 'En esta liga los Primales pelean como máximo a nivel {n}.', 'res.newMove': '¡{p} aprendió {m}!',
+    'intro.go': '¡Empezar mi aventura!', 'intro.tap': 'Toca para continuar', 'intro.again': 'Ver la historia',
+    'mis.title': 'Misiones de hoy', 'mis.claim': 'Cobrar', 'mis.done': 'Cobrada', 'mis.new': 'Nuevas misiones en {t}',
+    'bono.title': 'Primera victoria del día', 'bono.txt': 'Tu próxima victoria de Liga da el DOBLE de monedas.', 'bono.got': '¡Primera victoria del día! +{n} monedas extra',
+    'camino.title': 'Tu camino a Campeón', 'camino.sub': 'Sube de liga, completa tu Primaldex y gánate a los cinco legendarios.',
+    'camino.dex': 'Primaldex', 'camino.leg': 'Legendarios', 'camino.medals': 'Medallas', 'camino.league': 'Liga',
     'evo.start': '¿Qué? ¡{n} está evolucionando!', 'evo.done': '¡{a} evolucionó a {b}!', 'evo.ability': 'Nueva habilidad', 'evo.move': 'Nuevo movimiento', 'evo.skip': 'Saltar',
     'misc.rotate': 'Gira tu teléfono para jugar en horizontal', 'misc.install': 'Instalar la app',
     'hud.go': '¡YA!', 'hud.superEff': '¡Muy eficaz!', 'hud.notEff': 'Poco eficaz', 'hud.dodged': '¡Esquivado!',
@@ -149,6 +154,11 @@ const T = {
     'amis.code': 'Code', 'amis.share': 'Share on WhatsApp', 'amis.copy': 'Copy link', 'amis.copied': 'Link copied', 'amis.waiting': 'Waiting for your friend',
     'amis.msg': 'I challenge you in Primal Clash! Join here: {u}', 'amis.placeholder': '5-letter code',
     'hud.locked': 'Learned at Lv. {n}', 'hud.capLevel': 'In this league Primals fight at level {n} at most.', 'res.newMove': '{p} learned {m}!',
+    'intro.go': 'Start my adventure!', 'intro.tap': 'Tap to continue', 'intro.again': 'Watch the story',
+    'mis.title': "Today's missions", 'mis.claim': 'Claim', 'mis.done': 'Claimed', 'mis.new': 'New missions in {t}',
+    'bono.title': 'First win of the day', 'bono.txt': 'Your next League win pays DOUBLE coins.', 'bono.got': 'First win of the day! +{n} bonus coins',
+    'camino.title': 'Your road to Champion', 'camino.sub': 'Climb the leagues, complete your Primaldex and earn the five legendaries.',
+    'camino.dex': 'Primaldex', 'camino.leg': 'Legendaries', 'camino.medals': 'Badges', 'camino.league': 'League',
     'evo.start': 'What? {n} is evolving!', 'evo.done': '{a} evolved into {b}!', 'evo.ability': 'New ability', 'evo.move': 'New move', 'evo.skip': 'Skip',
     'misc.rotate': 'Rotate your phone to play in landscape', 'misc.install': 'Install the app',
     'hud.go': 'GO!', 'hud.superEff': 'Super effective!', 'hud.notEff': 'Not very effective', 'hud.dodged': 'Dodged!',
@@ -189,6 +199,7 @@ export const descEspecialId = (id: string) => (idioma === 'en' ? EN.especiales[i
 /** Técnica especial k (0 o 1) de una especie. */
 export const nombreEspecial = (esp: string, k = 0) => nombreEspecialId(especialesDe(esp)[k]?.id ?? '');
 export const descEspecial = (esp: string, k = 0) => descEspecialId(especialesDe(esp)[k]?.id ?? '');
+export const textoMision = (id: string, meta: number) => ((idioma === 'en' ? EN.misiones[id] : null) ?? MISIONES.find((m) => m.id === id)?.texto ?? id).replace('{n}', String(meta));
 export const nombreRareza = (r: string) => (idioma === 'en' ? EN.rarezas[r] : null) ?? RAREZAS[r as Rareza]?.nombre ?? r;
 export const nombreArena = (liga: string) => (idioma === 'en' ? EN.arenas[liga] : null) ?? LIGAS.find((l) => l.id === liga)?.arena ?? liga;
 export const nombreLiga = (id: string) => (idioma === 'en' ? EN.ligas[id] : null) ?? LIGAS.find((l) => l.id === id)?.nombre ?? id;

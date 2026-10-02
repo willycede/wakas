@@ -122,6 +122,10 @@ export const EN = {
     umbral: ['Threshold Badge', 'You have mastered even the dark.'],
     primal: ['Primal Badge', 'A legend of the Primal League.'],
   } as Record<string, [string, string]>,
+  misiones: {
+    ganar: 'Win {n} League battles', jugar: 'Play {n} League battles', especial: 'Unleash {n} specials', ko: 'Defeat {n} rival Primals',
+    combo: 'Land a 15-hit combo', captura: 'Catch a Primal', amistosa: 'Play a friendly battle',
+  } as Record<string, string>,
   habDomador: {
     entrenador: ['Natural Trainer', '+6% experience for your Primals per level.'],
     negociante: ['Dealmaker', '+8% coins per battle per level.'],

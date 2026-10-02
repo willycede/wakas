@@ -11,7 +11,7 @@ import { WebSocketTransport } from '@colyseus/ws-transport';
 import { ESPECIES, RAREZAS, TAM_EQUIPO, ligaDe, type Especie } from '../../shared/src';
 import { BatallaRoom, type OpcionesBatalla, type Participante } from './battle/room';
 import type { Domador } from './db';
-import { costoCaptura, elegirIniciales, perfil, ponerEquipo, puedeCapturar, subirHabilidad } from './progress';
+import { cobrarMision, costoCaptura, elegirIniciales, perfil, ponerEquipo, puedeCapturar, subirHabilidad } from './progress';
 import { domadores, store } from './services';
 
 const scrypt = promisify(scryptCb) as (pw: string, salt: Buffer, len: number) => Promise<Buffer>;
@@ -169,6 +169,7 @@ async function main() {
   app.post('/api/inicial', accion((d, b) => elegirIniciales(d, Array.isArray(b.especies) ? b.especies.map(String) : [])));
   app.post('/api/equipo', accion((d, b) => ponerEquipo(d, Array.isArray(b.equipo) ? b.equipo.map(String) : [])));
   app.post('/api/habilidad', accion((d, b) => subirHabilidad(d, String(b.id))));
+  app.post('/api/mision', accion((d, b) => cobrarMision(d, String(b.id))));
 
   app.get('/api/ranking', async (_req, res) => res.json(await store.ranking(50)));
 

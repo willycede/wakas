@@ -4,7 +4,7 @@ export const TICK_MS = 50; // 20 ticks por segundo
 export const ARENA = { w: 1100, h: 700 };
 export const RADIO_PRIMAL = 18;
 
-export interface Obstaculo { x: number; y: number; r: number }
+export interface Obstaculo { x: number; y: number; r: number; k?: 'muro' }
 
 /** Un Primal de un Domador (guardado). */
 export interface PrimalGuardado { uid: string; esp: string; nivel: number; xp: number }
@@ -26,6 +26,8 @@ export interface Perfil {
   puntosLibres: number;
   capturados: string[]; // especies vistas/capturadas alguna vez
   tutorial: boolean; // ya hizo (o saltó) el tutorial
+  misiones: { id: string; progreso: number; meta: number; premio: number; cobrada: boolean }[];
+  bonoDiario: boolean; // la primera victoria de hoy aún da el doble de monedas
 }
 
 export interface UnidadSnap {
@@ -107,4 +109,5 @@ export interface FinBatalla {
   medallasNuevas: string[];
   nivelDomador: number;
   subioDomador: number;
+  bonoDiario?: number; // monedas extra por la primera victoria del día
 }

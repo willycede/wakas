@@ -2,7 +2,7 @@
 
 import {
   BONO_MEDALLA_XP, ESPECIES, ESPERA_CAMBIO, HABILIDADES_DOMADOR, INICIALES, MAX_LEGENDARIOS, NIVEL_MAX_DOMADOR, NIVEL_MAX_PRIMAL, NUM_INICIALES,
-  RECOMPENSAS, TAM_EQUIPO, esLegendario, legendarioDelDia, medallasDe, puntosHabilidad, xpDomador, xpPrimal, type FinBatalla, type Perfil, type PrimalGuardado,
+  BONO_PRIMERA_VICTORIA, MISIONES, RECOMPENSAS, TAM_EQUIPO, diaActual, esLegendario, misionesDelDia, legendarioDelDia, medallasDe, puntosHabilidad, xpDomador, xpPrimal, type FinBatalla, type Perfil, type PrimalGuardado,
 } from '../../shared/src';
 import type { Domador } from './db';
 import type { Mods } from './battle/engine';
@@ -22,7 +22,36 @@ export function perfil(d: Domador): Perfil {
     monedas: d.monedas, trofeos: d.trofeos, mejorTrofeos: d.mejorTrofeos, victorias: d.victorias, derrotas: d.derrotas,
     primales: d.primales, equipo: d.equipo, habilidades: d.habilidades, puntosLibres: puntosHabilidad(d.nivel) - usados, capturados: d.capturados,
     tutorial: !!d.tutorial,
+    misiones: misionesHoy(d).map((m) => {
+      const def = MISIONES.find((x) => x.id === m.id)!;
+      return { id: m.id, progreso: m.progreso, meta: def.meta, premio: def.premio, cobrada: m.cobrada };
+    }),
+    bonoDiario: d.ultimaVictoriaDia !== diaActual(),
   };
+}
+
+/** Misiones de hoy (si cambió el día, salen tres nuevas). */
+export function misionesHoy(d: Domador) {
+  const hoy = diaActual();
+  if (d.misiones?.dia !== hoy) d.misiones = { dia: hoy, lista: misionesDelDia(hoy).map((m) => ({ id: m.id, progreso: 0, cobrada: false })) };
+  return d.misiones.lista;
+}
+
+export function avanzarMision(d: Domador, id: string, n = 1) {
+  const m = misionesHoy(d).find((x) => x.id === id);
+  const def = MISIONES.find((x) => x.id === id);
+  if (m && def && n > 0) m.progreso = Math.min(def.meta, m.progreso + n);
+}
+
+export function cobrarMision(d: Domador, id: string): string | null {
+  const m = misionesHoy(d).find((x) => x.id === id);
+  const def = MISIONES.find((x) => x.id === id);
+  if (!m || !def) return 'Esa misión no es de hoy.';
+  if (m.cobrada) return 'Ya cobraste esa misión.';
+  if (m.progreso < def.meta) return 'Aún no completas esa misión.';
+  m.cobrada = true;
+  d.monedas += def.premio;
+  return null;
 }
 
 export function mods(d: Domador): Mods {
@@ -104,7 +133,9 @@ function darXpPrimal(d: Domador, p: PrimalGuardado, xp: number) {
   return { subio, evoluciono };
 }
 
-export function recompensar(d: Domador, gano: boolean, empate: boolean, modo: 'liga' | 'captura', participaron: string[], capturado?: string): FinBatalla {
+export interface StatsBatalla { especiales: number; ko: number; comboMax: number }
+
+export function recompensar(d: Domador, gano: boolean, empate: boolean, modo: 'liga' | 'captura', participaron: string[], capturado?: string, st?: StatsBatalla): FinBatalla {
   const base = gano ? RECOMPENSAS.victoria : RECOMPENSAS.derrota;
   const antes = medallasDe(d.nivel).map((m) => m.id);
   let trofeos = 0;
@@ -114,8 +145,19 @@ export function recompensar(d: Domador, gano: boolean, empate: boolean, modo: 'l
     d.mejorTrofeos = Math.max(d.mejorTrofeos, d.trofeos);
     if (!empate) gano ? d.victorias++ : d.derrotas++;
   }
-  const monedas = modo === 'liga' ? Math.round(base.monedas * (1 + habilidad(d, 'negociante'))) : 0;
+  let monedas = modo === 'liga' ? Math.round(base.monedas * (1 + habilidad(d, 'negociante'))) : 0;
+  // primera victoria del día: el doble de monedas
+  let bonoDiario = 0;
+  if (modo === 'liga' && gano && d.ultimaVictoriaDia !== diaActual()) {
+    bonoDiario = monedas * (BONO_PRIMERA_VICTORIA - 1);
+    monedas += bonoDiario;
+    d.ultimaVictoriaDia = diaActual();
+  }
   d.monedas += monedas;
+  // misiones diarias
+  if (modo === 'liga') { avanzarMision(d, 'jugar'); if (gano) avanzarMision(d, 'ganar'); }
+  if (st) { avanzarMision(d, 'especial', st.especiales); avanzarMision(d, 'ko', st.ko); if (st.comboMax >= 15) avanzarMision(d, 'combo'); }
+  if (capturado) avanzarMision(d, 'captura');
   const xpD = !gano ? 0 : modo === 'liga' ? base.xpDomador : RECOMPENSAS.captura.xpDomador;
   const ups = darXpDomador(d, xpD);
   const bonoXp = 1 + habilidad(d, 'entrenador') + medallasDe(d.nivel).length * BONO_MEDALLA_XP;
@@ -140,7 +182,7 @@ export function recompensar(d: Domador, gano: boolean, empate: boolean, modo: 'l
   const nuevas = medallasDe(d.nivel).map((m) => m.id).filter((m) => !antes.includes(m));
   d.medallas = medallasDe(d.nivel).map((m) => m.id);
   return {
-    gano, empate, motivo: '', trofeos, monedas, xpDomador: xpD, xpPrimales, capturado, medallasNuevas: nuevas, nivelDomador: d.nivel, subioDomador: ups,
+    gano, empate, motivo: '', trofeos, monedas, bonoDiario: bonoDiario || undefined, xpDomador: xpD, xpPrimales, capturado, medallasNuevas: nuevas, nivelDomador: d.nivel, subioDomador: ups,
   };
 }
 

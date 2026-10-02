@@ -4,7 +4,7 @@
 import { Room, type Client } from 'colyseus';
 import { ARENA, EMOTES, ESPECIES, FRASES, TICK_MS, ligaDe, type FinBatalla, type InicioBatalla, type Obstaculo } from '../../../shared/src';
 import type { Domador } from '../db';
-import { mods, recompensar } from '../progress';
+import { avanzarMision, mods, recompensar } from '../progress';
 import { domadores, store } from '../services';
 import { IA } from './ai';
 import { Batalla, crearUnidad, type Unidad } from './engine';
@@ -18,8 +18,18 @@ export interface OpcionesBatalla {
   costo?: number;
 }
 
-function obstaculos(): Obstaculo[] {
+/** Obstáculos simétricos (para que sea justo). En las ligas de piedra se levantan murallas:
+ * una fila de bloques que corta el paso y obliga a rodear. */
+function obstaculos(liga: string): Obstaculo[] {
   const out: Obstaculo[] = [];
+  if (liga === 'diamante' || liga === 'campeon' || liga === 'oro') {
+    const vertical = Math.random() < 0.5;
+    const cx = ARENA.w * (0.36 + Math.random() * 0.06), cy = ARENA.h * (0.28 + Math.random() * 0.12);
+    for (let k = 0; k < 4; k++) {
+      const x = vertical ? cx : cx + (k - 1.5) * 34, y = vertical ? cy + (k - 1.5) * 34 : cy;
+      out.push({ x, y, r: 18, k: 'muro' }, { x: ARENA.w - x, y: ARENA.h - y, r: 18, k: 'muro' });
+    }
+  }
   const n = 4 + Math.floor(Math.random() * 3);
   for (let i = 0; i < n; i++) {
     // simétricos respecto al centro, para que sea justo
@@ -48,7 +58,7 @@ export class BatallaRoom extends Room {
     // en la Liga y en las amistosas los Primales pelean como mucho al nivel máximo de la liga
     this.nivelMax = opts.modo === 'liga' || opts.modo === 'amistosa' ? ligaDe(Math.max(opts.lados[0].trofeos, opts.lados[1].trofeos)).nivelMax : 99;
     const equipos = opts.lados.map((p) => p.equipo.map((e) => crearUnidad(e.esp, Math.min(e.nivel, this.nivelMax), this.modsDe(p)))) as [Unidad[], Unidad[]];
-    this.b = new Batalla(equipos[0], equipos[1], this.modsDe(opts.lados[0]), this.modsDe(opts.lados[1]), opts.modo === 'tutorial' ? [] : obstaculos());
+    this.b = new Batalla(equipos[0], equipos[1], this.modsDe(opts.lados[0]), this.modsDe(opts.lados[1]), opts.modo === 'tutorial' ? [] : obstaculos(ligaDe(Math.max(opts.lados[0].trofeos, opts.lados[1].trofeos)).id));
     opts.lados.forEach((p, l) => { if (p.ia !== undefined && !p.pasivo) this.ias.push(new IA(this.b, l as 0 | 1, p.ia)); });
     if (opts.modo === 'tutorial') {
       // el muñeco de práctica aguanta hasta el último paso del tutorial
@@ -202,14 +212,16 @@ export class BatallaRoom extends Room {
       if (this.opts.modo === 'amistosa' || this.opts.modo === 'tutorial') {
         // sin trofeos ni experiencia; el tutorial regala 200 monedas la primera vez
         let monedas = 0;
-        if (this.opts.modo === 'tutorial' && gano && !d.tutorial) { monedas = 200; d.monedas += monedas; d.tutorial = true; await domadores.guardar(d); }
+        if (this.opts.modo === 'tutorial' && gano && !d.tutorial) { monedas = 200; d.monedas += monedas; d.tutorial = true; }
+        if (this.opts.modo === 'amistosa') avanzarMision(d, 'amistosa');
+        await domadores.guardar(d);
         const res: FinBatalla = { gano, empate, motivo: t.motivo, trofeos: 0, monedas, xpDomador: 0, xpPrimales: [], medallasNuevas: [], nivelDomador: d.nivel, subioDomador: 0 };
         for (const c of this.clients) if (this.clientes.get(c.sessionId) === l) c.send('fin', res);
         continue;
       }
       let capturado: string | undefined;
       if (this.opts.modo === 'captura' && gano && this.opts.especieSalvaje) capturado = this.opts.especieSalvaje;
-      const res = recompensar(d, gano, empate, this.opts.modo, [...this.uids[l]], capturado);
+      const res = recompensar(d, gano, empate, this.opts.modo, [...this.uids[l]], capturado, this.b.lados[l].stats);
       res.motivo = t.motivo;
       await domadores.guardar(d);
       for (const c of this.clients) if (this.clientes.get(c.sessionId) === l) c.send('fin', res);

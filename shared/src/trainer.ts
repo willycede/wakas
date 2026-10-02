@@ -80,3 +80,25 @@ export function legendarioDelDia(ahora = Date.now()) {
   const dia = Math.floor(ahora / 86_400_000);
   return { id: LEGENDARIOS[dia % LEGENDARIOS.length], terminaEn: (dia + 1) * 86_400_000 - ahora };
 }
+
+// ------------------------------------------------------------------ misiones diarias
+/** Tres misiones al día (iguales para todo el mundo) que dan monedas: un motivo para volver cada día. */
+export interface MisionDef { id: string; texto: string; meta: number; premio: number }
+export const MISIONES: MisionDef[] = [
+  { id: 'ganar', texto: 'Gana {n} batallas de Liga', meta: 2, premio: 60 },
+  { id: 'jugar', texto: 'Juega {n} batallas de Liga', meta: 3, premio: 40 },
+  { id: 'especial', texto: 'Lanza {n} técnicas especiales', meta: 3, premio: 50 },
+  { id: 'ko', texto: 'Derrota a {n} Primales rivales', meta: 5, premio: 50 },
+  { id: 'combo', texto: 'Haz un combo de 15 golpes', meta: 1, premio: 50 },
+  { id: 'captura', texto: 'Captura un Primal', meta: 1, premio: 80 },
+  { id: 'amistosa', texto: 'Juega un reto amistoso', meta: 1, premio: 40 },
+];
+export const diaActual = (t = Date.now()) => Math.floor(t / 86_400_000);
+export function misionesDelDia(dia = diaActual()): MisionDef[] {
+  // siempre una de Liga y dos más que rotan
+  const resto = MISIONES.filter((m) => m.id !== 'ganar' && m.id !== 'jugar');
+  const a = resto[dia % resto.length], b = resto[(dia * 3 + 2) % resto.length];
+  return [MISIONES[dia % 2 ? 0 : 1], a, b === a ? resto[(dia + 1) % resto.length] : b];
+}
+/** La primera victoria de Liga de cada día da el doble de monedas. */
+export const BONO_PRIMERA_VICTORIA = 2;

@@ -198,21 +198,28 @@ export function dibujarEstadio(s: Phaser.Scene, liga: string, obstaculos: Obstac
     g.fillStyle(c).fillTriangle(x, -PISTA - 8, x + 18, -PISTA - 8, x + 9, -PISTA + 6);
     g.fillStyle(c).fillTriangle(x, H + PISTA + 8, x + 18, H + PISTA + 8, x + 9, H + PISTA - 6);
   }
-  for (let i = 0; i < 12; i++) g.fillStyle(i % 2 ? tema.cesped[0] : tema.cesped[1]).fillRect((W / 12) * i, 0, W / 12 + 1, H);
-  for (let i = 0; i < 420; i++) {
-    const c = Phaser.Display.Color.IntegerToColor(rnd.pick(tema.cesped));
-    g.fillStyle(rnd.frac() < 0.5 ? c.brighten(12).color : c.darken(10).color, 0.8).fillRect(rnd.between(0, W - 4), rnd.between(0, H - 4), 4, 4);
+  // terreno natural (nada de líneas de fútbol): cada liga, un paisaje de Ecuador
+  pintarTerreno(s, g, liga, rnd);
+  // borde de rocas alrededor del campo
+  const borde = s.add.graphics().setDepth(1);
+  const piedras = TERRENO_BORDE[liga] ?? [0x6a6070, 0x8a8090];
+  for (let k = 0; k < 2; k++) {
+    const lados: [number, number, number, number][] = [[0, 0, W, 0], [0, H, W, H], [0, 0, 0, H], [W, 0, W, H]];
+    for (const [x0, y0, x1, y1] of lados) {
+      const L = Math.hypot(x1 - x0, y1 - y0);
+      for (let d = 0; d < L; d += 16) {
+        const x = x0 + ((x1 - x0) * d) / L + rnd.between(-5, 5), y = y0 + ((y1 - y0) * d) / L + rnd.between(-5, 5);
+        const r = rnd.between(8, 14) - k * 4;
+        borde.fillStyle(0x000000, 0.25).fillCircle(x + 2, y + 3, r);
+        borde.fillStyle(piedras[k]).fillCircle(x, y, r);
+      }
+    }
   }
-  g.lineStyle(6, tema.linea, 0.9).strokeRect(0, 0, W, H);
-  g.lineStyle(4, tema.linea, 0.7).lineBetween(W / 2, 0, W / 2, H).strokeCircle(W / 2, H / 2, 90);
-  g.fillStyle(tema.linea, 0.9).fillCircle(W / 2, H / 2, 8);
-  g.lineStyle(4, 0x4aa8ff, 0.5).strokeRect(20, H / 2 - 120, 120, 240);
-  g.lineStyle(4, 0xff6a6a, 0.5).strokeRect(W - 140, H / 2 - 120, 120, 240);
   if (liga === 'campeon') {
     // la línea ecuatorial cruza el campo: 0° 0' 0''
     g.fillStyle(0xd8a838, 0.95).fillRect(W / 2 - 7, -PISTA, 14, H + PISTA * 2);
     g.fillStyle(0xce1126, 0.9).fillRect(W / 2 - 2, -PISTA, 4, H + PISTA * 2);
-    s.add.text(W / 2 + 14, H - 24, "LATITUD 0° 0' 0''", { fontFamily: 'Lilita One', fontSize: '18px', color: '#ffe8a0' }).setDepth(1).setAlpha(0.8);
+    s.add.text(W / 2 + 14, H - 30, "LATITUD 0° 0' 0''", { fontFamily: 'Lilita One', fontSize: '18px', color: '#ffe8a0' }).setDepth(1).setAlpha(0.8);
   }
   // obstáculos temáticos
   for (const o of obstaculos) obstaculo(s, o, tema.obs);
@@ -262,6 +269,16 @@ function flash(s: Phaser.Scene) {
 
 function obstaculo(s: Phaser.Scene, o: Obstaculo, tipo: Obs) {
   const r = s.add.graphics().setDepth(o.y);
+  if (o.k === 'muro') {
+    // bloque de muralla (piedra tallada, como los muros incas)
+    const w = o.r * 2 + 4, h = o.r * 1.5;
+    r.fillStyle(0x000000, 0.3).fillRect(o.x - w / 2 + 3, o.y - 2, w, h * 0.7);
+    r.fillStyle(0x6a6458).fillRect(o.x - w / 2, o.y - h, w, h + 6);
+    r.fillStyle(0x8a8474).fillRect(o.x - w / 2, o.y - h - 10, w, h);
+    r.fillStyle(0xa8a290).fillRect(o.x - w / 2 + 3, o.y - h - 8, w - 6, 4);
+    r.lineStyle(2, 0x4a4438).strokeRect(o.x - w / 2, o.y - h - 10, w, h + 16).lineBetween(o.x - w / 2, o.y - h * 0.4, o.x + w / 2, o.y - h * 0.4);
+    return;
+  }
   r.fillStyle(0x000000, 0.25).fillEllipse(o.x + 4, o.y + o.r * 0.6, o.r * 2.2, o.r * 0.9);
   const piedra = (c0: number, c1: number, c2: number, borde: number) => {
     r.fillStyle(c0).fillCircle(o.x, o.y, o.r);
@@ -308,4 +325,100 @@ function obstaculo(s: Phaser.Scene, o: Obstaculo, tipo: Obs) {
     default:
       piedra(0x6e6a7a, 0x908ca0, 0xb8b4c4, 0x2a2436);
   }
+}
+
+// ------------------------------------------------------------------ terrenos
+const TERRENO_BORDE: Record<string, [number, number]> = {
+  bronce: [0xb8a070, 0xd8c090], plata: [0x4a3a2a, 0x2a5a2a], oro: [0x3a3232, 0x5a5050], platino: [0x1a1616, 0x3a3434],
+  diamante: [0x7a7464, 0x9a9484], maestro: [0xa8c4dc, 0xeaf6ff], campeon: [0x8a6a38, 0xb89a5a],
+};
+
+/** Manchas irregulares del suelo. */
+function manchas(g: Phaser.GameObjects.Graphics, rnd: Phaser.Math.RandomDataGenerator, colores: number[], n: number, rmin: number, rmax: number, alpha = 1) {
+  for (let i = 0; i < n; i++) {
+    const x = rnd.between(0, W), y = rnd.between(0, H), r = rnd.between(rmin, rmax);
+    g.fillStyle(rnd.pick(colores), alpha).fillEllipse(x, y, r * 2, r * 1.2);
+    // simétrico: el campo es justo para los dos lados
+    g.fillStyle(rnd.pick(colores), alpha).fillEllipse(W - x, H - y, r * 2, r * 1.2);
+  }
+}
+/** Charco o laguna con borde. */
+function charco(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number, borde: number, agua: number, brillo: number) {
+  g.fillStyle(borde).fillEllipse(x, y, w + 10, h + 8);
+  g.fillStyle(agua).fillEllipse(x, y, w, h);
+  g.fillStyle(brillo, 0.6).fillEllipse(x - w * 0.18, y - h * 0.15, w * 0.35, h * 0.2);
+}
+/** Grieta que zigzaguea (con brillo de lava o de hielo). */
+function grieta(g: Phaser.GameObjects.Graphics, rnd: Phaser.Math.RandomDataGenerator, x: number, y: number, ang: number, largo: number, color: number, brillo: number) {
+  const pts: [number, number][] = [[x, y]];
+  for (let d = 30; d < largo; d += 30) { ang += rnd.realInRange(-0.6, 0.6); const [px, py] = pts[pts.length - 1]; pts.push([px + Math.cos(ang) * 30, py + Math.sin(ang) * 30]); }
+  for (const [ancho, c, a] of [[9, color, 0.5], [4, brillo, 0.95]] as const) {
+    g.lineStyle(ancho, c, a).beginPath();
+    pts.forEach(([px, py], i) => (i ? g.lineTo(px, py) : g.moveTo(px, py)));
+    g.strokePath();
+  }
+}
+
+function pintarTerreno(s: Phaser.Scene, g: Phaser.GameObjects.Graphics, liga: string, rnd: Phaser.Math.RandomDataGenerator) {
+  const fondo: Record<string, number> = { bronce: 0xe6cf98, plata: 0x3f7a3a, oro: 0x5c524a, platino: 0x302b2b, diamante: 0x948c7c, maestro: 0xe2f0fa, campeon: 0xb89a5a };
+  g.fillStyle(fondo[liga] ?? 0x4c9a4c).fillRect(0, 0, W, H);
+  switch (liga) {
+    case 'bronce': // playa: arena, charcas de marea y conchas
+      manchas(g, rnd, [0xd8bc80, 0xf0dcae, 0xdcc48c], 22, 30, 90, 0.8);
+      charco(g, W * 0.3, H * 0.2, 150, 60, 0xc8a870, 0x3aa8d0, 0xbff0ff);
+      charco(g, W * 0.7, H * 0.8, 150, 60, 0xc8a870, 0x3aa8d0, 0xbff0ff);
+      for (let i = 0; i < 70; i++) g.fillStyle(rnd.pick([0xffffff, 0xf0a8a0, 0xc0a070]), 0.9).fillCircle(rnd.between(0, W), rnd.between(0, H), rnd.between(2, 4));
+      break;
+    case 'plata': { // selva: barro, hierba alta y un río que cruza por el centro
+      manchas(g, rnd, [0x356a32, 0x4c8a44, 0x2f6030], 26, 30, 80, 0.9);
+      manchas(g, rnd, [0x6a4a2a, 0x5a3e24], 6, 30, 60, 0.7);
+      const rio = (off: number, c: number, ancho: number) => {
+        g.fillStyle(c);
+        for (let y = -10; y < H + 10; y += 6) { const x = W / 2 + Math.sin(y / 70) * 50 + off; g.fillRect(x - ancho / 2, y, ancho, 7); }
+      };
+      rio(0, 0x5a4a2a, 92); rio(0, 0x2a7aa8, 76); rio(-10, 0x4aa0c8, 30);
+      for (let i = 0; i < 10; i++) { const y = rnd.between(20, H - 20), x = W / 2 + Math.sin(y / 70) * 50 + rnd.between(-25, 25); g.fillStyle(0x3a9a3a).fillCircle(x, y, 7); g.fillStyle(0xf0a0c0).fillCircle(x + 2, y - 2, 2); }
+      for (let i = 0; i < 160; i++) { const x = rnd.between(0, W), y = rnd.between(0, H); g.fillStyle(0x6ac05a, 0.8).fillTriangle(x, y, x + 3, y - 9, x + 6, y); }
+      break;
+    }
+    case 'oro': // volcán: ceniza, rocas sueltas y grietas de lava
+      manchas(g, rnd, [0x4a4038, 0x6a6058, 0x544a42], 26, 30, 90, 0.85);
+      for (let i = 0; i < 4; i++) { const x = rnd.between(80, W / 2 - 60), y = rnd.between(60, H - 60), a = rnd.realInRange(0, 6.28); grieta(g, rnd, x, y, a, 200, 0xff4a10, 0xffc040); grieta(g, rnd, W - x, H - y, a + Math.PI, 200, 0xff4a10, 0xffc040); }
+      for (let i = 0; i < 90; i++) g.fillStyle(rnd.pick([0x2a2422, 0x8a8078]), 0.9).fillCircle(rnd.between(0, W), rnd.between(0, H), rnd.between(2, 5));
+      break;
+    case 'platino': // Galápagos: roca volcánica negra, pozas turquesa y musgo
+      manchas(g, rnd, [0x3a3434, 0x262222, 0x443c3c], 30, 25, 80, 0.9);
+      charco(g, W * 0.25, H * 0.75, 120, 54, 0x1a1616, 0x2ac8c0, 0xbffff8);
+      charco(g, W * 0.75, H * 0.25, 120, 54, 0x1a1616, 0x2ac8c0, 0xbffff8);
+      charco(g, W * 0.5, H * 0.5, 80, 36, 0x1a1616, 0x2ac8c0, 0xbffff8);
+      for (let i = 0; i < 60; i++) g.fillStyle(rnd.pick([0x4a8a3a, 0x6aa84a]), 0.8).fillCircle(rnd.between(0, W), rnd.between(0, H), rnd.between(3, 7));
+      break;
+    case 'diamante': { // Quito colonial: plaza de piedra con baldosas
+      for (let y = 0; y < H; y += 40) for (let x = 0; x < W; x += 40) {
+        g.fillStyle(((x + y) / 40) % 2 ? 0x9a9284 : 0x8a8274).fillRect(x + 1, y + 1, 38, 38);
+        g.fillStyle(0xffffff, 0.06).fillRect(x + 3, y + 3, 16, 6);
+      }
+      g.lineStyle(10, 0xa8a090, 0.8).strokeCircle(W / 2, H / 2, 110);
+      g.lineStyle(4, 0x7a7262, 0.9).strokeCircle(W / 2, H / 2, 110);
+      break;
+    }
+    case 'maestro': // Chimborazo: nieve, lagos helados y grietas de hielo
+      manchas(g, rnd, [0xf4faff, 0xcfe4f4, 0xffffff], 26, 30, 90, 0.9);
+      charco(g, W * 0.32, H * 0.3, 190, 80, 0xf4faff, 0x9fd0f0, 0xffffff);
+      charco(g, W * 0.68, H * 0.7, 190, 80, 0xf4faff, 0x9fd0f0, 0xffffff);
+      for (let i = 0; i < 3; i++) { const x = rnd.between(80, W / 2 - 60), y = rnd.between(60, H - 60), a = rnd.realInRange(0, 6.28); grieta(g, rnd, x, y, a, 160, 0x6aa0c8, 0xdff4ff); grieta(g, rnd, W - x, H - y, a + Math.PI, 160, 0x6aa0c8, 0xdff4ff); }
+      break;
+    case 'campeon': { // tierra sagrada: piedra dorada con un anillo de piedra inca
+      manchas(g, rnd, [0xa88a4a, 0xc8aa6a, 0xb09050], 26, 30, 90, 0.85);
+      for (let k = 0; k < 24; k++) {
+        const a = (k / 24) * Math.PI * 2;
+        g.fillStyle(k % 2 ? 0x8a6a38 : 0x9a7a44).fillRoundedRect(W / 2 + Math.cos(a) * 150 - 14, H / 2 + Math.sin(a) * 150 - 10, 28, 20, 4);
+      }
+      g.fillStyle(0xd8a838, 0.25).fillCircle(W / 2, H / 2, 120);
+      break;
+    }
+    default:
+      manchas(g, rnd, [0x55a655, 0x4c9a4c], 30, 30, 80, 0.8);
+  }
+  void s;
 }

@@ -4,6 +4,7 @@ import Phaser from 'phaser';
 import { DESBLOQUEO, ESPECIES, xpPrimal, type FinBatalla, type InicioBatalla, type Perfil } from '../../shared/src';
 import { dialogo } from './ficha';
 import { mostrarEvoluciones } from './evolucion';
+import { mostrarIntro } from './intro';
 import { alternarMusica, fanfarria, musicaActiva, tocar } from './musica';
 import { nombreMov } from './i18n';
 import { api, getToken, setToken, spriteUrl } from './api';
@@ -77,6 +78,7 @@ async function empezarTutorial() {
   try { const r = await api.tutorial(); await menu.onBatalla(r.roomId); } catch (e: any) { toast(e.message, true); }
 }
 menu.onTutorial = () => void empezarTutorial();
+menu.onHistoria = () => void mostrarIntro();
 (window as any).__evo = mostrarEvoluciones; // para depurar
 
 /** Enlace de reto amistoso (?reto=CÓDIGO): entra directo a la batalla. */
@@ -98,6 +100,7 @@ async function arrancar() {
   }
   menu.setPerfil(p);
   if (!p.primales.length) {
+    await mostrarIntro(); // la primera vez: por qué jugar
     repintarInicial = pantallaInicial((np) => {
       repintarInicial = null;
       menu.setPerfil(np);
@@ -179,6 +182,7 @@ async function terminar(r: FinBatalla) {
       ${r.xpDomador ? recompensa('xp', 'estrella', `+${r.xpDomador}`, 'XP') : ''}
     </div>
     ${r.subioDomador ? `<div class="banner-line">${icono('crecer')}${t('res.levelUp', { n: r.nivelDomador })}</div>` : ''}
+    ${r.bonoDiario ? `<div class="banner-line">${icono('moneda')}${t('bono.got', { n: r.bonoDiario })}</div>` : ''}
     ${medallas}${aprendidos}
     ${!r.gano && !r.empate ? `<div class="banner-line info">${t('res.noXp')}</div>` : ''}
     ${xp ? `<div class="xp-list">${xp}</div>` : ''}
