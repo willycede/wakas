@@ -8,8 +8,8 @@ import {
 import { api, spriteUrl } from './api';
 import { icono } from './iconos';
 import { descEspecial, descEspecie, descHab, descMov, nombreElemento, nombreEspecial, nombreHab, nombreMov, t } from './i18n';
-import { avatarUrl } from './avatar';
-import { LEGAL, NUM_ENTRENADORES, type Avatar } from '../../shared/src';
+import { imgAvatar, zonasDe } from './avatar';
+import { LEGAL, NUM_ENTRENADORES, PALETAS, type Avatar } from '../../shared/src';
 import { idioma } from './i18n';
 import { esc, rarezaTag, tiposTag, toast } from './menu';
 import { tError } from './i18n';
@@ -151,20 +151,39 @@ export function dialogo(titulo: string, texto: string, botones: { texto: string;
   $('ficha-body').querySelectorAll<HTMLElement>('[data-b]').forEach((el) => (el.onclick = () => { $('ficha').classList.add('hidden'); botones[Number(el.dataset.b)].fn(); }));
 }
 
-/** Editor del avatar: eliges tu entrenador entre los ilustrados. */
+/** Editor del avatar: eliges el estilo de entrenador y los colores de piel, pelo, gorra y ropa. */
 export function editarAvatar(actual: Avatar, onGuardar: (a: Avatar) => void) {
-  let a = { ...actual };
+  let a: Avatar = { ...actual };
+  const colores = () => zonasDe(a.modelo).map((z) => `<div class="av-zona"><span>${t(('av.' + z) as 'av.piel')}</span><div class="av-tonos">
+      <button class="av-tono orig ${a[z] === undefined ? 'on' : ''}" data-z="${z}" data-i="" title="${t('av.original')}">↺</button>
+      ${PALETAS[z].map((c, i) => `<button class="av-tono ${a[z] === i ? 'on' : ''}" data-z="${z}" data-i="${i}" style="--c:${c}"></button>`).join('')}</div></div>`).join('');
   const pintar = () => {
+    const scroll = document.querySelector('.av-opciones')?.scrollTop ?? 0;
     $('ficha-body').innerHTML = `<button class="f-cerrar">✕</button>
       <div class="av-editor">
-        <div class="av-vista"><div class="av-foco"></div><img src="${avatarUrl(a)}" alt=""></div>
-        <div class="av-opciones"><h2 class="display">${t('av.title')}</h2>
-          <div class="av-grid">${Array.from({ length: NUM_ENTRENADORES }, (_, i) => `<button class="av-op ${i === a.modelo ? 'on' : ''}" data-m="${i}"><img src="${avatarUrl({ modelo: i })}" alt=""></button>`).join('')}</div>
-          <div class="f-acciones"><button class="btn primary big" id="av-guardar">${t('av.save')}</button></div>
+        <div class="av-vista"><div class="av-foco"></div>${imgAvatar(a)}</div>
+        <div class="av-opciones"><h2 class="display">${t('av.edit')}</h2>
+          <div class="av-zona"><span>${t('av.estilo')}</span>
+          <div class="av-grid">${Array.from({ length: NUM_ENTRENADORES }, (_, i) => `<button class="av-op ${i === a.modelo ? 'on' : ''}" data-m="${i}">${imgAvatar({ ...a, modelo: i })}</button>`).join('')}</div></div>
+          ${colores()}
         </div>
-      </div>`;
+      </div>
+      <div class="f-acciones"><button class="btn ghost" id="av-azar">${t('av.random')}</button><button class="btn primary big" id="av-guardar">${t('av.save')}</button></div>`;
+    document.querySelector('.av-opciones')!.scrollTop = scroll;
     $('ficha-body').querySelector<HTMLElement>('.f-cerrar')!.onclick = () => $('ficha').classList.add('hidden');
-    $('ficha-body').querySelectorAll<HTMLElement>('.av-op').forEach((b) => (b.onclick = () => { a = { modelo: Number(b.dataset.m) }; pintar(); }));
+    $('ficha-body').querySelectorAll<HTMLElement>('.av-op').forEach((b) => (b.onclick = () => { a = { ...a, modelo: Number(b.dataset.m) }; pintar(); }));
+    $('ficha-body').querySelectorAll<HTMLElement>('.av-tono').forEach((b) => (b.onclick = () => {
+      const z = b.dataset.z as keyof typeof PALETAS;
+      a = { ...a };
+      if (b.dataset.i === '') delete a[z]; else a[z] = Number(b.dataset.i);
+      pintar();
+    }));
+    $('av-azar').onclick = () => {
+      const r = (n: number) => Math.floor(Math.random() * n);
+      a = { modelo: a.modelo };
+      for (const z of zonasDe(a.modelo)) if (Math.random() < 0.8) a[z] = r(PALETAS[z].length);
+      pintar();
+    };
     $('av-guardar').onclick = () => { $('ficha').classList.add('hidden'); onGuardar(a); };
   };
   $('ficha').classList.remove('hidden');

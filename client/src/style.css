@@ -885,7 +885,7 @@ input:focus { outline: none; box-shadow: inset 0 0 0 2px var(--gold), 0 0 0 4px 
 /* ---------- avatar ---------- */
 .retrato { display: inline-block; width: 44px; height: 44px; border-radius: 50%; overflow: hidden; flex: none; position: relative;
   background: radial-gradient(circle at 50% 30%, #5a4aa0, #2a2050); box-shadow: inset 0 0 0 2px var(--line-2); }
-.retrato img { position: absolute; width: 200%; left: -50%; top: -8%; image-rendering: pixelated; }
+.retrato img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
 .retrato.grande { width: 64px; height: 64px; }
 .retrato.av.on { box-shadow: inset 0 0 0 2px var(--good); }
 #tb-avatar { cursor: pointer; display: flex; }
@@ -916,7 +916,6 @@ input:focus { outline: none; box-shadow: inset 0 0 0 2px var(--gold), 0 0 0 4px 
 .av-op:hover { transform: translateY(-2px); }
 .av-op img { height: 86px; image-rendering: pixelated; }
 .av-op.on { box-shadow: inset 0 0 0 3px var(--gold), 0 0 14px rgba(255,201,64,.35); }
-.retrato img { width: 150%; left: -25%; top: -2%; }
 
 /* ---------- textos legales ---------- */
 .acepto { display: flex; gap: 10px; align-items: flex-start; text-transform: none; letter-spacing: 0; font-size: 13px; font-weight: 700; color: var(--muted); margin: 14px 0 4px; }
@@ -939,3 +938,19 @@ input:focus { outline: none; box-shadow: inset 0 0 0 2px var(--gold), 0 0 0 4px 
 .buzon textarea:focus { outline: 2px solid var(--gold); }
 .bz-pie { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
 .bz-pie small { color: var(--dim); font-weight: 800; }
+
+/* ---------- editor de avatar: estilos y colores ---------- */
+.av-opciones { max-height: min(62vh, 520px); overflow-y: auto; padding-right: 6px; }
+.av-zona { margin-bottom: 12px; }
+.av-zona > span { display: block; font-size: 12px; font-weight: 900; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 6px; }
+.av-grid { max-height: none; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); }
+.av-op { height: 84px; }
+.av-op img { height: 76px; }
+.av-tonos { display: flex; flex-wrap: wrap; gap: 6px; }
+.av-tono { width: 30px; height: 30px; border-radius: 50%; border: 0; cursor: pointer; background: var(--c); box-shadow: inset 0 0 0 2px rgba(0,0,0,.35); transition: transform .12s; }
+.av-tono:hover { transform: scale(1.12); }
+.av-tono.on { box-shadow: 0 0 0 3px var(--gold), inset 0 0 0 2px rgba(0,0,0,.35); }
+.av-tono.orig { background: rgba(255,255,255,.08); color: var(--text); font-weight: 900; font-size: 15px; box-shadow: inset 0 0 0 2px rgba(255,255,255,.18); }
+.av-tono.orig.on { box-shadow: 0 0 0 3px var(--gold), inset 0 0 0 2px rgba(255,255,255,.18); }
+.av-editor + .f-acciones { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+@media (max-width: 760px) { .av-opciones { max-height: 46vh; } .av-tono { width: 28px; height: 28px; } }

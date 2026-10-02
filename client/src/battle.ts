@@ -16,7 +16,7 @@ import * as FX from './efectos';
 import { icono } from './iconos';
 import { descEspecial, descMov, nombreArena, nombreElemento, nombreEspecial, nombreEspecialId, nombreMov, t } from './i18n';
 import { dibujarEstadio, type Estadio } from './arenas';
-import { avatarUrl } from './avatar';
+import { avatarUrl, lienzoAvatar } from './avatar';
 import { TONO_LEGENDARIO, alternarMusica, tocar } from './musica';
 import { esc } from './menu';
 
@@ -211,6 +211,12 @@ export class BatallaScene extends Phaser.Scene {
       this.add.ellipse(x, y + 2, 34, 11, 0x000000, 0.35).setDepth(y - 1);
       // tamaño proporcional a las criaturas (como un Primal mediano)
       const img = this.add.image(x, y, key).setOrigin(0.5, 1).setScale(l === 0 ? 0.78 : -0.78, 0.78).setDepth(y);
+      // con sus colores personalizados (se cambia la textura cuando el lienzo está listo)
+      void lienzoAvatar(a).then((c) => {
+        const k2 = `entrenador_c_${l}_${Date.now()}`;
+        this.textures.addCanvas(k2, c);
+        if (img.active) img.setTexture(k2);
+      }).catch(() => {});
       // marca de color del lado
       this.add.ellipse(x, y + 2, 40, 13).setStrokeStyle(2, l === this.init0.lado ? 0x4aa8ff : 0xff5a6a, 0.9).setDepth(y - 1);
       this.tweens.add({ targets: img, scaleY: 0.8, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
