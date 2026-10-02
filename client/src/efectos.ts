@@ -166,13 +166,13 @@ export function basico(s: Escena, x: number, y: number, ang: number, paso: numbe
   const [c0, c1] = pal(el);
   if (cuerpo) {
     // zarpazo en arco delante del Primal; el tercero es un corte doble más grande
-    const d = 28;
+    const d = 44;
     const cortes = paso === 3 ? 2 : 1;
     for (let k = 0; k < cortes; k++) {
       s.time.delayedCall(k * 70, () => {
         const m = s.add.image(x + Math.cos(ang) * d, y - 14 + Math.sin(ang) * d * 0.7, 'media_luna').setDepth(y + 40)
           .setRotation(ang + (paso === 2 ? Math.PI : 0) * 0 + (k ? 0.5 : -0.2)).setTint(k ? c1 : c0).setBlendMode('ADD');
-        const sc = paso === 3 ? 1.5 : 1.1;
+        const sc = paso === 3 ? 2.1 : 1.6;
         m.setScale(sc * 0.6, sc * (paso === 2 ? -1 : 1));
         s.tweens.add({ targets: m, scaleX: sc * 1.15, alpha: 0, x: m.x + Math.cos(ang) * 10, duration: 200, ease: 'Cubic.easeOut', onComplete: () => m.destroy() });
       });

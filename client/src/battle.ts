@@ -267,7 +267,7 @@ export class BatallaScene extends Phaser.Scene {
     this.pend = this.pend.filter((p) => p.s > s.ack);
     const cambio = !antes || antes.u[this.init0.lado].esp !== me.esp;
     // embestidas, esquivas y entradas a la arena: manda el servidor
-    if (cambio || me.an === 'dash' || me.an === 'caido' || me.an === 'vuelo') {
+    if (cambio || me.an === 'dash' || me.an === 'caido' || me.an === 'vuelo' || (me.an === 'basico' && ESPECIES[me.esp].basico === 'cuerpo')) {
       this.pred = { x: me.x, y: me.y };
       this.prevPred = { ...this.pred };
       this.err = { x: 0, y: 0 };

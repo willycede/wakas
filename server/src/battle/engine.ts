@@ -446,13 +446,27 @@ export class Batalla {
     u.accionHasta = this.t + (fin ? 0.3 : 0.18);
     u.anim = 'basico'; u.animHasta = this.t + 0.22;
     const hb = habDe(u.esp).basico;
-    const falso: Movimiento = { id: 'basico', nombre: 'Básico', elemento: el, tipo: 'proyectil', desc: '', poder: fin ? 0.55 : 0.3, enfriamiento: 0, alcance: 0,
+    // cuerpo a cuerpo es más arriesgado: pega un poco más que el disparo
+    const cuerpo = tipo === 'cuerpo';
+    const falso: Movimiento = { id: 'basico', nombre: 'Básico', elemento: el, tipo: 'proyectil', desc: '', poder: cuerpo ? (fin ? 0.66 : 0.38) : (fin ? 0.55 : 0.3), enfriamiento: 0, alcance: 0,
       estado: hb?.estado, probEstado: hb?.prob ?? 0, empuje: fin ? 50 : 10 };
-    if (tipo === 'cuerpo') {
-      // zarpazo en arco delante del Primal; el tercero avanza y empuja
-      if (fin) u.dash = { vx: Math.cos(ang) * 260, vy: Math.sin(ang) * 260, hasta: this.t + 0.12, golpeados: new Set() };
-      const cx = u.x + Math.cos(ang) * 30, cy = u.y + Math.sin(ang) * 30;
-      this.golpearArea(l, cx, cy, fin ? 46 : 38, falso, 1, u);
+    if (cuerpo) {
+      // ayuda de puntería: si el rival está cerca y más o menos delante, el golpe se gira hacia él
+      const rival = this.activa(l === 0 ? 1 : 0);
+      const dr = Math.hypot(rival.x - u.x, rival.y - u.y), angR = Math.atan2(rival.y - u.y, rival.x - u.x);
+      if (rival.hp > 0 && dr < 240 && angDif(angR, ang) < 1.3) { ang = angR; u.fa = ang; }
+      // zarpazo en arco delante del Primal, con buen alcance
+      const cx = u.x + Math.cos(ang) * 45, cy = u.y + Math.sin(ang) * 45;
+      const vidaAntes = rival.hp;
+      this.golpearArea(l, cx, cy, fin ? 64 : 52, falso, 1, u);
+      const acerto = rival.hp < vidaAntes;
+      // cada golpe da un paso hacia delante (el tercero, un salto): así se acorta la distancia;
+      // si el zarpazo no alcanzó, golpea al contacto durante el paso
+      const paso_ = Math.max(0, Math.min(fin ? 110 : 60, dr - 46));
+      if (paso_ > 4) {
+        const dur = fin ? 0.13 : 0.09;
+        u.dash = { vx: Math.cos(ang) * paso_ / dur, vy: Math.sin(ang) * paso_ / dur, hasta: this.t + dur, golpeados: new Set(), mov: acerto ? undefined : { ...falso, tipo: 'embestida', radio: 30 } };
+      }
       this.fx.push({ k: 'basico', lado: l, x: r1(u.x), y: r1(u.y), ang: r2(ang), paso, el, cuerpo: true });
     } else {
       const n = fin ? 3 : 1;

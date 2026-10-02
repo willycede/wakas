@@ -70,7 +70,7 @@ export class IA {
       opciones.push(i);
     }
     if (opciones.length && Math.random() < 0.2 + this.nivel * 0.4) return b.accion(this.lado, opciones[Math.floor(Math.random() * opciones.length)], { x: tx, y: ty });
-    const alcanceBasico = esp.basico === 'cuerpo' ? 75 : 320;
+    const alcanceBasico = esp.basico === 'cuerpo' ? 150 : 320;
     if (L.carga >= CARGA_MAX && d < 340 && Math.random() < 0.3 + this.nivel * 0.5) return b.accion(this.lado, especialesDe(yo.esp).length > 1 && Math.random() < 0.5 ? 7 : 6);
     if (d < alcanceBasico && yo.cds[0] <= 0) b.accion(this.lado, 0, { x: tx, y: ty });
     void ang;
