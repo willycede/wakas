@@ -5,13 +5,14 @@ import {
   DESBLOQUEO, ELEMENTOS, ESPECIES, MOVIMIENTOS, RAREZAS, efectividad, especialesDe, statsPrimal, tipos,
   type Elemento, type Perfil,
 } from '../../shared/src';
-import { spriteUrl } from './api';
+import { api, spriteUrl } from './api';
 import { icono } from './iconos';
 import { descEspecial, descEspecie, descHab, descMov, nombreElemento, nombreEspecial, nombreHab, nombreMov, t } from './i18n';
 import { avatarUrl } from './avatar';
 import { LEGAL, NUM_ENTRENADORES, type Avatar } from '../../shared/src';
 import { idioma } from './i18n';
-import { esc, rarezaTag, tiposTag } from './menu';
+import { esc, rarezaTag, tiposTag, toast } from './menu';
+import { tError } from './i18n';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -190,4 +191,36 @@ export function textoAcepto() {
 }
 export function enlazarLegal(raiz: HTMLElement, alCerrar?: () => void) {
   raiz.querySelectorAll<HTMLElement>('[data-legal]').forEach((a) => (a.onclick = (ev) => { ev.preventDefault(); ev.stopPropagation(); mostrarLegal(a.dataset.legal as 'terminos' | 'privacidad', alCerrar); }));
+}
+
+/** Buzón de sugerencias: ideas, pedidos de Primales o funciones, errores. */
+export function abrirBuzon() {
+  const tipos = ['idea', 'primal', 'error', 'otro'];
+  let tipo = 'idea';
+  $('ficha-body').innerHTML = `<button class="f-cerrar">✕</button><div class="buzon">
+    <h2 class="display">${icono('carta')}${t('buzon.title')}</h2><p class="muted">${t('buzon.sub')}</p>
+    <div class="bz-tipos">${tipos.map((x) => `<button class="chip${x === tipo ? ' on' : ''}" data-tipo="${x}">${t(('buzon.' + x) as 'buzon.idea')}</button>`).join('')}</div>
+    <textarea id="bz-texto" maxlength="1000" rows="5" placeholder="${esc(t('buzon.ph'))}"></textarea>
+    <div class="bz-pie"><small id="bz-cuenta">0 / 1000</small><button class="btn primary" id="bz-enviar">${t('buzon.send')}</button></div></div>`;
+  $('ficha').classList.remove('hidden');
+  const cerrar = () => $('ficha').classList.add('hidden');
+  $('ficha-body').querySelector<HTMLElement>('.f-cerrar')!.onclick = cerrar;
+  $('ficha').onclick = (ev) => { if (ev.target === $('ficha')) cerrar(); };
+  const area = $('bz-texto') as HTMLTextAreaElement;
+  area.oninput = () => ($('bz-cuenta').textContent = `${area.value.length} / 1000`);
+  $('ficha-body').querySelectorAll<HTMLElement>('[data-tipo]').forEach((b) => (b.onclick = () => {
+    tipo = b.dataset.tipo!;
+    $('ficha-body').querySelectorAll('[data-tipo]').forEach((x) => x.classList.toggle('on', x === b));
+  }));
+  const enviar = $('bz-enviar') as HTMLButtonElement;
+  enviar.onclick = async () => {
+    if (area.value.trim().length < 5) { toast(t('buzon.corto'), true); return; }
+    enviar.disabled = true;
+    try {
+      await api.buzon(tipo, area.value);
+      cerrar();
+      toast(t('buzon.thanks'));
+    } catch (e: any) { toast(tError(e.message), true); enviar.disabled = false; }
+  };
+  setTimeout(() => area.focus(), 50);
 }

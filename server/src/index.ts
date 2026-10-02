@@ -254,6 +254,23 @@ async function main() {
 
   app.get('/api/ranking', async (_req, res) => res.json(await store.ranking(50)));
 
+  // Buzón de sugerencias: hasta 5 mensajes por jugador al día
+  app.post('/api/buzon', async (req, res) => {
+    const d = await auth(req);
+    if (!d) return res.status(401).json({ error: 'Sesión no válida.' });
+    const tipo = String(req.body?.tipo ?? '');
+    const texto = String(req.body?.texto ?? '').replace(/\s+/g, ' ').trim().slice(0, 1000);
+    if (!['idea', 'primal', 'error', 'otro'].includes(tipo)) return res.status(400).json({ error: 'Elige un tipo de mensaje.' });
+    if (texto.length < 5) return res.status(400).json({ error: 'Escribe un poco más (mínimo 5 letras).' });
+    const hoy = diaActual();
+    if (d.buzon?.dia !== hoy) d.buzon = { dia: hoy, n: 0 };
+    if (d.buzon.n >= 5) return res.status(429).json({ error: 'Ya enviaste 5 mensajes hoy. ¡Gracias! Vuelve mañana.' });
+    d.buzon.n++;
+    await store.crearMensaje({ fecha: Date.now(), autor: d.id, nombre: d.nombre, tipo, texto, estado: 'nuevo', nivel: d.nivel, trofeos: d.trofeos });
+    await domadores.guardar(d);
+    res.json({ ok: true });
+  });
+
   // Liga: entra a la cola y espera rival (o IA)
   app.post('/api/buscar', async (req, res) => {
     const d = await auth(req);
@@ -422,6 +439,17 @@ async function main() {
     const t = tokenAdmin(req);
     if (t) sesionesAdmin.delete(t);
     res.setHeader('Set-Cookie', 'pc_admin=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0');
+    res.json({ ok: true });
+  });
+  app.get('/api/admin/buzon', async (req, res) => {
+    if (!esAdmin(req)) return res.status(401).json({ error: 'Inicia sesión.' });
+    res.json(await store.mensajes(500));
+  });
+  app.post('/api/admin/buzon/:id', async (req, res) => {
+    if (!esAdmin(req)) return res.status(401).json({ error: 'Inicia sesión.' });
+    const estado = String(req.body?.estado ?? '');
+    if (!['nuevo', 'leido', 'hecho', 'archivado'].includes(estado)) return res.status(400).json({ error: 'Estado no válido.' });
+    await store.estadoMensaje(Number(req.params.id), estado);
     res.json({ ok: true });
   });
   app.get('/api/admin/estadisticas', async (req, res) => {

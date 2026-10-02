@@ -37,6 +37,8 @@ Si no pones `ADMIN_KEY`, el panel queda cerrado para todos (nadie puede entrar).
 
 El panel muestra también **de qué país** juegan (aproximado, por la zona horaria del navegador; no se guarda la IP) y **a qué hora** juegan.
 
+Ahí también está el **Buzón de sugerencias**: los mensajes que mandan los jugadores desde la pestaña Entrenador. Puedes marcarlos como hechos o archivarlos.
+
 ## Términos y Política de Privacidad
 
 Al crear cuenta, cada jugador marca "Tengo al menos 13 años y acepto los Términos y la Política de Privacidad". Las cuentas antiguas lo aceptan una vez al entrar.

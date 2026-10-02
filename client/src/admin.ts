@@ -177,6 +177,7 @@ function pintar(r: Resumen) {
         <p class="ayuda">Si uno aparece muy por encima del resto, puede estar demasiado fuerte.</p></div>
       <div class="card"><h2>Iniciales favoritos</h2><p class="sub">Cuántos jugadores eligieron cada inicial</p>${barras(r.iniciales)}</div>
     </section>
+    <section class="card buzon" id="buzon"></section>
     <section class="grid2">
       <div class="card"><h2>¿De dónde juegan?</h2><p class="sub">Jugadores activos en los últimos 30 días por país (aproximado, según la zona horaria)</p>
         ${barras(r.paises.map((x) => ({ nombre: pais(x.codigo), n: x.n })))}</div>
@@ -185,6 +186,7 @@ function pintar(r: Resumen) {
         <p class="ayuda">Útil para elegir a qué hora hacer eventos o mantenimiento.</p>
         ${tabla(['Hora', 'Batallas'], r.horas.map((v, h) => [hora(h), v]))}</div>
     </section>`;
+  pintarBuzon();
   $('actualizado').textContent = `Actualizado a las ${new Date().toLocaleTimeString('es')} · se actualiza solo cada 30 s`;
 }
 
@@ -208,7 +210,52 @@ function demo(): Resumen {
   };
 }
 
+// ------------------------------------------------------------------ buzón de sugerencias
+interface Mensaje { id: number; fecha: number; nombre: string; tipo: string; texto: string; estado: string; nivel?: number; trofeos?: number }
+const TIPOS: Record<string, string> = { idea: '💡 Idea', primal: '🙏 Pedido', error: '🐞 Error', otro: '💬 Otro' };
+const FILTROS: [string, string][] = [['pendientes', 'Por revisar'], ['hecho', 'Hechos'], ['archivado', 'Archivados'], ['todos', 'Todos']];
+let mensajes: Mensaje[] = [];
+let filtro = 'pendientes';
+const demoMode = new URLSearchParams(location.search).has('demo');
+
+function pintarBuzon() {
+  const el = document.getElementById('buzon');
+  if (!el) return;
+  const nuevos = mensajes.filter((m) => m.estado === 'nuevo').length;
+  const lista = mensajes.filter((m) => (filtro === 'todos' ? true : filtro === 'pendientes' ? m.estado === 'nuevo' || m.estado === 'leido' : m.estado === filtro));
+  el.innerHTML = `<div class="bz-cab"><div><h2>Buzón de sugerencias ${nuevos ? `<span class="bz-nuevos">${nuevos} nuevo${nuevos > 1 ? 's' : ''}</span>` : ''}</h2>
+      <p class="sub">Ideas, pedidos y errores que mandan los jugadores desde la pestaña Entrenador</p></div>
+      <div class="bz-filtros">${FILTROS.map(([id, n]) => `<button data-f="${id}" class="${id === filtro ? 'on' : ''}">${n}</button>`).join('')}</div></div>
+    ${lista.length ? `<div class="bz-lista">${lista.map((m) => `<article class="bz-msg ${m.estado}">
+        <div class="bz-meta"><span class="bz-tipo">${TIPOS[m.tipo] ?? esc(m.tipo)}</span><b>${esc(m.nombre)}</b>
+          <span>nivel ${m.nivel ?? '?'} · ${num(m.trofeos ?? 0)} trofeos · ${new Date(m.fecha).toLocaleString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+          ${m.estado === 'nuevo' ? '<span class="bz-punto">nuevo</span>' : ''}</div>
+        <p>${esc(m.texto)}</p>
+        <div class="bz-acc">${m.estado !== 'hecho' ? `<button data-id="${m.id}" data-e="hecho">✓ Hecho</button>` : ''}${m.estado === 'nuevo' ? `<button data-id="${m.id}" data-e="leido">Marcar leído</button>` : ''}${m.estado !== 'archivado' ? `<button data-id="${m.id}" data-e="archivado">Archivar</button>` : `<button data-id="${m.id}" data-e="leido">Recuperar</button>`}</div>
+      </article>`).join('')}</div>` : '<div class="vacio">No hay mensajes aquí.</div>'}`;
+  el.querySelectorAll<HTMLButtonElement>('[data-f]').forEach((b) => (b.onclick = () => { filtro = b.dataset.f!; pintarBuzon(); }));
+  el.querySelectorAll<HTMLButtonElement>('[data-e]').forEach((b) => (b.onclick = async () => {
+    const id = Number(b.dataset.id), estado = b.dataset.e!;
+    const m = mensajes.find((x) => x.id === id);
+    if (m) m.estado = estado;
+    pintarBuzon();
+    if (!demoMode) await fetch(`/api/admin/buzon/${id}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ estado }), credentials: 'same-origin' }).catch(() => {});
+  }));
+}
+
+function demoBuzon(): Mensaje[] {
+  const ahora = Date.now();
+  return [
+    ['idea', 'Tunguri99', 'Que se puedan hacer torneos entre amigos con premio de monedas', 'nuevo'],
+    ['primal', 'LaYaku', 'Por favor agreguen un Primal tipo cóndor legendario, sería épico', 'nuevo'],
+    ['error', 'Quindi_EC', 'A veces en el celular el joystick se queda pegado después de usar el especial', 'leido'],
+    ['idea', 'ChusikMaster', 'Un modo 2 contra 2 con un amigo', 'hecho'],
+    ['otro', 'Galapagos7', 'Me encanta la música de los legendarios!!', 'archivado'],
+  ].map(([tipo, nombre, texto, estado], i) => ({ id: 5 - i, fecha: ahora - i * 5_400_000, nombre, tipo, texto, estado, nivel: 4 + i * 3, trofeos: 120 + i * 210 }));
+}
+
 async function cargar() {
+  if (demoMode) mensajes = demoBuzon();
   if (new URLSearchParams(location.search).has('demo')) { pintar(demo()); $('actualizado').textContent = 'DATOS DE EJEMPLO (inventados) · así se verá con jugadores'; return; }
   if (!sesion && document.getElementById('clave')) return; // en la pantalla de entrada no se recarga sola
   try {
@@ -217,6 +264,7 @@ async function cargar() {
     if (res.status === 401) return pedirClave('');
     sesion = true;
     $('salir').hidden = false;
+    mensajes = await fetch('/api/admin/buzon', { credentials: 'same-origin' }).then((r) => (r.ok ? r.json() : mensajes)).catch(() => mensajes);
     pintar(data as Resumen);
   } catch {
     $('actualizado').textContent = 'No se pudo conectar con el servidor.';

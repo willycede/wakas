@@ -927,3 +927,15 @@ input:focus { outline: none; box-shadow: inset 0 0 0 2px var(--gold), 0 0 0 4px 
 .legal h3 { font-size: 15px; margin: 18px 0 4px; color: #ffe2a0; }
 .legal p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
 .legales { margin-top: 26px; font-size: 12px; font-weight: 800; text-align: center; color: var(--dim); }
+
+/* ---------- buzón de sugerencias ---------- */
+.buzon { max-width: 560px; margin: 0 auto; text-align: left; }
+.buzon h2 { display: flex; align-items: center; gap: 10px; font-size: 28px; margin: 0 0 4px; }
+.buzon h2 svg { width: 30px; height: 30px; fill: var(--gold); }
+.bz-tipos { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 10px; }
+.bz-tipos .chip { font: inherit; font-weight: 800; font-size: 13px; padding: 8px 14px; border-radius: 999px; border: 0; cursor: pointer; color: var(--muted); background: rgba(255,255,255,.07); box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); }
+.bz-tipos .chip.on { color: #2a1600; background: linear-gradient(#ffd866, #ffb020); box-shadow: none; }
+.buzon textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 120px; font: inherit; font-size: 15px; color: #fff; background: rgba(0,0,0,.3); border: 0; border-radius: 12px; padding: 12px 14px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); }
+.buzon textarea:focus { outline: 2px solid var(--gold); }
+.bz-pie { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+.bz-pie small { color: var(--dim); font-weight: 800; }

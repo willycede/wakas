@@ -26,6 +26,7 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
 
 export const api = {
   registro: (usuario: string, clave: string, acepto: string) => call<{ token: string }>('POST', '/api/registro', { usuario, clave, acepto }),
+  buzon: (tipo: string, texto: string) => call<{ ok: boolean }>('POST', '/api/buzon', { tipo, texto }),
   aceptarLegal: (version: string) => call<Perfil>('POST', '/api/legal/aceptar', { version }),
   entrar: (usuario: string, clave: string) => call<{ token: string }>('POST', '/api/entrar', { usuario, clave }),
   perfil: () => call<Perfil>('GET', '/api/perfil'),

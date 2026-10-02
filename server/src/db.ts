@@ -35,6 +35,20 @@ export interface Domador {
   pais?: string; // aproximado (zona horaria / idioma del navegador)
   zonaMin?: number; // diferencia horaria del jugador respecto a UTC, en minutos
   legal?: { version: string; fecha: number }; // términos aceptados
+  buzon?: { dia: number; n: number }; // mensajes enviados al buzón hoy
+}
+
+/** Mensaje del buzón de sugerencias. */
+export interface MensajeBuzon {
+  id: number;
+  fecha: number;
+  autor: number;
+  nombre: string;
+  tipo: string; // idea | primal | error | otro
+  texto: string;
+  estado: string; // nuevo | leido | hecho | archivado
+  nivel?: number;
+  trofeos?: number;
 }
 
 export interface Store {
@@ -50,6 +64,9 @@ export interface Store {
   todos(): Promise<Domador[]>;
   leerDias(desde: number): Promise<Record<number, any>>;
   guardarDia(dia: number, datos: unknown): Promise<void>;
+  crearMensaje(m: Omit<MensajeBuzon, 'id'>): Promise<number>;
+  mensajes(n: number): Promise<MensajeBuzon[]>;
+  estadoMensaje(id: number, estado: string): Promise<void>;
 }
 
 export function nuevoDomador(id: number, usuario: string): Domador {
@@ -76,6 +93,12 @@ class PgStore implements Store {
       CREATE UNIQUE INDEX IF NOT EXISTS cuentas_usuario ON cuentas (lower(usuario));
       CREATE INDEX IF NOT EXISTS cuentas_trofeos ON cuentas (trofeos DESC);
       CREATE TABLE IF NOT EXISTS estadisticas (dia INTEGER PRIMARY KEY, datos JSONB NOT NULL DEFAULT '{}');
+      CREATE TABLE IF NOT EXISTS buzon (
+        id SERIAL PRIMARY KEY,
+        fecha BIGINT NOT NULL,
+        estado TEXT NOT NULL DEFAULT 'nuevo',
+        datos JSONB NOT NULL DEFAULT '{}'
+      );
       CREATE TABLE IF NOT EXISTS sesiones (
         token TEXT PRIMARY KEY,
         cuenta INTEGER NOT NULL REFERENCES cuentas(id) ON DELETE CASCADE,
@@ -124,13 +147,24 @@ class PgStore implements Store {
   async guardarDia(dia: number, datos: unknown) {
     await this.pool.query('INSERT INTO estadisticas (dia, datos) VALUES ($1, $2) ON CONFLICT (dia) DO UPDATE SET datos = EXCLUDED.datos', [dia, JSON.stringify(datos)]);
   }
+  async crearMensaje(m: Omit<MensajeBuzon, 'id'>) {
+    const r = await this.pool.query('INSERT INTO buzon (fecha, estado, datos) VALUES ($1, $2, $3) RETURNING id', [m.fecha, m.estado, JSON.stringify(m)]);
+    return r.rows[0].id as number;
+  }
+  async mensajes(n: number) {
+    const r = await this.pool.query('SELECT id, fecha, estado, datos FROM buzon ORDER BY id DESC LIMIT $1', [n]);
+    return r.rows.map((x) => ({ ...x.datos, id: x.id, fecha: Number(x.fecha), estado: x.estado }) as MensajeBuzon);
+  }
+  async estadoMensaje(id: number, estado: string) {
+    await this.pool.query('UPDATE buzon SET estado = $2 WHERE id = $1', [id, estado]);
+  }
   async ranking(n: number) {
     const r = await this.pool.query("SELECT datos->>'nombre' AS nombre, trofeos, (datos->>'nivel')::int AS nivel FROM cuentas ORDER BY trofeos DESC LIMIT $1", [n]);
     return r.rows.map((x) => ({ nombre: x.nombre, trofeos: x.trofeos, nivel: x.nivel ?? 1 }));
   }
 }
 
-interface FileData { seq: number; cuentas: { id: number; usuario: string; hash: string }[]; sesiones: Record<string, number>; domadores: Domador[]; estadisticas?: Record<number, unknown> }
+interface FileData { seq: number; cuentas: { id: number; usuario: string; hash: string }[]; sesiones: Record<string, number>; domadores: Domador[]; estadisticas?: Record<number, unknown>; buzon?: MensajeBuzon[] }
 
 class FileStore implements Store {
   private d: FileData = { seq: 0, cuentas: [], sesiones: {}, domadores: [] };
@@ -186,6 +220,20 @@ class FileStore implements Store {
     this.d.estadisticas ??= {};
     this.d.estadisticas[dia] = structuredClone(datos);
     this.persist();
+  }
+  async crearMensaje(m: Omit<MensajeBuzon, 'id'>) {
+    this.d.buzon ??= [];
+    const id = (this.d.buzon.at(-1)?.id ?? 0) + 1;
+    this.d.buzon.push({ ...m, id });
+    this.persist();
+    return id;
+  }
+  async mensajes(n: number) {
+    return (this.d.buzon ?? []).slice(-n).reverse().map((m) => structuredClone(m));
+  }
+  async estadoMensaje(id: number, estado: string) {
+    const m = this.d.buzon?.find((x) => x.id === id);
+    if (m) { m.estado = estado; this.persist(); }
   }
   async ranking(n: number) {
     return [...this.d.domadores].sort((a, b) => b.trofeos - a.trofeos).slice(0, n).map((d) => ({ nombre: d.nombre, trofeos: d.trofeos, nivel: d.nivel }));

@@ -6,7 +6,7 @@ import {
 } from '../../shared/src';
 import { api, spriteUrl } from './api';
 import { emblemaLiga, icono } from './iconos';
-import { abrirFicha, editarAvatar, enlazarLegal } from './ficha';
+import { abrirBuzon, abrirFicha, editarAvatar, enlazarLegal } from './ficha';
 import { avatarUrl, retrato } from './avatar';
 import { textoMision, descEspecial, descEspecie, descHab, habDomador, medalla, nombreElemento, nombreEspecial, nombreHab, nombreLiga, nombreMov, nombreRareza, t, tError } from './i18n';
 
@@ -291,7 +291,7 @@ export class Menu {
       <div class="trainer-head"><button class="th-avatar" id="th-avatar" title="${t('av.edit')}"><img src="${avatarUrl(p.avatar)}" alt=""><span>${icono('mas')}</span></button>
         <div class="tb-level">${p.nivel}</div><div class="info"><b>${esc(p.nombre)}</b><br><small>${t('trainer.level', { n: p.nivel })} · ${p.xpSig ? `${p.xp} / ${p.xpSig} XP` : 'MAX'}</small>
         <div class="xpbar"><div style="width:${p.xpSig ? (p.xp / p.xpSig) * 100 : 100}%"></div></div></div></div>
-      <div class="row-btns"><button class="btn ghost" id="btn-tuto">${icono('mira')}${t('tuto.again')}</button><button class="btn ghost" id="btn-historia">${icono('estrella')}${t('intro.again')}</button></div>
+      <div class="row-btns"><button class="btn ghost" id="btn-tuto">${icono('mira')}${t('tuto.again')}</button><button class="btn ghost" id="btn-historia">${icono('estrella')}${t('intro.again')}</button><button class="btn ghost" id="btn-buzon">${icono('carta')}${t('buzon.btn')}</button></div>
       <div class="legales"><a href="#" data-legal="terminos">${t('legal.terminos')}</a> · <a href="#" data-legal="privacidad">${t('legal.privacidad')}</a></div>
       <div class="section-title">${t('trainer.medals')} · ${MEDALLAS.filter((m) => p.nivel >= m.nivel).length}/${MEDALLAS.length}</div>
       <p class="muted" style="margin-top:-4px;font-size:13px">${t('trainer.medalsHint')}</p>
@@ -353,6 +353,7 @@ export class Menu {
     body.querySelector<HTMLButtonElement>('#btn-historia')?.addEventListener('click', () => this.onHistoria());
     body.querySelector<HTMLButtonElement>('#th-avatar')?.addEventListener('click', () => this.personalizar());
     enlazarLegal(body);
+    body.querySelector<HTMLButtonElement>('#btn-buzon')?.addEventListener('click', () => abrirBuzon());
     body.querySelectorAll<HTMLButtonElement>('[data-mision]').forEach((b) => (b.onclick = async () => {
       try { const p = await api.mision(b.dataset.mision!); toast(`+${this.perfil.misiones.find((m) => m.id === b.dataset.mision)?.premio ?? ''} ${t('res.coins')}`); this.setPerfil(p); this.show('batalla'); } catch (e: any) { toast(e.message, true); }
     }));
