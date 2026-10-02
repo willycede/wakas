@@ -31,7 +31,7 @@ export function ligaDe(trofeos: number): Liga {
 
 export interface Medalla { id: string; nombre: string; nivel: number; icono: string; desc: string }
 export const MEDALLAS: Medalla[] = [
-  { id: 'brasa', nombre: 'Medalla Brasa', nivel: 3, icono: '🔥', desc: 'Tu primer paso como Domador.' },
+  { id: 'brasa', nombre: 'Medalla Brasa', nivel: 3, icono: '🔥', desc: 'Tu primer paso como Entrenador.' },
   { id: 'oleaje', nombre: 'Medalla Oleaje', nivel: 6, icono: '🌊', desc: 'Ya sabes cambiar de Primal en el momento justo.' },
   { id: 'brote', nombre: 'Medalla Brote', nivel: 10, icono: '🌱', desc: 'Tu equipo empieza a crecer.' },
   { id: 'voltio', nombre: 'Medalla Voltio', nivel: 14, icono: '⚡', desc: 'Reflejos de relámpago.' },

@@ -49,7 +49,7 @@ function stats(e: Especie) {
 }
 
 const MEDALLA_EL: Record<string, string> = { brasa: 'fuego', oleaje: 'agua', brote: 'planta', voltio: 'electrico', roca: 'roca', vendaval: 'viento', umbral: 'sombra', primal: 'estrella' };
-const HAB_IC: Record<string, string> = { entrenador: 'crecer', negociante: 'moneda', vinculo: 'corazon', relevo: 'cambiar', instinto: 'mira', capturador: 'red' };
+const HAB_IC: Record<string, string> = { entrenador: 'crecer', negociante: 'moneda', vinculo: 'corazon', relevo: 'cambiar', instinto: 'mira', capturador: 'chakana' };
 
 type Tab = 'equipo' | 'capturar' | 'batalla' | 'domador' | 'ranking';
 

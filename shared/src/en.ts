@@ -113,7 +113,7 @@ export const EN = {
     diamante: 'Colonial Quito Plaza', maestro: 'Chimborazo Glacier', campeon: 'Middle of the World',
   } as Record<string, string>,
   medallas: {
-    brasa: ['Ember Badge', 'Your first step as a Tamer.'],
+    brasa: ['Ember Badge', 'Your first step as a Trainer.'],
     oleaje: ['Surge Badge', 'You know when to switch Primals.'],
     brote: ['Sprout Badge', 'Your team is starting to grow.'],
     voltio: ['Volt Badge', 'Lightning-fast reflexes.'],

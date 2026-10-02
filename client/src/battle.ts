@@ -16,6 +16,7 @@ import * as FX from './efectos';
 import { icono } from './iconos';
 import { descEspecial, descMov, nombreArena, nombreElemento, nombreEspecial, nombreEspecialId, nombreMov, t } from './i18n';
 import { dibujarEstadio, type Estadio } from './arenas';
+import { TONO_LEGENDARIO, alternarMusica, tocar } from './musica';
 import { esc } from './menu';
 
 const INTERP = 100;
@@ -47,6 +48,7 @@ export class BatallaScene extends Phaser.Scene {
   estadio: Estadio | null = null;
   silenciado = false;
   tuto: { pasos: string[]; i: number; cuenta: number; mov: number } | null = null;
+  musicaLegendaria = '';
   keys!: Record<string, Phaser.Input.Keyboard.Key>;
   joy = { x: 0, y: 0, activo: false };
   seq = 0;
@@ -120,7 +122,7 @@ export class BatallaScene extends Phaser.Scene {
     this.estadio = dibujarEstadio(this, this.init0.liga, this.init0.obstaculos);
     this.gAvisos = this.add.graphics().setDepth(1);
     this.gApunte = this.add.graphics().setDepth(4000);
-    this.keys = this.input.keyboard!.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,SHIFT,ONE,TWO,THREE,FOUR,Q,E,F,R,T,C') as any;
+    this.keys = this.input.keyboard!.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,SHIFT,ONE,TWO,THREE,FOUR,Q,E,F,R,T,C,M') as any;
     this.input.mouse?.disableContextMenu();
     this.game.canvas.style.cursor = 'crosshair';
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
@@ -158,6 +160,9 @@ export class BatallaScene extends Phaser.Scene {
     this.keys.R.on('down', () => this.accion(6));
     this.keys.T.on('down', () => this.accion(7));
     this.keys.C.on('down', () => this.panelEmotes());
+    this.keys.M.on('down', () => alternarMusica());
+    this.musicaLegendaria = '';
+    tocar('batalla');
     this.keys.Q.on('down', () => this.cambiarRel(-1));
     this.keys.E.on('down', () => this.cambiarRel(1));
     this.scale.on('resize', this.ajustar, this);
@@ -251,6 +256,9 @@ export class BatallaScene extends Phaser.Scene {
     const me = s.u[this.init0.lado];
     if (Date.now() - this.ultMovio > 160 || me.an === 'basico' || me.an === 'mov' || me.an === 'dash') this.faLocal = me.fa;
     this.actualizarHud(s);
+    // si hay un legendario en la arena, suena su tema épico
+    const leg = s.u.find((x) => esLegendario(x.esp));
+    if (leg && this.musicaLegendaria !== leg.esp) { this.musicaLegendaria = leg.esp; tocar('legendario', TONO_LEGENDARIO[leg.esp] ?? 0); }
   }
 
   /** Reconciliación: posición del servidor + entradas aún no confirmadas. Lo que no cuadre se suaviza. */

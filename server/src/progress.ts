@@ -150,7 +150,7 @@ export function puedeCapturar(d: Domador, esp: string): string | null {
   if (!e) return 'Primal desconocido.';
   if (d.primales.length === 0) return 'Primero elige tus Primales iniciales.';
   if (e.rareza === 'legendario' && legendarioDelDia().id !== esp) return 'Este legendario no aparece hoy. Vuelve otro día.';
-  if (d.nivel < e.captura.nivel) return `Necesitas ser Domador de nivel ${e.captura.nivel}.`;
+  if (d.nivel < e.captura.nivel) return `Necesitas ser Entrenador de nivel ${e.captura.nivel}.`;
   if (d.monedas < costoCaptura(d, esp)) return `Necesitas ${costoCaptura(d, esp)} monedas.`;
   if (!d.equipo.length) return 'Necesitas un equipo.';
   return null;

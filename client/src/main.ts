@@ -4,6 +4,7 @@ import Phaser from 'phaser';
 import { DESBLOQUEO, ESPECIES, xpPrimal, type FinBatalla, type InicioBatalla, type Perfil } from '../../shared/src';
 import { dialogo } from './ficha';
 import { mostrarEvoluciones } from './evolucion';
+import { alternarMusica, fanfarria, musicaActiva, tocar } from './musica';
 import { nombreMov } from './i18n';
 import { api, getToken, setToken, spriteUrl } from './api';
 import { BatallaScene } from './battle';
@@ -32,6 +33,15 @@ alCambiarIdioma(() => {
   repintarInicial?.();
   (game?.scene.getScene('batalla') as BatallaScene | undefined)?.refrescarIdioma?.();
 });
+// botón de música (se recuerda en el navegador)
+function pintarMusica() {
+  const b = $('btn-musica');
+  b.innerHTML = icono(musicaActiva() ? 'musica' : 'silencio');
+  b.classList.toggle('apagado', !musicaActiva());
+  b.onclick = () => { alternarMusica(); pintarMusica(); };
+}
+pintarMusica();
+tocar('menu');
 document.documentElement.lang = idioma;
 aplicarHtml();
 pintarIdioma();
@@ -56,7 +66,7 @@ function mostrarLogin() {
   ($('login-pass') as HTMLInputElement).onkeydown = (e) => { if (e.key === 'Enter') void go(false); };
 }
 
-/** Primera vez: ofrece el tutorial (se puede saltar y repetir desde la pestaña Domador). */
+/** Primera vez: ofrece el tutorial (se puede saltar y repetir desde la pestaña Entrenador). */
 function ofrecerTutorial() {
   dialogo(t('tuto.offer'), t('tuto.offerTxt'), [
     { texto: t('tuto.start'), clase: 'primary big', fn: () => void empezarTutorial() },
@@ -137,6 +147,7 @@ async function terminar(r: FinBatalla) {
   // primero, la pantalla de evolución de cada Primal que evolucionó
   const evos = r.xpPrimales.filter((x) => x.evoluciono).map((x) => ({ de: x.esp, a: x.evoluciono!, nivel: x.nivel }));
   if (evos.length) await mostrarEvoluciones(evos);
+  fanfarria(r.gano ? 'victoria' : 'derrota', 'menu');
   const clase = r.empate ? 'draw' : r.gano ? 'win' : 'lose';
   const titulo = r.empate ? t('res.draw') : r.gano ? (r.capturado ? t('res.caught') : t('res.win')) : t('res.lose');
   const motivo = r.motivo === 'tiempo' ? t('res.time') : r.motivo === 'abandono' ? (r.gano ? t('res.left') : '') : r.motivo === 'rendicion' ? t('res.surrender') : '';

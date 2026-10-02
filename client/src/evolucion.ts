@@ -6,6 +6,7 @@ import { spriteUrl } from './api';
 import { icono } from './iconos';
 import { descHab, nombreElemento, nombreHab, nombreMov, t } from './i18n';
 import { esc, rarezaTag } from './menu';
+import { fanfarria, tocar } from './musica';
 
 const $ = (id: string) => document.getElementById(id)!;
 const espera = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -26,7 +27,7 @@ function una({ de, a, nivel }: Evolucion): Promise<void> {
     const fila = (k: Parameters<typeof t>[0], v0: number, v1: number, max: number) => `
       <div class="ev-stat"><span>${t(k)}</span>
         <div class="bar"><div class="b0" style="width:${Math.min(100, (v0 / max) * 100)}%"></div><div class="b1" style="--w:${Math.min(100, (v1 / max) * 100)}%"></div></div>
-        <b>${v1}</b><em>+${v1 - v0}</em></div>`;
+        <b>${v1}</b><em class="${v1 < v0 ? 'baja' : ''}">${v1 >= v0 ? '+' : '−'}${Math.abs(v1 - v0)}</em></div>`;
     const movsNuevos = nuevo.movimientos.filter((m, i) => !viejo.movimientos.includes(m) && (nuevo.rareza === 'legendario' || nivel >= DESBLOQUEO[i]));
     const tiposNuevos = tipos(a).filter((x) => !tipos(de).includes(x));
     el.style.setProperty('--c', c);
@@ -37,8 +38,10 @@ function una({ de, a, nivel }: Evolucion): Promise<void> {
         <div class="ev-halo"></div>
         <img class="ev-spr ev-viejo" src="${spriteUrl(de)}" alt="">
         <img class="ev-spr ev-nuevo" src="${spriteUrl(a)}" alt="">
+        <div class="ev-energia">${Array.from({ length: 24 }, (_, i) => `<i style="--a:${i * 15}deg;--r:${160 + (i % 4) * 45}px;--t:${(i % 6) * 0.09}s"></i>`).join('')}</div>
+        <div class="ev-onda"></div><div class="ev-onda o2"></div><div class="ev-onda o3"></div>
         <div class="ev-flash"></div>
-        <div class="ev-chispas">${Array.from({ length: 18 }, (_, i) => `<i style="--a:${i * 20}deg;--d:${120 + (i % 3) * 40}px"></i>`).join('')}</div>
+        <div class="ev-chispas">${Array.from({ length: 36 }, (_, i) => `<i style="--a:${i * 10}deg;--d:${160 + (i % 4) * 70}px"></i>`).join('')}</div>
       </div>
       <div class="ev-info">
         <div class="ev-nombre">${rarezaTag(a)}<h2>${nuevo.nombre}</h2>
@@ -56,33 +59,35 @@ function una({ de, a, nivel }: Evolucion): Promise<void> {
       <button class="ev-saltar" id="ev-saltar">${t('evo.skip')}</button>`;
     el.className = 'ev';
     el.classList.remove('hidden');
+    tocar('evolucion');
     let saltado = false;
     const revelar = () => {
       if (el.classList.contains('revelado')) return;
       el.classList.remove('cambiando');
       el.classList.add('revelado');
+      fanfarria('evolucionado');
       $('ev-texto').innerHTML = t('evo.done', { a: viejo.nombre, b: `<b>${nuevo.nombre}</b>` });
     };
     $('ev-saltar').onclick = () => { saltado = true; revelar(); };
     $('ev-ok').onclick = () => { el.classList.add('hidden'); el.innerHTML = ''; fin(); };
     void (async () => {
-      await espera(1300);
+      await espera(450);
       if (saltado) return;
       el.classList.add('brilla');
-      await espera(700);
-      // parpadeo entre las dos siluetas, cada vez más rápido
+      await espera(300);
+      // parpadeo entre las dos siluetas, cada vez más rápido, mientras la energía converge
       el.classList.add('cambiando');
-      let ms = 420;
+      let ms = 240;
       let nuevaVisible = false;
-      while (ms > 45 && !saltado) {
+      while (ms > 30 && !saltado) {
         nuevaVisible = !nuevaVisible;
         el.classList.toggle('ver-nuevo', nuevaVisible);
         await espera(ms);
-        ms *= 0.8;
+        ms *= 0.74;
       }
       if (saltado) return;
       el.classList.add('ver-nuevo', 'estalla');
-      await espera(450);
+      await espera(220);
       revelar();
     })();
   });

@@ -667,3 +667,33 @@ input:focus { outline: none; box-shadow: inset 0 0 0 2px var(--gold), 0 0 0 4px 
 .f-evo-item.on { background: linear-gradient(180deg, rgba(255,201,64,.18), rgba(0,0,0,.2)); }
 .f-flecha { padding: 0 2px; }
 .f-flecha .ic { font-size: 20px; animation: flota 2s ease-in-out infinite; }
+
+/* evolución: más rápida y épica */
+.ev.brilla .ev-rayos { opacity: .9; animation-duration: 2.5s; }
+.ev.brilla .ev-halo { animation-duration: .25s; }
+.ev.cambiando .ev-escena { animation: evtiembla .08s linear infinite; }
+@keyframes evtiembla { 0% { transform: translate(0, 0); } 25% { transform: translate(2px, -1px); } 50% { transform: translate(-2px, 1px); } 75% { transform: translate(1px, 2px); } }
+.ev-energia i { position: absolute; left: 50%; bottom: 120px; width: 6px; height: 18px; border-radius: 3px; background: #fff; box-shadow: 0 0 12px var(--c), 0 0 4px #fff; opacity: 0; }
+.ev.brilla .ev-energia i { animation: evenergia .45s ease-in var(--t) infinite; }
+.ev.revelado .ev-energia i, .ev.estalla .ev-energia i { animation: none; opacity: 0; }
+@keyframes evenergia { 0% { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--r) * -1)); } 30% { opacity: 1; } 100% { opacity: 0; transform: rotate(var(--a)) translateY(-10px) scaleY(.4); } }
+.ev-onda { position: absolute; left: 50%; bottom: 120px; width: 40px; height: 40px; margin: 0 0 -20px -20px; border-radius: 50%; border: 6px solid var(--c); opacity: 0; pointer-events: none; }
+.ev.estalla .ev-onda { animation: evonda .8s cubic-bezier(.1,.7,.3,1) forwards; }
+.ev.estalla .ev-onda.o2 { animation-delay: .1s; border-color: #fff; }
+.ev.estalla .ev-onda.o3 { animation-delay: .2s; }
+@keyframes evonda { 0% { opacity: 1; transform: scale(.5); } 100% { opacity: 0; transform: scale(18); border-width: 1px; } }
+.ev.estalla .ev-flash { animation: evflash .6s ease-out forwards; background: radial-gradient(circle at 50% 42%, #fff 0%, color-mix(in srgb, var(--c) 70%, #fff) 40%, var(--c) 100%); }
+.ev.estalla .ev-chispas i { animation-duration: .7s; width: 12px; height: 12px; }
+.ev.estalla, .ev.revelado.recien { animation: evsacude .45s ease-out; }
+@keyframes evsacude { 0%, 100% { transform: none; } 15% { transform: translate(-10px, 6px); } 30% { transform: translate(9px, -7px); } 45% { transform: translate(-7px, -4px); } 60% { transform: translate(5px, 5px); } 80% { transform: translate(-2px, 1px); } }
+.ev.revelado .ev-nuevo { animation: evaparece .45s cubic-bezier(.2,1.8,.4,1), flota 3s ease-in-out .45s infinite; }
+@keyframes evaparece { 0% { transform: translateX(-50%) scale(.2); } 60% { transform: translateX(-50%) scale(1.25); } 100% { transform: translateX(-50%) scale(1); } }
+.ev.revelado .ev-texto { animation: evgolpe .4s cubic-bezier(.2,1.8,.4,1); }
+.ev.revelado .ev-nombre h2 { animation: evgolpe .45s cubic-bezier(.2,1.8,.4,1) .1s both; }
+@keyframes evgolpe { 0% { transform: scale(2.4); opacity: 0; letter-spacing: 12px; } 100% { transform: none; opacity: 1; } }
+.ev.revelado .ev-info { animation: aparece .3s ease-out .1s both; }
+.ev-stat .b1 { animation-duration: .6s; animation-delay: .3s; }
+
+#btn-musica .ic { font-size: 15px; }
+#btn-musica.apagado { opacity: .55; }
+.ev-stat em.baja { color: var(--danger); }

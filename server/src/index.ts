@@ -65,7 +65,7 @@ function rivalIA(d: Domador): Participante {
     usados.add(e.id);
     return { uid: 'ia' + i, esp: e.id, nivel: Math.max(1, nivelMedio + Math.floor(Math.random() * 3) - 1) };
   });
-  const nombres = ['Rival Kai', 'Domadora Ren', 'Rival Iker', 'Domadora Luma', 'Rival Taro', 'Domadora Nia'];
+  const nombres = ['Rival Kai', 'Entrenadora Ren', 'Rival Iker', 'Entrenadora Luma', 'Rival Taro', 'Entrenadora Nia'];
   const liga = ligaDe(d.trofeos);
   return { id: null, nombre: nombres[Math.floor(Math.random() * nombres.length)], trofeos: Math.max(0, d.trofeos + Math.floor(Math.random() * 80) - 40), equipo,
     ia: Math.min(0.95, 0.18 + d.trofeos / 6000 + Math.random() * 0.08) };
