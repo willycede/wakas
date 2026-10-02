@@ -1,10 +1,11 @@
 // Preparación antes de la batalla: 20 s para ver la ficha del rival (sus Primales favoritos) y
 // elegir tus 3 Primales. Cada Primal de tu colección muestra si tiene ventaja contra los del rival.
 
+import { liderPorId } from '../../shared/src';
 import { ELEMENTOS, ESPECIES, LIGAS, MAX_LEGENDARIOS, MOVIMIENTOS, TAM_EQUIPO, efectividad, esLegendario, ligaDe, tipos, type Elemento, type Perfil, type Preparacion } from '../../shared/src';
 import { spriteUrl } from './api';
 import { abrirFicha } from './ficha';
-import { nombreLiga, t } from './i18n';
+import { bi, nombreLiga, t } from './i18n';
 import { emblemaLiga, icono } from './iconos';
 import { retrato } from './avatar';
 import { esc, rarezaTag, tiposTag } from './menu';
@@ -35,6 +36,7 @@ export function mostrarPreparacion(net: Conexion, prep: Preparacion, perfil: Per
   const total = r.victorias + r.derrotas;
   const liga = ligaDe(r.trofeos);
 
+  const lider = r.lider ? liderPorId(r.lider) : undefined;
   const pintar = () => {
     const orden = [...perfil.primales].sort((a, b) => ventaja(b.esp, favs) - ventaja(a.esp, favs) || b.nivel - a.nivel);
     el.innerHTML = `
@@ -46,13 +48,13 @@ export function mostrarPreparacion(net: Conexion, prep: Preparacion, perfil: Per
         <div class="prep-rival">
           <div class="pr-head">${r.salvaje ? '' : r.avatar ? retrato(r.avatar, 'grande') : emblemaLiga(liga.color, LIGAS.indexOf(liga), 54)}
             <div><small>${r.salvaje ? t('dif.wild') : t('prep.rival')}</small><b>${esc(r.nombre)}</b>
-              ${r.salvaje ? rarezaTag(r.salvaje) : `<span class="pr-liga" style="color:${liga.color}">${nombreLiga(liga.id)} · ${icono('trofeo')}${r.trofeos}</span>`}</div></div>
-          ${r.salvaje ? '' : `<div class="pr-stats">
+              ${r.salvaje ? rarezaTag(r.salvaje) : lider ? `<span class="pr-liga" style="color:${ELEMENTOS[lider.elemento].color}">${esc(bi(lider.titulo))} · ${esc(bi(lider.lugar))}</span>` : `<span class="pr-liga" style="color:${liga.color}">${nombreLiga(liga.id)} · ${icono('trofeo')}${r.trofeos}</span>`}</div></div>
+          ${lider ? `<div class="hl-frase">“${esc(bi(lider.frase))}”</div>` : r.salvaje ? '' : `<div class="pr-stats">
             <div><b>${r.nivel}</b><small>${t('prep.level')}</small></div>
             <div><b>${total ? Math.round((r.victorias / total) * 100) : 0}%</b><small>${t('prep.winrate')}</small></div>
             <div><b>${r.victorias}</b><small>${t('battle.wins')}</small></div>
             <div><b>${r.mejorTrofeos}</b><small>${t('battle.best')}</small></div></div>`}
-          <div class="section-title">${r.salvaje ? t('prep.wildMon') : t('prep.favs')}</div>
+          <div class="section-title">${r.salvaje ? t('prep.wildMon') : lider ? t('hist.team') : t('prep.favs')}</div>
           <div class="pr-favs">${r.favoritos.map((f) => `<button class="pr-fav" data-ver="${f.esp}" style="--c:${ELEMENTOS[ESPECIES[f.esp].elemento].color}">
               <img src="${spriteUrl(f.esp)}" alt=""><b>${ESPECIES[f.esp].nombre}</b><div class="tipos">${tiposTag(f.esp)}</div>${f.n ? `<small>${t('prep.uses', { n: f.n })}</small>` : ''}</button>`).join('')}</div>
           ${r.id && !r.ia && onAmigo ? `<button class="btn ghost pr-amigo" id="prep-amigo">${icono('mas')}${t('amigos.add')}</button>` : ''}

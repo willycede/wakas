@@ -1,6 +1,7 @@
 // Mensajes entre cliente y servidor.
 
 import type { Avatar } from './avatar';
+import type { ProgresoHistoria } from './historia';
 
 export const TICK_MS = 50; // 20 ticks por segundo
 export const ARENA = { w: 1100, h: 700 };
@@ -32,6 +33,7 @@ export interface Perfil {
   legalOk: boolean; // aceptó la versión vigente de los Términos
   misiones: { id: string; progreso: number; meta: number; premio: number; cobrada: boolean }[];
   bonoDiario: boolean; // la primera victoria de hoy aún da el doble de monedas
+  historia: ProgresoHistoria;
 }
 
 export interface UnidadSnap {
@@ -86,7 +88,7 @@ export type Fx =
 
 export interface InicioBatalla {
   lado: 0 | 1;
-  modo: 'liga' | 'captura' | 'tutorial' | 'amistosa';
+  modo: 'liga' | 'captura' | 'tutorial' | 'amistosa' | 'historia';
   rivalIA: boolean;
   nombres: [string, string];
   trofeos: [number, number];
@@ -99,6 +101,7 @@ export interface InicioBatalla {
 
 /** Lo que se sabe del rival antes de la batalla. */
 export interface FichaRival {
+  lider?: string; // Modo Historia
   id?: number; // para agregarlo como amigo
   avatar?: Avatar;
   nombre: string; trofeos: number; nivel: number; victorias: number; derrotas: number; mejorTrofeos: number;
@@ -135,4 +138,6 @@ export interface FinBatalla {
   nivelDomador: number;
   subioDomador: number;
   bonoDiario?: number; // monedas extra por la primera victoria del día
+  /** Modo Historia: contra quién fue y qué cambió. */
+  historia?: { lider: string; primeraVez: boolean; elite: number; campeon: boolean; reinicio: boolean };
 }

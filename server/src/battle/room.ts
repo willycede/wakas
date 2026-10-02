@@ -4,7 +4,7 @@
 import { Room, type Client } from 'colyseus';
 import { ARENA, EMOTES, ESPECIES, FRASES, SEGUNDOS_PREPARACION, TICK_MS, ligaDe, type FichaRival, type FinBatalla, type InicioBatalla, type Obstaculo, type Preparacion } from '../../../shared/src';
 import type { Domador } from '../db';
-import { avanzarMision, equipoValido, mods, recompensar } from '../progress';
+import { avanzarMision, equipoValido, mods, recompensar, resultadoHistoria } from '../progress';
 import { domadores, salas, stats, store } from '../services';
 import { IA } from './ai';
 import { Batalla, crearUnidad, type Unidad } from './engine';
@@ -12,8 +12,9 @@ import { Batalla, crearUnidad, type Unidad } from './engine';
 export interface Participante { id: number | null; nombre: string; trofeos: number; equipo: { uid: string; esp: string; nivel: number }[]; ia?: number; pasivo?: boolean; ficha?: FichaRival }
 
 export interface OpcionesBatalla {
-  modo: 'liga' | 'captura' | 'tutorial' | 'amistosa';
+  modo: 'liga' | 'captura' | 'tutorial' | 'amistosa' | 'historia';
   lados: [Participante, Participante];
+  lider?: string; // Modo Historia: id del líder rival
   especieSalvaje?: string;
   costo?: number;
 }
@@ -296,6 +297,7 @@ export class BatallaRoom extends Room {
       let capturado: string | undefined;
       if (this.opts.modo === 'captura' && gano && this.opts.especieSalvaje) capturado = this.opts.especieSalvaje;
       const res = recompensar(d, gano, empate, this.opts.modo, [...this.uids[l]], capturado, this.b.lados[l].stats);
+      if (this.opts.modo === 'historia' && this.opts.lider) resultadoHistoria(d, this.opts.lider, gano && !empate, res);
       res.motivo = t.motivo;
       await domadores.guardar(d);
       for (const c of this.clients) if (this.clientes.get(c.sessionId) === l) c.send('fin', res);

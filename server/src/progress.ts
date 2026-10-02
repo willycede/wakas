@@ -2,7 +2,7 @@
 
 import {
   BONO_MEDALLA_XP, LEGAL_VERSION, avatarAleatorio, avatarValido, ESPECIES, ESPERA_CAMBIO, HABILIDADES_DOMADOR, INICIALES, MAX_LEGENDARIOS, NIVEL_MAX_DOMADOR, NIVEL_MAX_PRIMAL, NUM_INICIALES,
-  BONO_PRIMERA_VICTORIA, MISIONES, RECOMPENSAS, TAM_EQUIPO, diaActual, esLegendario, misionesDelDia, legendarioDelDia, medallasDe, puntosHabilidad, xpDomador, xpPrimal, type FichaRival, type FinBatalla, type Perfil, type PrimalGuardado,
+  BONO_PRIMERA_VICTORIA, MISIONES, RECOMPENSAS, TAM_EQUIPO, diaActual, esLegendario, misionesDelDia, legendarioDelDia, medallasDeHistoria, historiaVacia, liderPorId, ALTO_MANDO, GIMNASIOS, puntosHabilidad, xpDomador, xpPrimal, type FichaRival, type FinBatalla, type Perfil, type PrimalGuardado,
 } from '../../shared/src';
 import type { Domador } from './db';
 import type { Mods } from './battle/engine';
@@ -29,6 +29,7 @@ export function perfil(d: Domador): Perfil {
       return { id: m.id, progreso: m.progreso, meta: def.meta, premio: def.premio, cobrada: m.cobrada };
     }),
     bonoDiario: d.ultimaVictoriaDia !== diaActual(),
+    historia: d.historia ?? historiaVacia(),
   };
 }
 
@@ -137,9 +138,8 @@ function darXpPrimal(d: Domador, p: PrimalGuardado, xp: number) {
 
 export interface StatsBatalla { especiales: number; ko: number; comboMax: number }
 
-export function recompensar(d: Domador, gano: boolean, empate: boolean, modo: 'liga' | 'captura', participaron: string[], capturado?: string, st?: StatsBatalla): FinBatalla {
+export function recompensar(d: Domador, gano: boolean, empate: boolean, modo: 'liga' | 'captura' | 'historia', participaron: string[], capturado?: string, st?: StatsBatalla): FinBatalla {
   const base = gano ? RECOMPENSAS.victoria : RECOMPENSAS.derrota;
-  const antes = medallasDe(d.nivel).map((m) => m.id);
   let trofeos = 0;
   if (modo === 'liga') {
     trofeos = empate ? 0 : base.trofeos;
@@ -165,10 +165,10 @@ export function recompensar(d: Domador, gano: boolean, empate: boolean, modo: 'l
     d.uso ??= {};
     for (const uid of participaron) { const p = d.primales.find((x) => x.uid === uid); if (p) d.uso[p.esp] = (d.uso[p.esp] ?? 0) + 1; }
   }
-  const xpD = !gano ? 0 : modo === 'liga' ? base.xpDomador : RECOMPENSAS.captura.xpDomador;
+  const xpD = !gano ? 0 : modo === 'captura' ? RECOMPENSAS.captura.xpDomador : base.xpDomador;
   const ups = darXpDomador(d, xpD);
-  const bonoXp = 1 + habilidad(d, 'entrenador') + medallasDe(d.nivel).length * BONO_MEDALLA_XP;
-  const xpP = (!gano ? 0 : modo === 'liga' ? base.xpPrimal : RECOMPENSAS.captura.xpPrimal) * bonoXp;
+  const bonoXp = 1 + habilidad(d, 'entrenador') + medallasDeHistoria(d.historia).length * BONO_MEDALLA_XP;
+  const xpP = (!gano ? 0 : modo === 'captura' ? RECOMPENSAS.captura.xpPrimal : base.xpPrimal) * bonoXp;
   const xpPrimales: FinBatalla['xpPrimales'] = [];
   for (const uid of d.equipo) {
     const p = d.primales.find((x) => x.uid === uid);
@@ -186,11 +186,36 @@ export function recompensar(d: Domador, gano: boolean, empate: boolean, modo: 'l
     if (d.equipo.length < TAM_EQUIPO && !(esLegendario(capturado) && hayLeg)) d.equipo.push(p.uid);
     if (!d.capturados.includes(capturado)) d.capturados.push(capturado);
   }
-  const nuevas = medallasDe(d.nivel).map((m) => m.id).filter((m) => !antes.includes(m));
-  d.medallas = medallasDe(d.nivel).map((m) => m.id);
   return {
-    gano, empate, motivo: '', trofeos, monedas, bonoDiario: bonoDiario || undefined, xpDomador: xpD, xpPrimales, capturado, medallasNuevas: nuevas, nivelDomador: d.nivel, subioDomador: ups,
+    gano, empate, motivo: '', trofeos, monedas, bonoDiario: bonoDiario || undefined, xpDomador: xpD, xpPrimales, capturado, medallasNuevas: [], nivelDomador: d.nivel, subioDomador: ups,
   };
+}
+
+/** Modo Historia: medalla y premio del gimnasio, o avance en el Alto Mando (si pierdes ahí, vuelves a empezar). */
+export function resultadoHistoria(d: Domador, liderId: string, gano: boolean, res: FinBatalla) {
+  const h = (d.historia ??= historiaVacia());
+  const lider = liderPorId(liderId)!;
+  const esGim = GIMNASIOS.includes(lider);
+  let primeraVez = false, campeon = false, reinicio = false, monedas = 0;
+  if (gano) {
+    if (esGim) {
+      primeraVez = !h.gim.includes(lider.id);
+      if (primeraVez) { h.gim.push(lider.id); res.medallasNuevas = [lider.medalla!]; }
+      monedas = primeraVez ? lider.premio : 30;
+    } else {
+      primeraVez = h.campeon === 0;
+      monedas = primeraVez ? lider.premio : Math.round(lider.premio / 4);
+      h.elite++;
+      if (h.elite >= ALTO_MANDO.length) { h.campeon++; h.elite = 0; campeon = true; }
+    }
+  } else if (!esGim && h.elite > 0) {
+    h.elite = 0;
+    reinicio = true;
+  }
+  d.medallas = medallasDeHistoria(h);
+  d.monedas += monedas;
+  res.monedas += monedas;
+  res.historia = { lider: lider.id, primeraVez, elite: h.elite, campeon, reinicio };
 }
 
 export const avatarDe = (d: Domador) => avatarValido(d.avatar) ?? avatarAleatorio(d.id);

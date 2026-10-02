@@ -5,3 +5,4 @@ export * from './movement';
 export * from './en';
 export * from './avatar';
 export * from './legal';
+export * from './historia';

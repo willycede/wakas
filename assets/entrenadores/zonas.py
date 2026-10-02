@@ -121,6 +121,31 @@ def pixelar(rgba, z, alto, contorno=True):
     return pad, zp
 
 
+def retrato_de(seg, rgba, z):
+    """Retrato: cuadrado alrededor de la cabeza (gorra + pelo + cara), en pixel art."""
+    cab = np.isin(seg, [1, 2, 11]) & (rgba[..., 3] > 0)
+    # solo la parte alta de la figura (el pelo largo o una capa no cuentan como cabeza)
+    fy = np.nonzero(rgba[..., 3] > 0)[0]
+    cab[int(fy.min() + (fy.max() - fy.min()) * 0.3):] = False
+    cy, cx = np.nonzero(cab)
+    if len(cy) < 200:
+        # el modelo no encontró la cabeza: la parte de arriba de la figura
+        fy, fx = np.nonzero(rgba[..., 3] > 0)
+        arriba = fy < fy.min() + (fy.max() - fy.min()) * 0.2
+        cy, cx = fy[arriba], fx[arriba]
+    hx0, hx1, hy0, hy1 = cx.min(), cx.max(), cy.min(), cy.max()
+    lado = int(max(hx1 - hx0, hy1 - hy0) * 1.18)
+    mx, my = (hx0 + hx1) // 2, (hy0 + hy1) // 2 + int(lado * 0.06)
+    sx0, sy0 = mx - lado // 2, my - lado // 2
+    caja = np.zeros((lado, lado, 4), np.uint8)
+    zc = np.zeros((lado, lado), np.uint8)
+    ox0, oy0 = max(0, sx0), max(0, sy0)
+    ox1, oy1 = min(rgba.shape[1], sx0 + lado), min(rgba.shape[0], sy0 + lado)
+    caja[oy0 - sy0:oy1 - sy0, ox0 - sx0:ox1 - sx0] = rgba[oy0:oy1, ox0:ox1]
+    zc[oy0 - sy0:oy1 - sy0, ox0 - sx0:ox1 - sx0] = z[oy0:oy1, ox0:ox1]
+    return pixelar(caja, zc, RETRATO, contorno=False)
+
+
 def guardar_z(zo, path):
     img = np.zeros(zo.shape + (4,), np.uint8)
     img[..., 0] = zo
@@ -145,20 +170,7 @@ def main(ver):
         spr, zs = pixelar(rgba[y0:y1, x0:x1], z[y0:y1, x0:x1], ALTO)
         Image.fromarray(spr, 'RGBA').save(os.path.join(HERE, f'{n}.png'))
         guardar_z(zs, os.path.join(HERE, 'zonas', f'{n}.png'))
-        # retrato: cuadrado alrededor de la cabeza (gorra + pelo + cara)
-        cab = np.isin(seg, [1, 2, 11]) & (a > 0)
-        cy, cx = np.nonzero(cab)
-        hx0, hx1, hy0, hy1 = cx.min(), cx.max(), cy.min(), cy.max()
-        lado = int(max(hx1 - hx0, hy1 - hy0) * 1.18)
-        mx, my = (hx0 + hx1) // 2, (hy0 + hy1) // 2 + int(lado * 0.06)
-        sx0, sy0 = mx - lado // 2, my - lado // 2
-        caja = np.zeros((lado, lado, 4), np.uint8)
-        zc = np.zeros((lado, lado), np.uint8)
-        ox0, oy0 = max(0, sx0), max(0, sy0)
-        ox1, oy1 = min(rgb.shape[1], sx0 + lado), min(rgb.shape[0], sy0 + lado)
-        caja[oy0 - sy0:oy1 - sy0, ox0 - sx0:ox1 - sx0] = rgba[oy0:oy1, ox0:ox1]
-        zc[oy0 - sy0:oy1 - sy0, ox0 - sx0:ox1 - sx0] = z[oy0:oy1, ox0:ox1]
-        ret, zr = pixelar(caja, zc, RETRATO, contorno=False)
+        ret, zr = retrato_de(seg, rgba, z)
         Image.fromarray(ret, 'RGBA').save(os.path.join(HERE, 'retratos', f'{n}.png'))
         guardar_z(zr, os.path.join(HERE, 'retratos', f'{n}_z.png'))
         presentes = [ZONAS[k] for k in range(1, 7) if (zs == k).sum() >= 6]

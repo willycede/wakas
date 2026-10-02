@@ -10,6 +10,7 @@ export interface Avatar {
   arriba?: number;
   abajo?: number;
   zapatos?: number;
+  lider?: string; // solo los líderes del Modo Historia: su propio dibujo (assets/lideres/<id>.png)
 }
 
 export const NUM_ENTRENADORES = 16;

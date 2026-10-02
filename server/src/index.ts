@@ -14,7 +14,10 @@ import type { Domador } from './db';
 import { avatarDe, cobrarMision, costoCaptura, elegirIniciales, fichaDe, perfil, ponerEquipo, puedeCapturar, subirHabilidad } from './progress';
 import { domadores, salas, stats, store } from './services';
 import { paisDe } from './pais';
-import { LEGAL_VERSION } from '../../shared/src';
+import { LEGAL_VERSION, historiaVacia, liderPorId, puedeRetar } from '../../shared/src';
+
+/** ¿Ya existe el dibujo de esta especie? (mientras se generan los últimos) */
+const hayArte = (esp: string) => [resolve(process.cwd(), 'client/dist/criaturas/sprites', esp + '.png'), resolve(process.cwd(), 'assets/criaturas/sprites', esp + '.png')].some((p) => existsSync(p));
 
 const scrypt = promisify(scryptCb) as (pw: string, salt: Buffer, len: number) => Promise<Buffer>;
 const PORT = Number(process.env.PORT ?? 2600);
@@ -398,6 +401,23 @@ async function main() {
     res.json({ ok: true });
   });
 
+  // Modo Historia: retar a un líder de gimnasio, al Alto Mando o a la Campeona
+  app.post('/api/historia/retar', async (req, res) => {
+    const d = await auth(req);
+    if (!d) return res.status(401).json({ error: 'Sesión no válida.' });
+    if (!d.equipo.length) return res.status(400).json({ error: 'Primero elige tus Primales iniciales.' });
+    const lider = liderPorId(String(req.body?.id ?? ''));
+    if (!lider) return res.status(400).json({ error: 'Ese rival no existe.' });
+    const err = puedeRetar(d.historia ?? historiaVacia(), lider.id);
+    if (err) return res.status(400).json({ error: err });
+    // si aún no está el dibujo de algún Primal, pelea con otro de su mismo estilo
+    const equipo = lider.equipo.map((e, i) => ({ uid: 'lider' + i, esp: hayArte(e.esp) ? e.esp : 'hercularmor', nivel: e.nivel }));
+    const rival: Participante = { id: null, nombre: lider.nombre, trofeos: lider.trofeos, equipo, ia: lider.ia,
+      ficha: { avatar: { modelo: 0, lider: lider.id }, nombre: lider.nombre, trofeos: lider.trofeos, nivel: Math.max(...lider.equipo.map((e) => e.nivel)), victorias: 0, derrotas: 0, mejorTrofeos: lider.trofeos,
+        favoritos: equipo.map((e) => ({ esp: e.esp, n: 0 })), ia: true, lider: lider.id } };
+    res.json({ roomId: await crearBatalla({ modo: 'historia', lados: [participante(d), rival], lider: lider.id }) });
+  });
+
   // Captura: pelea contra un Primal salvaje
   app.post('/api/capturar', async (req, res) => {
     const d = await auth(req);
@@ -472,6 +492,7 @@ async function main() {
       if (b.monedas) d.monedas += Number(b.monedas);
       if (b.nivel) d.nivel = Math.max(1, Math.min(50, Number(b.nivel)));
       if (b.trofeos !== undefined) d.trofeos = Number(b.trofeos);
+      if (b.historia) d.historia = b.historia;
       if (b.primal) {
         const esp = String(b.primal);
         if (ESPECIES[esp]) {

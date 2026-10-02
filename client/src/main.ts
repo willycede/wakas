@@ -12,7 +12,9 @@ import { alternarMusica, fanfarria, musicaActiva, tocar } from './musica';
 import { nombreMov } from './i18n';
 import { api, getToken, setToken, spriteUrl } from './api';
 import { BatallaScene } from './battle';
-import { alCambiarIdioma, aplicarHtml, cambiarIdioma, idioma, medalla, t, tError } from './i18n';
+import { alCambiarIdioma, aplicarHtml, bi, cambiarIdioma, idioma, medalla, t, tError } from './i18n';
+import { liderPorId } from '../../shared/src';
+import { retrato } from './avatar';
 import { icono } from './iconos';
 import { Menu, esc, pantallaInicial, toast } from './menu';
 import { Conexion } from './net';
@@ -224,6 +226,13 @@ async function terminar(r: FinBatalla) {
     return DESBLOQUEO.map((nv, i) => (antes < nv && x.nivel >= nv && i > 0 ? `<div class="banner-line">${icono('estrella')}${esc(t('res.newMove', { p: ESPECIES[esp].nombre, m: nombreMov(ESPECIES[esp].movimientos[i]) }))}</div>` : '')).filter(Boolean);
   }).join('');
   const medallas = r.medallasNuevas.map((id) => `<div class="banner-line">${icono('medalla')}${esc(t('res.medal', { n: medalla(id).nombre }))}</div>`).join('');
+  // Modo Historia: lo que dice el líder, avance en el Alto Mando, ¡Campeón!
+  const lider = r.historia ? liderPorId(r.historia.lider) : undefined;
+  const historia = !r.historia || !lider ? '' : `
+    ${r.historia.campeon ? `<div class="res-campeon">${icono('corona')}<b>${t('hist.champion')}</b><small>${t('hist.championTxt')}</small></div>` : ''}
+    <div class="res-lider">${retrato({ modelo: 0, lider: lider.id }, 'grande')}<div><b>${esc(lider.nombre)}</b><p>“${esc(r.gano ? bi(lider.derrota) : bi(lider.frase))}”</p></div></div>
+    ${r.historia.elite && !r.historia.campeon ? `<div class="banner-line">${icono('corona')}${t('hist.eliteProg', { n: r.historia.elite })}</div>` : ''}
+    ${r.historia.reinicio ? `<div class="banner-line info">${t('hist.reset')}</div>` : ''}`;
   const panel = $('result-body');
   panel.style.setProperty('--glow', r.gano ? 'rgba(255,201,64,.35)' : r.empate ? 'rgba(120,180,255,.3)' : 'rgba(150,120,220,.22)');
   $('result').className = `screen res-${clase}`;
@@ -241,7 +250,7 @@ async function terminar(r: FinBatalla) {
     </div>
     ${r.subioDomador ? `<div class="banner-line">${icono('crecer')}${t('res.levelUp', { n: r.nivelDomador })}</div>` : ''}
     ${r.bonoDiario ? `<div class="banner-line">${icono('moneda')}${t('bono.got', { n: r.bonoDiario })}</div>` : ''}
-    ${medallas}${aprendidos}
+    ${historia}${medallas}${aprendidos}
     ${!r.gano && !r.empate ? `<div class="banner-line info">${t('res.noXp')}</div>` : ''}
     ${xp ? `<div class="xp-list">${xp}</div>` : ''}
     <div class="f-acciones">${rivalId ? `<button class="btn ghost" id="btn-amigo">${icono('mas')}${t('amigos.add')}</button>` : ''}

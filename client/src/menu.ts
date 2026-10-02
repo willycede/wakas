@@ -1,13 +1,16 @@
 // Menús fuera de la batalla: Liga, equipo, capturas, Domador (medallas y habilidades) y ranking.
 
 import {
-  ELEMENTOS, ESPECIES, HABILIDADES_DOMADOR, INICIALES, LEGENDARIOS, LIGAS, MEDALLAS, MOVIMIENTOS, NUM_INICIALES, RAREZAS, TAM_EQUIPO, diaActual,
+  ALTO_MANDO, ELEMENTOS, ESPECIES, GIMNASIOS, HABILIDADES_DOMADOR, INICIALES, LEGENDARIOS, LIGAS, MEDALLAS, MOVIMIENTOS, NUM_INICIALES, RAREZAS, TAM_EQUIPO, diaActual,
+  liderPorId, medallasDeHistoria, puedeRetar, type Lider,
   legendarioDelDia, ligaDe, tipos, xpPrimal, type Especie, type Perfil, type Rareza, type Social,
 } from '../../shared/src';
 import { api, spriteUrl } from './api';
 import { emblemaLiga, icono } from './iconos';
 import { abrirBuzon, abrirFicha, editarAvatar, enlazarLegal } from './ficha';
 import { imgAvatar, retrato } from './avatar';
+import { bi } from './i18n';
+import { dialogo } from './ficha';
 import { textoMision, descEspecial, descEspecie, descHab, habDomador, medalla, nombreElemento, nombreEspecial, nombreHab, nombreLiga, nombreMov, nombreRareza, t, tError } from './i18n';
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -49,10 +52,10 @@ function stats(e: Especie) {
   return `<div class="stats">${fila('stat.hp', e.base.vida)}${fila('stat.atk', e.base.ataque)}${fila('stat.def', e.base.defensa)}${fila('stat.spd', e.base.velocidad)}</div>`;
 }
 
-const MEDALLA_EL: Record<string, string> = { brasa: 'fuego', oleaje: 'agua', brote: 'planta', voltio: 'electrico', roca: 'roca', vendaval: 'viento', umbral: 'sombra', primal: 'estrella' };
+const MEDALLA_EL: Record<string, string> = { brasa: 'fuego', oleaje: 'agua', brote: 'planta', voltio: 'electrico', roca: 'roca', vendaval: 'viento', umbral: 'sombra', nevado: 'hielo' };
 const HAB_IC: Record<string, string> = { entrenador: 'crecer', negociante: 'moneda', vinculo: 'corazon', relevo: 'cambiar', instinto: 'mira', capturador: 'chakana' };
 
-type Tab = 'equipo' | 'capturar' | 'batalla' | 'domador' | 'ranking';
+type Tab = 'equipo' | 'capturar' | 'batalla' | 'domador' | 'ranking' | 'historia';
 
 export class Menu {
   perfil!: Perfil;
@@ -98,12 +101,13 @@ export class Menu {
 
   show(tab: Tab) {
     this.tab = tab;
-    document.querySelectorAll<HTMLButtonElement>('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
+    document.querySelectorAll<HTMLButtonElement>('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === (tab === 'historia' ? 'batalla' : tab)));
     const body = $('menu-body');
     if (tab === 'batalla') body.innerHTML = this.batalla();
     if (tab === 'equipo') body.innerHTML = this.equipo();
     if (tab === 'capturar') body.innerHTML = this.capturar();
     if (tab === 'domador') body.innerHTML = this.domador();
+    if (tab === 'historia') { body.innerHTML = this.historia(); body.scrollTop = 0; body.scrollIntoView?.(); }
     if (tab === 'ranking') { body.innerHTML = `<div class="page"><div class="page-head"><h2>${t('ranking.title')}</h2></div><p class="muted">${t('misc.loading')}</p></div>`; void this.ranking(); }
     this.bind();
   }
@@ -130,6 +134,7 @@ export class Menu {
       </div>
       <div class="rules">${t('battle.rules')}</div>
       <div class="rules">${icono('candado')} ${t('hud.capLevel', { n: l.nivelMax })}</div>
+      ${this.tarjetaHistoria()}
       ${this.motivacion()}
       <div class="amis">
         <div class="amis-head">${icono('huella')}<div><b>${t('amis.title')}</b><small>${t('amis.txt')}</small></div></div>
@@ -160,7 +165,7 @@ export class Menu {
     const ligaI = LIGAS.indexOf(ligaDe(p.mejorTrofeos));
     const legs = LEGENDARIOS.filter((x) => p.primales.some((y) => y.esp === x)).length;
     const total = Object.keys(ESPECIES).length;
-    const medallas = MEDALLAS.filter((m) => p.nivel >= m.nivel).length;
+    const medallas = medallasDeHistoria(p.historia).length;
     const meta = (ic: string, nombre: string, v: number, max: number) =>
       `<div class="meta-item">${icono(ic)}<div><small>${nombre}</small><b>${v}<span>/${max}</span></b><div class="m-barra"><div style="width:${(v / max) * 100}%"></div></div></div></div>`;
     return `${bono}
@@ -275,8 +280,9 @@ export class Menu {
       const tr = medalla(m.id);
       const el = MEDALLA_EL[m.id];
       const c = el === 'estrella' ? '#ffc940' : ELEMENTOS[el as keyof typeof ELEMENTOS].color;
-      const got = p.nivel >= m.nivel;
-      return `<div class="medal ${got ? 'got' : ''}" style="--c:${c}" title="${esc(tr.desc)}"><div class="disc">${icono(got ? el : 'candado')}</div>${esc(tr.nombre)}<small>${t('misc.level', { n: m.nivel })}</small></div>`;
+      const got = medallasDeHistoria(p.historia).includes(m.id);
+      const g = GIMNASIOS.find((x) => x.medalla === m.id)!;
+      return `<div class="medal ${got ? 'got' : ''}" style="--c:${c}" title="${esc(tr.desc)}"><div class="disc">${icono(got ? el : 'candado')}</div>${esc(tr.nombre)}<small>${esc(g.nombre)} · ${esc(bi(g.lugar))}</small></div>`;
     }).join('');
     const skills = HABILIDADES_DOMADOR.map((h) => {
       const n = p.habilidades[h.id] ?? 0;
@@ -293,7 +299,7 @@ export class Menu {
         <div class="xpbar"><div style="width:${p.xpSig ? (p.xp / p.xpSig) * 100 : 100}%"></div></div></div></div>
       <div class="row-btns"><button class="btn ghost" id="btn-tuto">${icono('mira')}${t('tuto.again')}</button><button class="btn ghost" id="btn-historia">${icono('estrella')}${t('intro.again')}</button><button class="btn ghost" id="btn-buzon">${icono('carta')}${t('buzon.btn')}</button></div>
       <div class="legales"><a href="#" data-legal="terminos">${t('legal.terminos')}</a> · <a href="#" data-legal="privacidad">${t('legal.privacidad')}</a></div>
-      <div class="section-title">${t('trainer.medals')} · ${MEDALLAS.filter((m) => p.nivel >= m.nivel).length}/${MEDALLAS.length}</div>
+      <div class="section-title">${t('trainer.medals')} · ${medallasDeHistoria(p.historia).length}/${MEDALLAS.length}${p.historia.campeon ? ` <span class="points">${icono('corona')} ${t('hist.times', { n: p.historia.campeon })}</span>` : ''}</div>
       <p class="muted" style="margin-top:-4px;font-size:13px">${t('trainer.medalsHint')}</p>
       <div class="medals">${medals}</div>
       <div class="section-title">${t('trainer.skills')} <span class="points ${pts ? '' : 'none'}">${pts > 1 ? t('trainer.points', { n: pts }) : pts === 1 ? t('trainer.points1') : t('trainer.points0')}</span></div>
@@ -354,6 +360,9 @@ export class Menu {
     body.querySelector<HTMLButtonElement>('#th-avatar')?.addEventListener('click', () => this.personalizar());
     enlazarLegal(body);
     body.querySelector<HTMLButtonElement>('#btn-buzon')?.addEventListener('click', () => abrirBuzon());
+    body.querySelector<HTMLButtonElement>('#btn-hist')?.addEventListener('click', () => this.show('historia'));
+    body.querySelector<HTMLButtonElement>('#hist-volver')?.addEventListener('click', () => this.show('batalla'));
+    body.querySelectorAll<HTMLElement>('[data-lider]').forEach((el) => (el.onclick = () => this.fichaLider(el.dataset.lider!)));
     body.querySelectorAll<HTMLButtonElement>('[data-mision]').forEach((b) => (b.onclick = async () => {
       try { const p = await api.mision(b.dataset.mision!); toast(`+${this.perfil.misiones.find((m) => m.id === b.dataset.mision)?.premio ?? ''} ${t('res.coins')}`); this.setPerfil(p); this.show('batalla'); } catch (e: any) { toast(e.message, true); }
     }));
@@ -362,6 +371,76 @@ export class Menu {
     body.querySelectorAll<HTMLButtonElement>('[data-hab]').forEach((b) => (b.onclick = async () => {
       try { this.setPerfil(await api.habilidad(b.dataset.hab!)); this.show('domador'); } catch (e: any) { toast(e.message, true); }
     }));
+  }
+
+  // ---------------------------------------------------------------- Modo Historia
+  private tarjetaHistoria() {
+    const h = this.perfil.historia;
+    const n = medallasDeHistoria(h).length;
+    const sig = GIMNASIOS.find((g) => !h.gim.includes(g.id)) ?? ALTO_MANDO[h.elite];
+    return `<div class="hist-card">
+      <div class="hc-lider">${retrato({ modelo: 0, lider: sig.id }, 'grande')}</div>
+      <div class="hc-info"><small>${t('hist.sub')}</small><b>${t('hist.title')}</b>
+        <span class="hc-medallas">${MEDALLAS.map((m) => `<i class="${medallasDeHistoria(h).includes(m.id) ? 'on' : ''}" style="--c:${ELEMENTOS[MEDALLA_EL[m.id] as keyof typeof ELEMENTOS].color}"></i>`).join('')}<em>${t('hist.medals', { n })}</em></span></div>
+      <button class="btn primary" id="btn-hist">${icono('espadas')}${t('hist.go')}</button></div>`;
+  }
+
+  private nodoLider(l: Lider, estado: 'hecho' | 'sig' | 'bloq') {
+    const el = ELEMENTOS[l.elemento];
+    return `<button class="hl-nodo ${estado}" data-lider="${l.id}" style="--c:${el.color}">
+      ${retrato({ modelo: 0, lider: l.id }, 'grande')}
+      <div class="hl-info"><b>${esc(l.nombre)}</b><small>${esc(bi(l.titulo))}</small><span>${icono('bandera')}${esc(bi(l.lugar))}</span></div>
+      <div class="hl-el">${[l.elemento, l.elemento2].filter(Boolean).map((e) => `<span class="el mini" style="--c:${ELEMENTOS[e!].color}">${icono(e!)}${nombreElemento(e!)}</span>`).join('')}</div>
+      <div class="hl-estado">${estado === 'hecho' ? `${icono('check')}${t('hist.beaten')}` : estado === 'sig' ? t('hist.next') : `${icono('candado')}`}</div>
+    </button>`;
+  }
+
+  private historia() {
+    const h = this.perfil.historia;
+    const gims = GIMNASIOS.map((g, i) => this.nodoLider(g, h.gim.includes(g.id) ? 'hecho' : i === 0 || h.gim.includes(GIMNASIOS[i - 1].id) ? 'sig' : 'bloq')).join('<i class="hl-linea"></i>');
+    const todas = h.gim.length >= GIMNASIOS.length;
+    const elite = ALTO_MANDO.map((l, i) => this.nodoLider(l, !todas ? 'bloq' : i < h.elite ? 'hecho' : i === h.elite ? 'sig' : 'bloq')).join('<i class="hl-linea"></i>');
+    return `<div class="page historia">
+      <div class="hist-head"><button class="btn ghost" id="hist-volver">← ${t('hist.back')}</button>
+        <div><small>${t('hist.sub')}</small><h2>${t('hist.title')}</h2></div>
+        <span class="hc-medallas grande">${MEDALLAS.map((m) => `<i class="${medallasDeHistoria(h).includes(m.id) ? 'on' : ''}" style="--c:${ELEMENTOS[MEDALLA_EL[m.id] as keyof typeof ELEMENTOS].color}" title="${esc(medalla(m.id).nombre)}"></i>`).join('')}</span></div>
+      <p class="muted hist-tip">${t('hist.tip')}</p>
+      <div class="section-title">${t('hist.gyms')} · ${t('hist.medals', { n: medallasDeHistoria(h).length })}</div>
+      <div class="hl-camino">${gims}</div>
+      <div class="section-title">${icono('corona')} ${t('hist.elite')}${h.campeon ? ` <span class="points">${t('hist.times', { n: h.campeon })}</span>` : ''}</div>
+      <p class="muted hist-tip">${todas ? t('hist.eliteTxt') : t('hist.needMedals')}${todas && h.elite ? ` · <b>${t('hist.eliteProg', { n: h.elite })}</b>` : ''}</p>
+      <div class="hl-camino elite">${elite}</div>
+    </div>`;
+  }
+
+  /** Ficha del líder: su frase, su equipo, el premio y el botón para retarlo. */
+  private fichaLider(id: string) {
+    const l = liderPorId(id)!;
+    const h = this.perfil.historia;
+    const err = puedeRetar(h, id);
+    const vencido = h.gim.includes(id);
+    const esGim = GIMNASIOS.includes(l);
+    const premio = esGim
+      ? (vencido ? t('hist.rewardRematch') : t('hist.reward', { n: l.premio, m: medalla(l.medalla!).nombre }))
+      : t('hist.rewardCoins', { n: h.campeon ? Math.round(l.premio / 4) : l.premio });
+    const equipo = l.equipo.map((e) => `<div class="hl-pri"><img src="${spriteUrl(e.esp)}" alt=""><small>${esc(ESPECIES[e.esp]?.nombre ?? e.esp)} · ${t('misc.level', { n: e.nivel })}</small></div>`).join('');
+    const html = `<div class="hl-ficha" style="--c:${ELEMENTOS[l.elemento].color}">
+        <div class="hl-cuerpo">${imgAvatar({ modelo: 0, lider: l.id })}</div>
+        <div class="hl-datos"><small>${esc(bi(l.titulo))} · ${esc(bi(l.lugar))}</small><h2 class="display">${esc(l.nombre)}</h2>
+          <div class="hl-frase">“${esc(bi(l.frase))}”</div>
+          <div class="section-title">${t('hist.team')}</div><div class="hl-equipo">${equipo}</div>
+          <p class="hl-premio">${icono('moneda')}${esc(premio)}</p>
+          ${err ? `<p class="hl-error">${icono('candado')}${esc(tError(err))}</p>` : ''}</div></div>`;
+    dialogo('', html, err ? [{ texto: t('hist.back'), clase: 'ghost', fn: () => {} }]
+      : [{ texto: t('hist.back'), clase: 'ghost', fn: () => {} }, { texto: `${icono('espadas')}${vencido ? t('hist.rematch') : t('hist.challenge')}`, clase: 'primary big', fn: () => void this.retarLider(id) }]);
+    $('ficha').onclick = (ev) => { if (ev.target === $('ficha')) $('ficha').classList.add('hidden'); };
+  }
+
+  private async retarLider(id: string) {
+    try {
+      const r = await api.historia(id);
+      this.onBatalla(r.roomId);
+    } catch (e: any) { toast(tError(e.message), true); }
   }
 
   /** Ficha de un Primal tuyo con acciones de equipo. */

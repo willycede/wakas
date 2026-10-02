@@ -61,6 +61,14 @@ const T = {
     'hud.emotes': 'Emotes', 'hud.mute': 'Silenciar al rival', 'hud.unmute': 'Ver emotes del rival', 'hud.muted': 'Rival silenciado',
     'fr.gg': 'GG', 'fr.bien': '¡Bien jugado!', 'fr.ups': '¡Ups!', 'fr.gracias': '¡Gracias!', 'fr.vamos': '¡Vamos!', 'fr.wow': '¡Wow!',
     'misc.legendary': 'Legendario', 'misc.arena': 'Estadio',
+    'hist.title': 'Modo Historia', 'hist.sub': 'El Camino del Campeón', 'hist.card': 'Vence a los 8 líderes de gimnasio de Ecuador, gana sus medallas y enfrenta al Alto Mando.',
+    'hist.go': 'Jugar', 'hist.medals': '{n}/8 medallas', 'hist.gyms': 'Gimnasios', 'hist.elite': 'Alto Mando',
+    'hist.eliteTxt': 'Con las 8 medallas, vence a los 4 Élite y a la Campeona seguidos. Si pierdes, vuelves a empezar desde el primero.',
+    'hist.challenge': '¡Retar!', 'hist.rematch': 'Revancha', 'hist.locked': 'Bloqueado', 'hist.beaten': 'Vencido', 'hist.next': '¡Siguiente!', 'hist.team': 'Su equipo',
+    'hist.reward': 'Premio: {n} monedas y la {m}', 'hist.rewardCoins': 'Premio: {n} monedas', 'hist.rewardRematch': 'Revancha: experiencia y 30 monedas', 'hist.back': 'Volver',
+    'hist.champion': '¡NUEVO CAMPEÓN!', 'hist.championTxt': 'Venciste al Alto Mando y a la Campeona. ¡Tu nombre quedó en el Salón de la Fama!',
+    'hist.eliteProg': 'Alto Mando: {n} de 5 vencidos seguidos', 'hist.reset': 'Perdiste en el Alto Mando: vuelves a empezar desde Amaru.', 'hist.times': 'Campeón ×{n}',
+    'hist.needMedals': 'Consigue las 8 medallas para entrar', 'hist.tip': 'Consejo: lleva Primales con ventaja contra el elemento del líder.',
     'legal.falta': 'Para crear tu cuenta debes aceptar los Términos y la Política de Privacidad.', 'legal.titulo': 'Antes de seguir', 'legal.aceptar': 'Acepto',
     'legal.terminos': 'Términos y Condiciones', 'legal.privacidad': 'Política de Privacidad',
     'buzon.btn': 'Buzón de sugerencias', 'buzon.title': 'Buzón de sugerencias', 'buzon.sub': '¿Qué te gustaría ver en Wakas: Monster? Ideas, Primales nuevos, errores… lo leemos todo.',
@@ -150,6 +158,14 @@ const T = {
     'hud.emotes': 'Emotes', 'hud.mute': 'Mute rival', 'hud.unmute': 'Show rival emotes', 'hud.muted': 'Rival muted',
     'fr.gg': 'GG', 'fr.bien': 'Well played!', 'fr.ups': 'Oops!', 'fr.gracias': 'Thanks!', 'fr.vamos': "Let's go!", 'fr.wow': 'Wow!',
     'misc.legendary': 'Legendary', 'misc.arena': 'Stadium',
+    'hist.title': 'Story Mode', 'hist.sub': 'The Road to Champion', 'hist.card': 'Beat the 8 gym leaders of Ecuador, earn their badges and face the Elite Four.',
+    'hist.go': 'Play', 'hist.medals': '{n}/8 badges', 'hist.gyms': 'Gyms', 'hist.elite': 'Elite Four',
+    'hist.eliteTxt': 'With all 8 badges, beat the 4 Elite and the Champion in a row. If you lose, you start again from the first one.',
+    'hist.challenge': 'Challenge!', 'hist.rematch': 'Rematch', 'hist.locked': 'Locked', 'hist.beaten': 'Beaten', 'hist.next': 'Next!', 'hist.team': 'Their team',
+    'hist.reward': 'Reward: {n} coins and the {m}', 'hist.rewardCoins': 'Reward: {n} coins', 'hist.rewardRematch': 'Rematch: experience and 30 coins', 'hist.back': 'Back',
+    'hist.champion': 'NEW CHAMPION!', 'hist.championTxt': 'You beat the Elite Four and the Champion. Your name is in the Hall of Fame!',
+    'hist.eliteProg': 'Elite Four: {n} of 5 beaten in a row', 'hist.reset': 'You lost in the Elite Four: you start again from Amaru.', 'hist.times': 'Champion ×{n}',
+    'hist.needMedals': 'Get all 8 badges to enter', 'hist.tip': 'Tip: bring Primals with an advantage against the leader’s element.',
     'legal.falta': 'To create your account you must accept the Terms and the Privacy Policy.', 'legal.titulo': 'Before you continue', 'legal.aceptar': 'I accept',
     'legal.terminos': 'Terms and Conditions', 'legal.privacidad': 'Privacy Policy',
     'buzon.btn': 'Suggestion box', 'buzon.title': 'Suggestion box', 'buzon.sub': 'What would you like to see in Wakas: Monster? Ideas, new Primals, bugs… we read everything.',
@@ -261,6 +277,9 @@ const ERR: [RegExp, string][] = [
   [/^Solo puedes llevar un legendario/, 'You can only bring one legendary per battle.'],
   [/^Este legendario no aparece hoy/, 'This legendary does not appear today. Come back another day.'],
   [/^Ese código no existe/, 'That code does not exist or has expired.'],
+  [/^Primero vence al gimnasio anterior/, 'First beat the previous gym.'],
+  [/^Necesitas las 8 medallas/, 'You need all 8 badges to challenge the Elite Four.'],
+  [/^En el Alto Mando hay que vencerlos/, 'In the Elite Four you must beat them in order and in a row.'],
   [/^Debes aceptar los Términos/, 'You must accept the Terms and the Privacy Policy.'],
   [/^Ya enviaste 5 mensajes/, 'You already sent 5 messages today. Thanks! Come back tomorrow.'],
   [/^Escribe un poco más/, 'Write a bit more (at least 5 letters).'],
@@ -277,3 +296,6 @@ export function tError(msg: string) {
   for (const [re, out] of ERR) if (re.test(msg)) return msg.replace(re, out).replace(/\.\s*$/, '.');
   return msg;
 }
+
+/** Texto bilingüe de los datos del Modo Historia ([es, en]). */
+export const bi = (par: [string, string]) => (idioma === 'en' ? par[1] : par[0]);

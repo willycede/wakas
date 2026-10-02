@@ -76,6 +76,15 @@ Fuego, Agua, Planta, Eléctrico, Roca, Viento, Sombra, **Hielo** y **Luz**. Un P
 - Caminar: cada pata gira desde la cadera, alternándose, con bote del cuerpo.
 - Estadios dibujados en código (`client/src/arenas.ts`) con público animado, banderines tricolor, focos y un paisaje de fondo.
 
+## 7c. Modo Historia: El Camino del Campeón **[decisión del dueño]**
+- 8 gimnasios por Ecuador, cada uno con un líder de un elemento y su medalla (+3% de experiencia cada una):
+  Nina (Fuego, Baños) · Yaku (Agua, Montañita) · Sacha (Planta, Mindo) · Illapa (Eléctrico, Guayaquil) · Rumi (Roca, Ingapirca) · Wayra (Viento, Quilotoa) · Tuta (Sombra, Cueva de los Tayos) · Rasu (Hielo, Chimborazo).
+- Equipos de 3 Primales que suben de nivel (6–8 en el primero, 31–33 en el último). Se retan en orden.
+- Alto Mando en la Mitad del Mundo: Amaru, Supay, Killa, Kuntur y la Campeona Pacha (nivel 34–40). Requiere las 8 medallas y hay que vencerlos seguidos: si pierdes, vuelves a empezar desde Amaru.
+- Premios: la primera vez, monedas del líder (150 a 900 en gimnasios, 1000–1600 Élite, 3000 la Campeona) y su medalla. Revanchas: experiencia y pocas monedas. Vencer a la Campeona suma "Campeón ×N" al perfil.
+- Las medallas ya no se ganan por nivel: solo venciendo gimnasios.
+- Datos en `shared/src/historia.ts`; arte de líderes en `assets/lideres/` (generar_lideres.py).
+
 ## 11b. Panel del dueño y aspectos legales **[decisión del dueño]**
 - Panel `/admin` privado con clave (ADMIN_KEY) y sesión de 12 h: jugadores en línea, activos, nuevos, batallas, horas, retención, ligas, Primales, **países** (por zona horaria, sin IP) y **horas de juego** (hora local).
 - Buzón de sugerencias (pestaña Entrenador): idea, pedido (Primal o función), error u otro; máximo 5 mensajes por jugador al día. El dueño los lee en `/admin` y los marca como leídos, hechos o archivados.

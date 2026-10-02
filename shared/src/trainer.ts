@@ -29,23 +29,20 @@ export function ligaDe(trofeos: number): Liga {
   return l;
 }
 
-export interface Medalla { id: string; nombre: string; nivel: number; icono: string; desc: string }
+/** Medallas: se ganan venciendo a los líderes de gimnasio del Modo Historia (ver historia.ts). */
+export interface Medalla { id: string; nombre: string; icono: string; desc: string }
 export const MEDALLAS: Medalla[] = [
-  { id: 'brasa', nombre: 'Medalla Brasa', nivel: 3, icono: '🔥', desc: 'Tu primer paso como Entrenador.' },
-  { id: 'oleaje', nombre: 'Medalla Oleaje', nivel: 6, icono: '🌊', desc: 'Ya sabes cambiar de Primal en el momento justo.' },
-  { id: 'brote', nombre: 'Medalla Brote', nivel: 10, icono: '🌱', desc: 'Tu equipo empieza a crecer.' },
-  { id: 'voltio', nombre: 'Medalla Voltio', nivel: 14, icono: '⚡', desc: 'Reflejos de relámpago.' },
-  { id: 'roca', nombre: 'Medalla Roca', nivel: 18, icono: '🪨', desc: 'Firme como una montaña.' },
-  { id: 'vendaval', nombre: 'Medalla Vendaval', nivel: 23, icono: '🌪️', desc: 'Nadie te sigue el ritmo.' },
-  { id: 'umbral', nombre: 'Medalla Umbral', nivel: 28, icono: '🌑', desc: 'Dominas hasta la oscuridad.' },
-  { id: 'primal', nombre: 'Medalla Primal', nivel: 35, icono: '👑', desc: 'Leyenda de la Liga Primal.' },
+  { id: 'brasa', nombre: 'Medalla Brasa', icono: '🔥', desc: 'Venciste a Nina en Baños de Agua Santa.' },
+  { id: 'oleaje', nombre: 'Medalla Oleaje', icono: '🌊', desc: 'Venciste a Yaku en Montañita.' },
+  { id: 'brote', nombre: 'Medalla Brote', icono: '🌱', desc: 'Venciste a Sacha en Mindo.' },
+  { id: 'voltio', nombre: 'Medalla Voltio', icono: '⚡', desc: 'Venciste a Illapa en Guayaquil.' },
+  { id: 'roca', nombre: 'Medalla Roca', icono: '🪨', desc: 'Venciste a Rumi en Ingapirca.' },
+  { id: 'vendaval', nombre: 'Medalla Vendaval', icono: '🌪️', desc: 'Venciste a Wayra en el Quilotoa.' },
+  { id: 'umbral', nombre: 'Medalla Umbral', icono: '🌑', desc: 'Venciste a Tuta en la Cueva de los Tayos.' },
+  { id: 'nevado', nombre: 'Medalla Nevado', icono: '❄️', desc: 'Venciste a Rasu en el Chimborazo.' },
 ];
 /** Cada medalla da +3% de experiencia a tus Primales. */
 export const BONO_MEDALLA_XP = 0.03;
-
-export function medallasDe(nivel: number): Medalla[] {
-  return MEDALLAS.filter((m) => nivel >= m.nivel);
-}
 
 export interface HabilidadDomador { id: string; nombre: string; icono: string; max: number; porNivel: number; desc: string }
 export const HABILIDADES_DOMADOR: HabilidadDomador[] = [

@@ -99,7 +99,7 @@ export class BatallaScene extends Phaser.Scene {
   }
 
   preload() {
-    (this.init0.avatares ?? []).forEach((a) => { if (a && !this.textures.exists(`entrenador_${a.modelo}`)) this.load.image(`entrenador_${a.modelo}`, avatarUrl(a)); });
+    (this.init0.avatares ?? []).forEach((a) => { if (a && !this.textures.exists(`entrenador_${a.lider ?? a.modelo}`)) this.load.image(`entrenador_${a.lider ?? a.modelo}`, avatarUrl(a)); });
     for (const id of Object.keys(ESPECIES)) {
       if (!this.textures.exists('p_' + id)) this.load.image('p_' + id, spriteUrl(id));
       const m = ANIM[id];
@@ -204,7 +204,7 @@ export class BatallaScene extends Phaser.Scene {
     this.entrenadores = [null, null];
     (this.init0.avatares ?? [null, null]).forEach((a, l) => {
       if (!a) return;
-      const key = `entrenador_${a.modelo}`;
+      const key = `entrenador_${a.lider ?? a.modelo}`;
       if (!this.textures.exists(key)) return;
       // dentro de la arena, en el borde de su lado (no estorban: los Primales salen más adelante)
       const x = l === 0 ? 38 : ARENA.w - 38, y = ARENA.h / 2 + 34;

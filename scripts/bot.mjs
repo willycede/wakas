@@ -7,20 +7,20 @@ const WS = BASE.replace(/^http/, 'ws');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 
-async function call(method, path, body, token) {
+export async function call(method, path, body, token) {
   const r = await fetch(BASE + path, { method, headers: { 'content-type': 'application/json', ...(token ? { authorization: 'Bearer ' + token } : {}) }, body: body ? JSON.stringify(body) : undefined });
   const j = await r.json();
   if (!r.ok) throw new Error(path + ': ' + j.error);
   return j;
 }
 
-class Bot {
+export class Bot {
   constructor(name) { this.name = name + Math.random().toString(36).slice(2, 6); }
   async setup(inicial) {
     this.token = (await call('POST', '/api/registro', { usuario: this.name, clave: 'botbot', acepto: '2026-10-02' })).token;
     this.perfil = await call('POST', '/api/inicial', { especies: inicial }, this.token);
   }
-  async pelear(roomId) {
+  async pelear(roomId, quieto = false) {
     const c = new Client(WS);
     const room = await c.joinById(roomId, { token: this.token });
     let init, snap, fin;
@@ -36,7 +36,7 @@ class Bot {
     room.onMessage('fx', (l) => { for (const f of l) if (f.k === 'combo' && f.lado === init?.lado) comboMax = Math.max(comboMax, f.n); });
     const t0 = Date.now();
     while (!fin && Date.now() - t0 < 240_000) {
-      if (snap && init) {
+      if (snap && init && !quieto) {
         const me = snap.u[init.lado], foe = snap.u[1 - init.lado];
         const dx = foe.x - me.x, dy = foe.y - me.y, d = Math.hypot(dx, dy) || 1;
         const ideal = 120;
@@ -105,4 +105,4 @@ async function main() {
   log('OK');
   process.exit(0);
 }
-main().catch((e) => { console.error('FALLO:', e); process.exit(1); });
+if (process.argv[1].endsWith('bot.mjs')) main().catch((e) => { console.error('FALLO:', e); process.exit(1); });

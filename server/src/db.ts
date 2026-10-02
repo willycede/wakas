@@ -1,5 +1,6 @@
 // Almacenamiento: PostgreSQL en Railway (DATABASE_URL) o un archivo JSON en desarrollo local.
 
+import type { ProgresoHistoria } from '../../shared/src';
 import pg from 'pg';
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
@@ -36,6 +37,7 @@ export interface Domador {
   zonaMin?: number; // diferencia horaria del jugador respecto a UTC, en minutos
   legal?: { version: string; fecha: number }; // términos aceptados
   buzon?: { dia: number; n: number }; // mensajes enviados al buzón hoy
+  historia?: ProgresoHistoria; // Modo Historia: gimnasios y Alto Mando
 }
 
 /** Mensaje del buzón de sugerencias. */

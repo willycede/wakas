@@ -12,17 +12,20 @@ type Tipo = 'cuerpo' | 'retrato';
 /** Zonas que se pueden recolorear en cada entrenador (no todos tienen gorra, por ejemplo). */
 export const zonasDe = (modelo: number): ZonaAvatar[] => ((ZONAS as Record<string, string[]>)[modelo] ?? []) as ZonaAvatar[];
 const tieneColores = (a: Avatar) => ZONAS_AVATAR.some((z) => a[z] !== undefined);
-const clave = (a: Avatar) => [a.modelo, ...ZONAS_AVATAR.map((z) => a[z] ?? '')].join('.');
+export const clave = (a: Avatar) => (a.lider ? `L${a.lider}` : [a.modelo, ...ZONAS_AVATAR.map((z) => a[z] ?? '')].join('.'));
 function desdeClave(k: string): Avatar {
+  if (k.startsWith('L')) return { modelo: 0, lider: k.slice(1) };
   const p = k.split('.');
   const a: Avatar = { modelo: Number(p[0]) };
   ZONAS_AVATAR.forEach((z, i) => { if (p[i + 1] !== '' && p[i + 1] !== undefined) a[z] = Number(p[i + 1]); });
   return a;
 }
-const base = (m: number, tipo: Tipo) => (tipo === 'cuerpo' ? `entrenadores/${m}.png${V}` : `entrenadores/retratos/${m}.png${V}`);
+const base = (m: number, tipo: Tipo, lider?: string) => (lider
+  ? (tipo === 'cuerpo' ? `lideres/${lider}.png${V}` : `lideres/retratos/${lider}.png${V}`)
+  : (tipo === 'cuerpo' ? `entrenadores/${m}.png${V}` : `entrenadores/retratos/${m}.png${V}`));
 const mapa = (m: number, tipo: Tipo) => (tipo === 'cuerpo' ? `entrenadores/zonas/${m}.png${V}` : `entrenadores/retratos/${m}_z.png${V}`);
 
-export const avatarUrl = (a: Avatar) => base(a.modelo, 'cuerpo');
+export const avatarUrl = (a: Avatar) => base(a.modelo, 'cuerpo', a.lider);
 
 const imagenes = new Map<string, Promise<HTMLImageElement>>();
 function cargar(url: string) {
@@ -53,6 +56,16 @@ const lienzos = new Map<string, Promise<HTMLCanvasElement>>();
 export function lienzoAvatar(a: Avatar, tipo: Tipo = 'cuerpo'): Promise<HTMLCanvasElement> {
   const k = `${tipo}:${clave(a)}`;
   let p = lienzos.get(k);
+  if (!p && a.lider) {
+    // los líderes no se recolorean
+    p = cargar(base(0, tipo, a.lider)).then((img) => {
+      const c = document.createElement('canvas');
+      c.width = img.width; c.height = img.height;
+      c.getContext('2d')!.drawImage(img, 0, 0);
+      return c;
+    });
+    lienzos.set(k, p);
+  }
   if (!p) {
     p = Promise.all([cargar(base(a.modelo, tipo)), cargar(mapa(a.modelo, tipo))]).then(([img, zon]) => {
       const c = document.createElement('canvas');
@@ -105,12 +118,12 @@ function urlColor(a: Avatar, tipo: Tipo) {
 
 /** <img> del entrenador de cuerpo entero (se recolorea solo). */
 export function imgAvatar(a: Avatar, attrs = '') {
-  return `<img src="${base(a.modelo, 'cuerpo')}" data-av="${clave(a)}" data-tipo="cuerpo" alt="" ${attrs}>`;
+  return `<img src="${base(a.modelo, 'cuerpo', a.lider)}" data-av="${clave(a)}" data-tipo="cuerpo" alt="" ${attrs}>`;
 }
 
 /** Retrato redondo: la cara del entrenador en pixel art. */
 export function retrato(a: Avatar, cls = '') {
-  return `<span class="retrato ${cls}"><img src="${base(a.modelo, 'retrato')}" data-av="${clave(a)}" data-tipo="retrato" alt=""></span>`;
+  return `<span class="retrato ${cls}"><img src="${base(a.modelo, 'retrato', a.lider)}" data-av="${clave(a)}" data-tipo="retrato" alt=""></span>`;
 }
 
 // pone los colores a cada imagen de avatar que aparezca en la página
