@@ -40,6 +40,6 @@ El panel muestra también **de qué país** juegan (aproximado, por la zona hora
 ## Términos y Política de Privacidad
 
 Al crear cuenta, cada jugador marca "Tengo al menos 13 años y acepto los Términos y la Política de Privacidad". Las cuentas antiguas lo aceptan una vez al entrar.
-Los textos están en `shared/src/legal.ts` y son un **borrador**: antes de cobrar con tarjeta, pide a un abogado que los revise y los datos del titular ya están puestos (Willy Cedeño, Jipijapa, willycedenodev@gmail.com). Si los cambias, se sube la fecha de versión y todos los jugadores los aceptan de nuevo.
+Los textos están en `shared/src/legal.ts` y son un **borrador**: antes de cobrar con tarjeta, pide a un abogado que los revise. Los datos del titular ya están puestos (Willy Cedeño, Jipijapa, willycedenodev@gmail.com). Si los cambias, se sube la fecha de versión y todos los jugadores los aceptan de nuevo.
 
 Para ver cómo se verá con muchos jugadores (datos inventados): `/admin?demo`.
