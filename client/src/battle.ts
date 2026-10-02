@@ -196,7 +196,7 @@ export class BatallaScene extends Phaser.Scene {
 
   private zoomJuego() {
     const w = this.scale.width, h = this.scale.height;
-    return Math.min(w / (ARENA.w + 200), h / (ARENA.h + 240));
+    return Math.min(w / (ARENA.w + 80), h / (ARENA.h + 240));
   }
 
   /** Cada Entrenador de pie a su lado de la arena, mirando el combate. */
@@ -206,12 +206,14 @@ export class BatallaScene extends Phaser.Scene {
       if (!a) return;
       const key = `entrenador_${a.modelo}`;
       if (!this.textures.exists(key)) return;
-      const x = l === 0 ? -64 : ARENA.w + 64, y = ARENA.h / 2 + 40;
-      this.add.ellipse(x, y + 2, 60, 18, 0x000000, 0.35).setDepth(y - 1);
-      const img = this.add.image(x, y, key).setOrigin(0.5, 1).setScale(l === 0 ? 1.5 : -1.5, 1.5).setDepth(y);
+      // dentro de la arena, en el borde de su lado (no estorban: los Primales salen más adelante)
+      const x = l === 0 ? 38 : ARENA.w - 38, y = ARENA.h / 2 + 34;
+      this.add.ellipse(x, y + 2, 34, 11, 0x000000, 0.35).setDepth(y - 1);
+      // tamaño proporcional a las criaturas (como un Primal mediano)
+      const img = this.add.image(x, y, key).setOrigin(0.5, 1).setScale(l === 0 ? 0.78 : -0.78, 0.78).setDepth(y);
       // marca de color del lado
-      this.add.ellipse(x, y + 2, 70, 22).setStrokeStyle(3, l === this.init0.lado ? 0x4aa8ff : 0xff5a6a, 0.9).setDepth(y - 1);
-      this.tweens.add({ targets: img, scaleY: 1.54, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      this.add.ellipse(x, y + 2, 40, 13).setStrokeStyle(2, l === this.init0.lado ? 0x4aa8ff : 0xff5a6a, 0.9).setDepth(y - 1);
+      this.tweens.add({ targets: img, scaleY: 0.8, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
       this.entrenadores[l] = img;
     });
   }
@@ -220,7 +222,7 @@ export class BatallaScene extends Phaser.Scene {
   private reaccion(l: number, tipo: 'salta' | 'lamenta') {
     const e = this.entrenadores[l];
     if (!e) return;
-    if (tipo === 'salta') this.tweens.add({ targets: e, y: e.y - 26, duration: 160, yoyo: true, repeat: 1, ease: 'Quad.easeOut' });
+    if (tipo === 'salta') this.tweens.add({ targets: e, y: e.y - 14, duration: 160, yoyo: true, repeat: 1, ease: 'Quad.easeOut' });
     else this.tweens.add({ targets: e, angle: { from: -8, to: 8 }, duration: 90, yoyo: true, repeat: 3, onComplete: () => e.setAngle(0) });
   }
 
