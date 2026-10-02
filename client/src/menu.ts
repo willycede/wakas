@@ -2,14 +2,14 @@
 
 import {
   ALTO_MANDO, ELEMENTOS, ESPECIES, GIMNASIOS, HABILIDADES_DOMADOR, INICIALES, LEGENDARIOS, LIGAS, MEDALLAS, MOVIMIENTOS, NUM_INICIALES, RAREZAS, TAM_EQUIPO, diaActual,
-  liderPorId, medallasDeHistoria, puedeRetar, type Lider,
+  liderPorId, medallasDeHistoria, puedeRetar, TERRENOS, type Lider,
   legendarioDelDia, ligaDe, tipos, xpPrimal, type Especie, type Perfil, type Rareza, type Social,
 } from '../../shared/src';
 import { api, spriteUrl } from './api';
 import { emblemaLiga, icono } from './iconos';
 import { abrirBuzon, abrirFicha, editarAvatar, enlazarLegal } from './ficha';
 import { imgAvatar, retrato } from './avatar';
-import { bi } from './i18n';
+import { bi, textoTerreno } from './i18n';
 import { dialogo } from './ficha';
 import { textoMision, descEspecial, descEspecie, descHab, habDomador, medalla, nombreElemento, nombreEspecial, nombreHab, nombreLiga, nombreMov, nombreRareza, t, tError } from './i18n';
 
@@ -428,6 +428,7 @@ export class Menu {
         <div class="hl-cuerpo">${imgAvatar({ modelo: 0, lider: l.id })}</div>
         <div class="hl-datos"><small>${esc(bi(l.titulo))} · ${esc(bi(l.lugar))}</small><h2 class="display">${esc(l.nombre)}</h2>
           <div class="hl-frase">“${esc(bi(l.frase))}”</div>
+          <div class="hl-terreno">${icono(l.elemento)}<b>${t('hist.terrain')}: ${esc(bi(TERRENOS[l.id].nombre))}</b><small>${textoTerreno(TERRENOS[l.id].efectos).map(esc).join(' · ')}</small></div>
           <div class="section-title">${t('hist.team')}</div><div class="hl-equipo">${equipo}</div>
           <p class="hl-premio">${icono('moneda')}${esc(premio)}</p>
           ${err ? `<p class="hl-error">${icono('candado')}${esc(tError(err))}</p>` : ''}</div></div>`;

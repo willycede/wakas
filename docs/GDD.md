@@ -83,6 +83,10 @@ Fuego, Agua, Planta, Eléctrico, Roca, Viento, Sombra, **Hielo** y **Luz**. Un P
 - Alto Mando en la Mitad del Mundo: Amaru, Supay, Killa, Kuntur y la Campeona Pacha (nivel 34–40). Requiere las 8 medallas y hay que vencerlos seguidos: si pierdes, vuelves a empezar desde Amaru.
 - Premios: la primera vez, monedas del líder (150 a 900 en gimnasios, 1000–1600 Élite, 3000 la Campeona) y su medalla. Revanchas: experiencia y pocas monedas. Vencer a la Campeona suma "Campeón ×N" al perfil.
 - Las medallas ya no se ganan por nivel: solo venciendo gimnasios.
+- Cada gimnasio tiene su estadio temático (volcán en erupción, playa al atardecer, bosque nublado, ciudad eléctrica de noche, ruinas de Ingapirca, cráter del Quilotoa, cueva con cristales, ventisca; templos del Alto Mando) con partículas de ambiente.
+- Terreno: el lugar potencia o debilita ciertos elementos en los DOS lados (ej. Baños: Fuego +20% ataque, Planta/Hielo −15% defensa). Se muestra en la ficha del líder, en la preparación y al empezar la batalla.
+- El líder habla durante el combate (cuando cae un Primal suyo o tuyo, con su último Primal y al usar su especial).
+- Ganar una medalla abre una ceremonia animada (la medalla cae girando, estallido, nombre y estuche de medallas).
 - Datos en `shared/src/historia.ts`; arte de líderes en `assets/lideres/` (generar_lideres.py).
 
 ## 11b. Panel del dueño y aspectos legales **[decisión del dueño]**

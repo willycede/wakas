@@ -1,11 +1,11 @@
 // Preparación antes de la batalla: 20 s para ver la ficha del rival (sus Primales favoritos) y
 // elegir tus 3 Primales. Cada Primal de tu colección muestra si tiene ventaja contra los del rival.
 
-import { liderPorId } from '../../shared/src';
+import { TERRENOS, liderPorId } from '../../shared/src';
 import { ELEMENTOS, ESPECIES, LIGAS, MAX_LEGENDARIOS, MOVIMIENTOS, TAM_EQUIPO, efectividad, esLegendario, ligaDe, tipos, type Elemento, type Perfil, type Preparacion } from '../../shared/src';
 import { spriteUrl } from './api';
 import { abrirFicha } from './ficha';
-import { bi, nombreLiga, t } from './i18n';
+import { bi, nombreLiga, t, textoTerreno } from './i18n';
 import { emblemaLiga, icono } from './iconos';
 import { retrato } from './avatar';
 import { esc, rarezaTag, tiposTag } from './menu';
@@ -49,7 +49,7 @@ export function mostrarPreparacion(net: Conexion, prep: Preparacion, perfil: Per
           <div class="pr-head">${r.salvaje ? '' : r.avatar ? retrato(r.avatar, 'grande') : emblemaLiga(liga.color, LIGAS.indexOf(liga), 54)}
             <div><small>${r.salvaje ? t('dif.wild') : t('prep.rival')}</small><b>${esc(r.nombre)}</b>
               ${r.salvaje ? rarezaTag(r.salvaje) : lider ? `<span class="pr-liga" style="color:${ELEMENTOS[lider.elemento].color}">${esc(bi(lider.titulo))} · ${esc(bi(lider.lugar))}</span>` : `<span class="pr-liga" style="color:${liga.color}">${nombreLiga(liga.id)} · ${icono('trofeo')}${r.trofeos}</span>`}</div></div>
-          ${lider ? `<div class="hl-frase">“${esc(bi(lider.frase))}”</div>` : r.salvaje ? '' : `<div class="pr-stats">
+          ${lider ? `<div class="hl-frase">“${esc(bi(lider.frase))}”</div><div class="hl-terreno">${icono(lider.elemento)}<b>${t('hist.terrain')}: ${esc(bi(TERRENOS[lider.id].nombre))}</b><small>${textoTerreno(TERRENOS[lider.id].efectos).map(esc).join(' · ')}</small></div>` : r.salvaje ? '' : `<div class="pr-stats">
             <div><b>${r.nivel}</b><small>${t('prep.level')}</small></div>
             <div><b>${total ? Math.round((r.victorias / total) * 100) : 0}%</b><small>${t('prep.winrate')}</small></div>
             <div><b>${r.victorias}</b><small>${t('battle.wins')}</small></div>

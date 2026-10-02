@@ -4,8 +4,9 @@
 
 import Phaser from 'phaser';
 import { ARENA, type Obstaculo } from '../../shared/src';
+import { TEMAS_GIM, ambiente, obstaculoGim, rayo, type ObsGim } from './gimnasios';
 
-type Obs = 'roca' | 'tronco' | 'lava' | 'fuente' | 'hielo' | 'pilar' | 'boya';
+type Obs = 'roca' | 'tronco' | 'lava' | 'fuente' | 'hielo' | 'pilar' | 'boya' | ObsGim;
 interface Tema {
   cesped: [number, number];
   linea: number;
@@ -154,7 +155,9 @@ export interface Estadio { animar: (t: number) => void; vitorear: () => void }
 
 /** Dibuja el estadio de una liga y devuelve controles para animar al público. */
 export function dibujarEstadio(s: Phaser.Scene, liga: string, obstaculos: Obstaculo[]): Estadio {
-  const tema = TEMAS[liga] ?? TEMAS.bronce;
+  // los gimnasios del Modo Historia llegan como 'g_<líder>'
+  const gim = liga.startsWith('g_') ? TEMAS_GIM[liga.slice(2)] : undefined;
+  const tema: Tema = gim ? { cesped: [gim.suelo, gim.suelo], linea: gim.linea, pista: gim.pista, muro: gim.muro, gradas: gim.gradas, publico: gim.publico, fuera: gim.fuera, noche: gim.noche, obs: gim.obs, fondo: gim.fondo } : TEMAS[liga] ?? TEMAS.bronce;
   const rnd = new Phaser.Math.RandomDataGenerator(['estadio-' + liga]);
   // exterior y paisaje
   const ext = s.add.graphics().setDepth(-30);
@@ -199,10 +202,10 @@ export function dibujarEstadio(s: Phaser.Scene, liga: string, obstaculos: Obstac
     g.fillStyle(c).fillTriangle(x, H + PISTA + 8, x + 18, H + PISTA + 8, x + 9, H + PISTA - 6);
   }
   // terreno natural (nada de líneas de fútbol): cada liga, un paisaje de Ecuador
-  pintarTerreno(s, g, liga, rnd);
+  if (gim) { g.fillStyle(gim.suelo).fillRect(0, 0, W, H); gim.terreno(g, rnd); } else pintarTerreno(s, g, liga, rnd);
   // borde de rocas alrededor del campo
   const borde = s.add.graphics().setDepth(1);
-  const piedras = TERRENO_BORDE[liga] ?? [0x6a6070, 0x8a8090];
+  const piedras = gim?.borde ?? TERRENO_BORDE[liga] ?? [0x6a6070, 0x8a8090];
   for (let k = 0; k < 2; k++) {
     const lados: [number, number, number, number][] = [[0, 0, W, 0], [0, H, W, H], [0, 0, 0, H], [W, 0, W, H]];
     for (const [x0, y0, x1, y1] of lados) {
@@ -244,6 +247,14 @@ export function dibujarEstadio(s: Phaser.Scene, liga: string, obstaculos: Obstac
     // oscurece un poco la escena: la luz cae sobre el campo
     s.add.rectangle(W / 2, H / 2, W + FUERA * 2, H + FUERA * 2, 0x0a0820, 0.25).setDepth(-17);
   }
+  if (gim) {
+    // ambiente del gimnasio: penumbra, aura del elemento en el centro y partículas
+    if (gim.oscuro) s.add.rectangle(W / 2, H / 2, W + FUERA * 2, H + FUERA * 2, 0x05030a, gim.oscuro).setDepth(2);
+    const aura = s.add.circle(W / 2, H / 2, 150, gim.color, 0.12).setDepth(1).setBlendMode('ADD');
+    s.tweens.add({ targets: aura, scale: 1.25, alpha: 0.05, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    for (const a of gim.amb) ambiente(s, a);
+  }
+  let proxRayo = 0;
   let vitoreo = 0;
   return {
     animar: (t) => {
@@ -252,7 +263,8 @@ export function dibujarEstadio(s: Phaser.Scene, liga: string, obstaculos: Obstac
       capas[0].y = paso ? -2 : 0;
       capas[1].y = paso ? 0 : -2;
       if (rapido) for (const l of luces) l.setAlpha((tema.noche ? 0.85 : 0.35) + Math.sin(t / 60) * 0.12);
-      if (tema.noche && Math.random() < 0.06) flash(s);
+      if (tema.noche && !gim && Math.random() < 0.06) flash(s);
+      if (gim?.rayos && t > proxRayo) { if (proxRayo) rayo(s); proxRayo = t + 2500 + Math.random() * 4000; }
     },
     vitorear: () => { vitoreo = s.time.now + 1600; },
   };
@@ -280,6 +292,7 @@ function obstaculo(s: Phaser.Scene, o: Obstaculo, tipo: Obs) {
     return;
   }
   r.fillStyle(0x000000, 0.25).fillEllipse(o.x + 4, o.y + o.r * 0.6, o.r * 2.2, o.r * 0.9);
+  if (obstaculoGim(r, o.x, o.y, o.r, tipo as ObsGim)) return;
   const piedra = (c0: number, c1: number, c2: number, borde: number) => {
     r.fillStyle(c0).fillCircle(o.x, o.y, o.r);
     r.fillStyle(c1).fillCircle(o.x - o.r * 0.25, o.y - o.r * 0.25, o.r * 0.65);

@@ -68,6 +68,8 @@ const T = {
     'hist.reward': 'Premio: {n} monedas y la {m}', 'hist.rewardCoins': 'Premio: {n} monedas', 'hist.rewardRematch': 'Revancha: experiencia y 30 monedas', 'hist.back': 'Volver',
     'hist.champion': '¡NUEVO CAMPEÓN!', 'hist.championTxt': 'Venciste al Alto Mando y a la Campeona. ¡Tu nombre quedó en el Salón de la Fama!',
     'hist.eliteProg': 'Alto Mando: {n} de 5 vencidos seguidos', 'hist.reset': 'Perdiste en el Alto Mando: vuelves a empezar desde Amaru.', 'hist.times': 'Campeón ×{n}',
+    'hist.terrain': 'Terreno', 'hist.st.ataque': 'ataque', 'hist.st.defensa': 'defensa', 'hist.st.velocidad': 'velocidad', 'hist.st.vida': 'vida', 'hist.allTypes': 'Todos',
+    'med.got': '¡Obtuviste la', 'med.from': 'Venciste a {n} en {l}', 'med.bonus': '+3% de experiencia para tus Primales · {n}/8 medallas',
     'hist.needMedals': 'Consigue las 8 medallas para entrar', 'hist.tip': 'Consejo: lleva Primales con ventaja contra el elemento del líder.',
     'legal.falta': 'Para crear tu cuenta debes aceptar los Términos y la Política de Privacidad.', 'legal.titulo': 'Antes de seguir', 'legal.aceptar': 'Acepto',
     'legal.terminos': 'Términos y Condiciones', 'legal.privacidad': 'Política de Privacidad',
@@ -165,6 +167,8 @@ const T = {
     'hist.reward': 'Reward: {n} coins and the {m}', 'hist.rewardCoins': 'Reward: {n} coins', 'hist.rewardRematch': 'Rematch: experience and 30 coins', 'hist.back': 'Back',
     'hist.champion': 'NEW CHAMPION!', 'hist.championTxt': 'You beat the Elite Four and the Champion. Your name is in the Hall of Fame!',
     'hist.eliteProg': 'Elite Four: {n} of 5 beaten in a row', 'hist.reset': 'You lost in the Elite Four: you start again from Amaru.', 'hist.times': 'Champion ×{n}',
+    'hist.terrain': 'Terrain', 'hist.st.ataque': 'attack', 'hist.st.defensa': 'defense', 'hist.st.velocidad': 'speed', 'hist.st.vida': 'HP', 'hist.allTypes': 'All',
+    'med.got': 'You earned the', 'med.from': 'You beat {n} in {l}', 'med.bonus': '+3% experience for your Primals · {n}/8 badges',
     'hist.needMedals': 'Get all 8 badges to enter', 'hist.tip': 'Tip: bring Primals with an advantage against the leader’s element.',
     'legal.falta': 'To create your account you must accept the Terms and the Privacy Policy.', 'legal.titulo': 'Before you continue', 'legal.aceptar': 'I accept',
     'legal.terminos': 'Terms and Conditions', 'legal.privacidad': 'Privacy Policy',
@@ -299,3 +303,12 @@ export function tError(msg: string) {
 
 /** Texto bilingüe de los datos del Modo Historia ([es, en]). */
 export const bi = (par: [string, string]) => (idioma === 'en' ? par[1] : par[0]);
+
+/** Efectos del terreno de un gimnasio, en texto: "Fuego +20% ataque · Planta, Hielo −15% defensa". */
+export function textoTerreno(efectos: { el: string[]; stat: string; mult: number }[]) {
+  return efectos.map((e) => {
+    const p = Math.round((e.mult - 1) * 100);
+    const els = e.el.length >= 9 ? t('hist.allTypes') : e.el.map((x) => nombreElemento(x as Parameters<typeof nombreElemento>[0])).join(', ');
+    return `${els} ${p > 0 ? '+' : '−'}${Math.abs(p)}% ${t(('hist.st.' + e.stat) as 'hist.st.ataque')}`;
+  });
+}

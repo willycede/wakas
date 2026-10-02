@@ -2,7 +2,7 @@
 // Captura: un Domador contra un Primal salvaje (con IA). 20 ticks por segundo.
 
 import { Room, type Client } from 'colyseus';
-import { ARENA, EMOTES, ESPECIES, FRASES, SEGUNDOS_PREPARACION, TICK_MS, ligaDe, type FichaRival, type FinBatalla, type InicioBatalla, type Obstaculo, type Preparacion } from '../../../shared/src';
+import { ARENA, EMOTES, ESPECIES, FRASES, SEGUNDOS_PREPARACION, TICK_MS, ligaDe, type FichaRival, type FinBatalla, type InicioBatalla, type Obstaculo, type Preparacion, multTerreno } from '../../../shared/src';
 import type { Domador } from '../db';
 import { avanzarMision, equipoValido, mods, recompensar, resultadoHistoria } from '../progress';
 import { domadores, salas, stats, store } from '../services';
@@ -73,6 +73,13 @@ export class BatallaRoom extends Room {
     if (this.b) return;
     const opts = this.opts;
     const equipos = opts.lados.map((p) => p.equipo.map((e) => crearUnidad(e.esp, Math.min(e.nivel, this.nivelMax), this.modsDe(p)))) as [Unidad[], Unidad[]];
+    // Modo Historia: el terreno del gimnasio afecta a los Primales de los dos lados
+    if (opts.lider) for (const u of equipos.flat()) {
+      const e = ESPECIES[u.esp];
+      const m = multTerreno(opts.lider, [e.elemento, ...(e.elemento2 ? [e.elemento2] : [])]);
+      u.ataque *= m.ataque; u.defensa *= m.defensa; u.velocidad *= m.velocidad;
+      u.mhp = Math.round(u.mhp * m.vida); u.hp = u.mhp;
+    }
     this.b = new Batalla(equipos[0], equipos[1], this.modsDe(opts.lados[0]), this.modsDe(opts.lados[1]), opts.modo === 'tutorial' ? [] : obstaculos(ligaDe(Math.max(opts.lados[0].trofeos, opts.lados[1].trofeos)).id));
     opts.lados.forEach((p, l) => { if (p.ia !== undefined && !p.pasivo) this.ias.push(new IA(this.b, l as 0 | 1, p.ia)); });
     if (opts.modo === 'tutorial') {
@@ -211,6 +218,7 @@ export class BatallaRoom extends Room {
       nivelMax: this.nivelMax < 99 ? this.nivelMax : undefined,
       // el salvaje no tiene Entrenador
       avatares: o.lados.map((p) => (p.ficha?.salvaje ? null : p.ficha?.avatar ?? null)) as InicioBatalla['avatares'],
+      lider: o.lider,
     };
     c.send('inicio', init);
     // tutorial: empieza en cuanto entra

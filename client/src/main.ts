@@ -13,7 +13,8 @@ import { nombreMov } from './i18n';
 import { api, getToken, setToken, spriteUrl } from './api';
 import { BatallaScene } from './battle';
 import { alCambiarIdioma, aplicarHtml, bi, cambiarIdioma, idioma, medalla, t, tError } from './i18n';
-import { liderPorId } from '../../shared/src';
+import { liderPorId, medallasDeHistoria } from '../../shared/src';
+import { ceremoniaMedalla } from './medalla';
 import { retrato } from './avatar';
 import { icono } from './iconos';
 import { Menu, esc, pantallaInicial, toast } from './menu';
@@ -199,7 +200,10 @@ async function terminar(r: FinBatalla) {
   // primero, la pantalla de evolución de cada Primal que evolucionó
   const evos = r.xpPrimales.filter((x) => x.evoluciono).map((x) => ({ de: x.esp, a: x.evoluciono!, nivel: x.nivel }));
   if (evos.length) await mostrarEvoluciones(evos);
-  fanfarria(r.gano ? 'victoria' : 'derrota', 'menu');
+  // Modo Historia: ceremonia de la medalla nueva (con su propia fanfarria)
+  const nueva = r.historia ? r.medallasNuevas[0] : undefined;
+  if (nueva) await ceremoniaMedalla(nueva, menu.perfil?.historia ? medallasDeHistoria(menu.perfil.historia).filter((m) => m !== nueva) : []);
+  else fanfarria(r.gano ? 'victoria' : 'derrota', 'menu');
   const clase = r.empate ? 'draw' : r.gano ? 'win' : 'lose';
   const titulo = r.empate ? t('res.draw') : r.gano ? (r.capturado ? t('res.caught') : t('res.win')) : t('res.lose');
   const motivo = r.motivo === 'tiempo' ? t('res.time') : r.motivo === 'abandono' ? (r.gano ? t('res.left') : '') : r.motivo === 'rendicion' ? t('res.surrender') : '';

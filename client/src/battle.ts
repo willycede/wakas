@@ -14,7 +14,9 @@ import { spriteUrl, V } from './api';
 import type { Conexion } from './net';
 import * as FX from './efectos';
 import { icono } from './iconos';
-import { descEspecial, descMov, nombreArena, nombreElemento, nombreEspecial, nombreEspecialId, nombreMov, t } from './i18n';
+import { bi, descEspecial, descMov, nombreArena, nombreElemento, nombreEspecial, nombreEspecialId, nombreMov, t, textoTerreno } from './i18n';
+import { DIALOGOS, TERRENOS, liderPorId } from '../../shared/src';
+import { retrato } from './avatar';
 import { dibujarEstadio, type Estadio } from './arenas';
 import { avatarUrl, lienzoAvatar } from './avatar';
 import { TONO_LEGENDARIO, alternarMusica, tocar } from './musica';
@@ -122,7 +124,8 @@ export class BatallaScene extends Phaser.Scene {
       g.destroy();
     }
     FX.crearTexturas(this);
-    this.estadio = dibujarEstadio(this, this.init0.liga, this.init0.obstaculos);
+    this.estadio = dibujarEstadio(this, this.init0.lider ? 'g_' + this.init0.lider : this.init0.liga, this.init0.obstaculos);
+    this.liderCaidos = 0; this.liderEspeciales = 0;
     this.ponerEntrenadores();
     this.gAvisos = this.add.graphics().setDepth(1);
     this.gApunte = this.add.graphics().setDepth(4000);
@@ -245,7 +248,38 @@ export class BatallaScene extends Phaser.Scene {
     cam.centerOn(ARENA.w / 2, ARENA.h / 2 - 260);
     cam.zoomTo(z, 2300, 'Sine.easeInOut');
     cam.pan(ARENA.w / 2, ARENA.h / 2 - 15, 2300, 'Sine.easeInOut');
-    $('bh-banner').innerHTML = `<div class="banner arena"><small>${t('misc.arena')}</small>${nombreArena(this.init0.liga)}</div>`;
+    const lider = this.init0.lider ? liderPorId(this.init0.lider) : undefined;
+    const ter = lider ? TERRENOS[lider.id] : undefined;
+    if (lider && ter) {
+      // gimnasio: su lugar, el terreno y lo que cambia para los Primales de los dos lados
+      $('bh-banner').innerHTML = `<div class="banner arena" style="--c:${ELEMENTOS[lider.elemento].color}"><small>${esc(bi(lider.lugar))}</small>${esc(bi(ter.nombre))}</div>`;
+      const el = $('bh-terreno');
+      el.innerHTML = `<b>${icono(lider.elemento)}${t('hist.terrain')}: ${esc(bi(ter.nombre))}</b>${textoTerreno(ter.efectos).map((x) => `<span>${esc(x)}</span>`).join('')}`;
+      el.classList.remove('hidden', 'mini');
+      el.style.setProperty('--c', ELEMENTOS[lider.elemento].color);
+      this.time.delayedCall(7000, () => el.classList.add('mini'));
+    } else $('bh-banner').innerHTML = `<div class="banner arena"><small>${t('misc.arena')}</small>${nombreArena(this.init0.liga)}</div>`;
+  }
+
+  // ---------------------------------------------------------------- Modo Historia: el líder habla
+  private liderCaidos = 0;
+  private liderEspeciales = 0;
+  private decir(clave: 'koSuyo' | 'koTuyo' | 'ultimo' | 'especial', espera = 0) {
+    const id = this.init0.lider;
+    const d = id ? DIALOGOS[id] : undefined;
+    if (!id || !d) return;
+    this.time.delayedCall(espera, () => {
+      const el = $('bh-dialogo');
+      const texto = bi(d[clave]);
+      el.innerHTML = `${retrato({ modelo: 0, lider: id }, 'grande')}<div><b>${esc(liderPorId(id)!.nombre)}</b><p></p></div>`;
+      el.classList.remove('hidden');
+      el.classList.remove('sale'); void el.offsetWidth; el.classList.add('entra');
+      // texto que se escribe letra por letra
+      const p = el.querySelector('p')!;
+      let i = 0;
+      const escribir = this.time.addEvent({ delay: 28, repeat: texto.length - 1, callback: () => { p.textContent = texto.slice(0, ++i); } });
+      this.time.delayedCall(texto.length * 28 + 2600, () => { if (p.isConnected && i >= texto.length) { el.classList.add('sale'); } escribir.remove(); });
+    });
   }
 
   private escala(_esp: string) {
@@ -692,6 +726,7 @@ export class BatallaScene extends Phaser.Scene {
         break;
       }
       case 'especial':
+        if (this.init0.lider && f.lado !== this.init0.lado && this.liderEspeciales++ < 2) this.decir('especial');
         this.reaccion(f.lado, 'salta');
         if (f.lado === this.init0.lado) this.tutoPaso('especial');
         this.especial(f);
@@ -709,6 +744,14 @@ export class BatallaScene extends Phaser.Scene {
         break;
       }
       case 'caido':
+        if (this.init0.lider) {
+          if (f.lado === this.init0.lado) this.decir('koTuyo', 500);
+          else {
+            this.liderCaidos++;
+            const total = liderPorId(this.init0.lider)?.equipo.length ?? 3;
+            this.decir(this.liderCaidos === total - 1 ? 'ultimo' : 'koSuyo', 500);
+          }
+        }
         this.reaccion(f.lado, 'lamenta');
         this.reaccion(1 - f.lado, 'salta');
         this.estadio?.vitorear();
@@ -908,6 +951,8 @@ export class BatallaScene extends Phaser.Scene {
     if (tactil) this.armarJoystick();
     $('bh-center').textContent = '';
     $('bh-banner').innerHTML = '';
+    $('bh-dialogo').classList.add('hidden');
+    $('bh-terreno').classList.add('hidden');
     $('bh-emote-btn').innerHTML = icono('emote');
     $('bh-emote-btn').onpointerdown = (ev) => { ev.stopPropagation(); this.panelEmotes(); };
     $('bh-emotes').classList.add('hidden');

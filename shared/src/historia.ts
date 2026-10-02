@@ -106,3 +106,63 @@ export function puedeRetar(h: ProgresoHistoria, id: string): string | null {
   if (h.gim.length < GIMNASIOS.length) return 'Necesitas las 8 medallas para retar al Alto Mando.';
   return ei === h.elite ? null : 'En el Alto Mando hay que vencerlos en orden y seguidos.';
 }
+
+// ------------------------------------------------------------------ terreno de cada gimnasio
+// El lugar potencia o debilita a los Primales de ciertos elementos: a los del líder… y a los tuyos.
+export type StatTerreno = 'ataque' | 'defensa' | 'velocidad' | 'vida';
+export interface EfectoTerreno { el: Elemento[]; stat: StatTerreno; mult: number }
+export interface Terreno { nombre: [string, string]; efectos: EfectoTerreno[] }
+
+export const TERRENOS: Record<string, Terreno> = {
+  nina: { nombre: ['Calor volcánico', 'Volcanic heat'], efectos: [{ el: ['fuego'], stat: 'ataque', mult: 1.2 }, { el: ['planta', 'hielo'], stat: 'defensa', mult: 0.85 }] },
+  yaku: { nombre: ['Marea alta', 'High tide'], efectos: [{ el: ['agua'], stat: 'velocidad', mult: 1.2 }, { el: ['agua'], stat: 'ataque', mult: 1.1 }, { el: ['fuego'], stat: 'ataque', mult: 0.85 }] },
+  sacha: { nombre: ['Bosque nublado', 'Cloud forest'], efectos: [{ el: ['planta'], stat: 'defensa', mult: 1.2 }, { el: ['planta'], stat: 'vida', mult: 1.1 }, { el: ['fuego'], stat: 'ataque', mult: 0.9 }] },
+  illapa: { nombre: ['Red eléctrica', 'Power grid'], efectos: [{ el: ['electrico'], stat: 'velocidad', mult: 1.25 }, { el: ['agua'], stat: 'defensa', mult: 0.85 }] },
+  rumi: { nombre: ['Muros de Ingapirca', 'Walls of Ingapirca'], efectos: [{ el: ['roca'], stat: 'defensa', mult: 1.25 }, { el: ['viento'], stat: 'ataque', mult: 0.9 }] },
+  wayra: { nombre: ['Vendaval del cráter', 'Crater gale'], efectos: [{ el: ['viento'], stat: 'velocidad', mult: 1.2 }, { el: ['viento'], stat: 'ataque', mult: 1.1 }, { el: ['roca'], stat: 'velocidad', mult: 0.88 }] },
+  tuta: { nombre: ['Oscuridad total', 'Total darkness'], efectos: [{ el: ['sombra'], stat: 'ataque', mult: 1.2 }, { el: ['luz'], stat: 'ataque', mult: 0.85 }] },
+  rasu: { nombre: ['Ventisca', 'Blizzard'], efectos: [{ el: ['hielo'], stat: 'defensa', mult: 1.2 }, { el: ['hielo'], stat: 'ataque', mult: 1.1 }, { el: ['fuego'], stat: 'vida', mult: 0.88 }] },
+  amaru: { nombre: ['Templo del río', 'River temple'], efectos: [{ el: ['agua', 'planta'], stat: 'vida', mult: 1.12 }] },
+  supay: { nombre: ['Diablada en llamas', 'Blazing diablada'], efectos: [{ el: ['sombra', 'fuego'], stat: 'ataque', mult: 1.12 }] },
+  killa: { nombre: ['Luna llena', 'Full moon'], efectos: [{ el: ['luz', 'hielo'], stat: 'defensa', mult: 1.12 }] },
+  kuntur: { nombre: ['Cumbre del cóndor', 'Condor’s peak'], efectos: [{ el: ['viento', 'roca'], stat: 'velocidad', mult: 1.12 }] },
+  pacha: { nombre: ['Línea del Ecuador', 'The Equator line'], efectos: [{ el: ['fuego', 'agua', 'planta', 'electrico', 'roca', 'viento', 'sombra', 'hielo', 'luz'], stat: 'vida', mult: 1.1 }] },
+};
+
+/** Multiplicadores del terreno para un Primal con esos elementos. */
+export function multTerreno(liderId: string | undefined, elementos: Elemento[]): Record<StatTerreno, number> {
+  const r = { ataque: 1, defensa: 1, velocidad: 1, vida: 1 };
+  for (const e of (liderId && TERRENOS[liderId]?.efectos) || []) if (e.el.some((x) => elementos.includes(x))) r[e.stat] *= e.mult;
+  return r;
+}
+
+// ------------------------------------------------------------------ lo que dicen durante la batalla
+export interface Dialogos { koSuyo: [string, string]; koTuyo: [string, string]; ultimo: [string, string]; especial: [string, string] }
+export const DIALOGOS: Record<string, Dialogos> = {
+  nina: { koSuyo: ['¡Uf! Esa me quemó a mí…', 'Ouch! That one burned me…'], koTuyo: ['¡Directo a la lava!', 'Straight into the lava!'],
+    ultimo: ['¡Tunguri, el volcán cuenta contigo!', 'Tunguri, the volcano is counting on you!'], especial: ['¡Que erupcione el Tungurahua!', 'Let the Tungurahua erupt!'] },
+  yaku: { koSuyo: ['Esa ola me revolcó…', 'That wave wiped me out…'], koTuyo: ['¡Te llevó la corriente!', 'The current took you!'],
+    ultimo: ['Última ola, ¡a todo o nada!', 'Last wave, all or nothing!'], especial: ['¡Marejada!', 'Swell incoming!'] },
+  sacha: { koSuyo: ['Mis flores… ¡pero volverán a crecer!', 'My flowers… but they’ll grow back!'], koTuyo: ['¡El bosque siempre gana!', 'The forest always wins!'],
+    ultimo: ['Cacaoso, ¡enraízate y no te muevas!', 'Cacaoso, take root and hold on!'], especial: ['¡Que florezca Mindo!', 'Let Mindo bloom!'] },
+  illapa: { koSuyo: ['¡Cortocircuito! No lo vi venir.', 'Short circuit! Didn’t see that coming.'], koTuyo: ['¡Desconectado!', 'Disconnected!'],
+    ultimo: ['Voltaje al máximo, ¡Aullatrueno!', 'Max voltage, Aullatrueno!'], especial: ['¡Rayo de Illapa!', 'Illapa’s thunderbolt!'] },
+  rumi: { koSuyo: ['Una piedra cayó… quedan muchas.', 'One stone fell… many remain.'], koTuyo: ['¡Aplastado como adobe!', 'Crushed like adobe!'],
+    ultimo: ['Martillazo, eres el último muro.', 'Martillazo, you are the last wall.'], especial: ['¡Que tiemble Ingapirca!', 'Let Ingapirca shake!'] },
+  wayra: { koSuyo: ['El viento cambió de dirección…', 'The wind changed direction…'], koTuyo: ['¡Volando al cráter!', 'Flying into the crater!'],
+    ultimo: ['Fragatormenta, ¡llévate todo!', 'Fragatormenta, sweep it all away!'], especial: ['¡Vendaval del Quilotoa!', 'Quilotoa gale!'] },
+  tuta: { koSuyo: ['La sombra se desvanece… por ahora.', 'The shadow fades… for now.'], koTuyo: ['La oscuridad te tragó.', 'The darkness swallowed you.'],
+    ultimo: ['Ayahuma… muéstrales el miedo.', 'Ayahuma… show them fear.'], especial: ['¡Que se apaguen las luces!', 'Lights out!'] },
+  rasu: { koSuyo: ['Ja, ja… tienes sangre caliente.', 'Ha ha… you’ve got warm blood.'], koTuyo: ['¡Congelado en la cumbre!', 'Frozen at the summit!'],
+    ultimo: ['Cotopaxor, defiende la montaña.', 'Cotopaxor, defend the mountain.'], especial: ['¡Ventisca del Chimborazo!', 'Chimborazo blizzard!'] },
+  amaru: { koSuyo: ['El río se desvía… no se detiene.', 'The river turns… it never stops.'], koTuyo: ['¡Atrapado por la serpiente!', 'Caught by the serpent!'],
+    ultimo: ['Yakuarón, que crezca la creciente.', 'Yakuarón, let the flood rise.'], especial: ['¡Abrazo de Amaru!', 'Amaru’s embrace!'] },
+  supay: { koSuyo: ['¡Ja! Eso apenas me hizo cosquillas… creo.', 'Ha! That barely tickled… I think.'], koTuyo: ['¡Al infierno de la diablada!', 'Into the diablada’s inferno!'],
+    ultimo: ['¡Último baile, Chusikrón!', 'Last dance, Chusikrón!'], especial: ['¡Que arda la máscara!', 'Let the mask burn!'] },
+  killa: { koSuyo: ['Un eclipse pasajero.', 'A passing eclipse.'], koTuyo: ['La Luna no perdona.', 'The Moon does not forgive.'],
+    ultimo: ['Gallofierro, brilla por los dos.', 'Gallofierro, shine for both of us.'], especial: ['¡Luz de luna llena!', 'Full moonlight!'] },
+  kuntur: { koSuyo: ['Una pluma menos… el cóndor sigue volando.', 'One feather less… the condor still flies.'], koTuyo: ['¡Desde lo alto todo se ve pequeño!', 'From up here everything looks small!'],
+    ultimo: ['Quindestral, ¡el cielo es nuestro!', 'Quindestral, the sky is ours!'], especial: ['¡Picada del cóndor!', 'Condor dive!'] },
+  pacha: { koSuyo: ['Bien… ahora sí me estás asustando.', 'Good… now you are actually scaring me.'], koTuyo: ['Así se pelea en la Mitad del Mundo.', 'That is how we fight at the Middle of the World.'],
+    ultimo: ['Mi último Primal… ¡demos un final de leyenda!', 'My last Primal… let us make it legendary!'], especial: ['¡Por el Sol y la Tierra!', 'For the Sun and the Earth!'] },
+};

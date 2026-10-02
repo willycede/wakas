@@ -97,6 +97,7 @@ export interface InicioBatalla {
   liga: string; // estadio de la batalla (según los trofeos)
   nivelMax?: number; // en la Liga: nivel máximo con el que pelean los Primales
   avatares: [Avatar | null, Avatar | null]; // los Entrenadores a cada lado de la arena (null = Primal salvaje)
+  lider?: string; // Modo Historia: gimnasio (estadio temático, terreno y diálogos)
 }
 
 /** Lo que se sabe del rival antes de la batalla. */
