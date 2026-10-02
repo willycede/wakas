@@ -9,9 +9,8 @@ Batallas de criaturas en tiempo real con ligas mundiales. Se juega en el navegad
 3. Toca **New Project → Deploy from GitHub repo** y elige `primal-clash`.
 4. En ese mismo proyecto toca **New → Database → PostgreSQL**. Así se guardan las cuentas y los trofeos.
 5. Abre el servicio del juego → pestaña **Variables** → **New Variable → Add Reference** → elige `DATABASE_URL` de la base de datos.
-6. Pestaña **Settings** del servicio:
-   - **Build Command:** `npm run build`
-   - **Start Command:** `npm start`
+6. Pestaña **Variables** → **New Variable**: `ADMIN_KEY` = una clave larga que solo tú sepas (es la clave del panel `/admin`).
+   (Los comandos para construir y arrancar ya vienen en el archivo `railway.json`; no hay que escribirlos.)
 7. Pestaña **Settings → Networking → Generate Domain**. Ese es el enlace del juego: ¡compártelo!
 
 Cada vez que haya cambios en GitHub, Railway lo vuelve a subir solo.
