@@ -16,6 +16,7 @@ import * as FX from './efectos';
 import { icono } from './iconos';
 import { bi, descEspecial, descMov, nombreArena, nombreElemento, nombreEspecial, nombreEspecialId, nombreMov, t, textoTerreno } from './i18n';
 import { DIALOGOS, TERRENOS, liderPorId } from '../../shared/src';
+import { TEMAS_GIM } from './gimnasios';
 import { retrato } from './avatar';
 import { dibujarEstadio, type Estadio } from './arenas';
 import { avatarUrl, lienzoAvatar } from './avatar';
@@ -124,7 +125,8 @@ export class BatallaScene extends Phaser.Scene {
       g.destroy();
     }
     FX.crearTexturas(this);
-    this.estadio = dibujarEstadio(this, this.init0.lider ? 'g_' + this.init0.lider : this.init0.liga, this.init0.obstaculos);
+    // los gimnasios tienen su estadio; los entrenadores de ruta pelean en el estadio de su liga
+    this.estadio = dibujarEstadio(this, this.init0.lider && TEMAS_GIM[this.init0.lider] ? 'g_' + this.init0.lider : this.init0.liga, this.init0.obstaculos);
     this.liderCaidos = 0; this.liderEspeciales = 0;
     this.ponerEntrenadores();
     this.gAvisos = this.add.graphics().setDepth(1);

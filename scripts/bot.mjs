@@ -20,7 +20,8 @@ export class Bot {
     this.token = (await call('POST', '/api/registro', { usuario: this.name, clave: 'botbot', acepto: '2026-10-02' })).token;
     this.perfil = await call('POST', '/api/inicial', { especies: inicial }, this.token);
   }
-  async pelear(roomId, quieto = false) {
+  /** elegir(snap, lado) -> slot al que conviene cambiar (o null): para que el bot cambie con ventaja como una persona */
+  async pelear(roomId, quieto = false, elegir = null) {
     const c = new Client(WS);
     const room = await c.joinById(roomId, { token: this.token });
     let init, snap, fin;
@@ -49,7 +50,8 @@ export class Bot {
         if (Math.random() < 0.004) room.send('emote', { id: 'gg' });
         else if (encara) room.send('acc', { i: Math.random() < 0.5 ? 0 : i });
         // cambia de Primal de vez en cuando
-        if (Math.random() < 0.01) room.send('cambio', { slot: Math.floor(Math.random() * snap.eq[init.lado].esp.length) });
+        if (elegir) { const k = elegir(snap, init.lado); if (k !== null && k !== undefined) room.send('cambio', { slot: k }); }
+        else if (Math.random() < 0.01) room.send('cambio', { slot: Math.floor(Math.random() * snap.eq[init.lado].esp.length) });
       }
       await sleep(100);
     }

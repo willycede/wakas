@@ -61,8 +61,8 @@ export function puntosHabilidad(nivel: number) {
 
 // Recompensas de batalla
 export const RECOMPENSAS = {
-  victoria: { trofeos: 30, xpDomador: 60, monedas: 25, xpPrimal: 120 },
-  derrota: { trofeos: -18, xpDomador: 0, monedas: 6, xpPrimal: 0 }, // perder no da experiencia
+  victoria: { trofeos: 30, xpDomador: 60, monedas: 75, xpPrimal: 120 },
+  derrota: { trofeos: -18, xpDomador: 18, monedas: 20, xpPrimal: 36 }, // perder da un 30% de la experiencia
   captura: { xpDomador: 40, xpPrimal: 80 },
 };
 export const TAM_EQUIPO = 3; // Primales por batalla

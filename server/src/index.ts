@@ -14,7 +14,7 @@ import type { Domador } from './db';
 import { avatarDe, cobrarMision, costoCaptura, elegirIniciales, fichaDe, perfil, ponerEquipo, puedeCapturar, subirHabilidad } from './progress';
 import { domadores, salas, stats, store } from './services';
 import { paisDe } from './pais';
-import { LEGAL_VERSION, historiaVacia, liderPorId, puedeRetar } from '../../shared/src';
+import { LEGAL_VERSION, avatarLider, historiaVacia, liderPorId, puedeRetar } from '../../shared/src';
 
 /** ¿Ya existe el dibujo de esta especie? (mientras se generan los últimos) */
 const hayArte = (esp: string) => [resolve(process.cwd(), 'client/dist/criaturas/sprites', esp + '.png'), resolve(process.cwd(), 'assets/criaturas/sprites', esp + '.png')].some((p) => existsSync(p));
@@ -413,7 +413,7 @@ async function main() {
     // si aún no está el dibujo de algún Primal, pelea con otro de su mismo estilo
     const equipo = lider.equipo.map((e, i) => ({ uid: 'lider' + i, esp: hayArte(e.esp) ? e.esp : 'hercularmor', nivel: e.nivel }));
     const rival: Participante = { id: null, nombre: lider.nombre, trofeos: lider.trofeos, equipo, ia: lider.ia,
-      ficha: { avatar: { modelo: 0, lider: lider.id }, nombre: lider.nombre, trofeos: lider.trofeos, nivel: Math.max(...lider.equipo.map((e) => e.nivel)), victorias: 0, derrotas: 0, mejorTrofeos: lider.trofeos,
+      ficha: { avatar: avatarLider(lider), nombre: lider.nombre, trofeos: lider.trofeos, nivel: Math.max(...lider.equipo.map((e) => e.nivel)), victorias: 0, derrotas: 0, mejorTrofeos: lider.trofeos,
         favoritos: equipo.map((e) => ({ esp: e.esp, n: 0 })), ia: true, lider: lider.id } };
     res.json({ roomId: await crearBatalla({ modo: 'historia', lados: [participante(d), rival], lider: lider.id }) });
   });

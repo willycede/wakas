@@ -86,6 +86,8 @@ Fuego, Agua, Planta, Eléctrico, Roca, Viento, Sombra, **Hielo** y **Luz**. Un P
 - Cada gimnasio tiene su estadio temático (volcán en erupción, playa al atardecer, bosque nublado, ciudad eléctrica de noche, ruinas de Ingapirca, cráter del Quilotoa, cueva con cristales, ventisca; templos del Alto Mando) con partículas de ambiente.
 - Terreno: el lugar potencia o debilita ciertos elementos en los DOS lados (ej. Baños: Fuego +20% ataque, Planta/Hielo −15% defensa). Se muestra en la ficha del líder, en la preparación y al empezar la batalla.
 - El líder habla durante el combate (cuando cae un Primal suyo o tuyo, con su último Primal y al usar su especial).
+- Entrenadores de ruta: 2 en el camino hacia cada gimnasio (desde Yaku), 14 en total, con equipos un poco más débiles que el líder; hay que vencerlos para retar al gimnasio. Dan 80–350 monedas la primera vez y 15 en revanchas.
+- Economía (rebalanceo tras el análisis de duración): victoria de Liga 75 monedas, derrota 20; perder da un 30% de la experiencia; épicos ~45% más baratos; legendarios 10.000 monedas desde nivel 18 de Entrenador.
 - Ganar una medalla abre una ceremonia animada (la medalla cae girando, estallido, nombre y estuche de medallas).
 - Datos en `shared/src/historia.ts`; arte de líderes en `assets/lideres/` (generar_lideres.py).
 

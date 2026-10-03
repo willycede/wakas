@@ -2,7 +2,7 @@
 
 import {
   ALTO_MANDO, ELEMENTOS, ESPECIES, GIMNASIOS, HABILIDADES_DOMADOR, INICIALES, LEGENDARIOS, LIGAS, MEDALLAS, MOVIMIENTOS, NUM_INICIALES, RAREZAS, TAM_EQUIPO, diaActual,
-  liderPorId, medallasDeHistoria, puedeRetar, TERRENOS, type Lider,
+  liderPorId, medallasDeHistoria, puedeRetar, siguienteRival, avatarLider, esRuta, CAMINO, TERRENOS, type Lider,
   legendarioDelDia, ligaDe, tipos, xpPrimal, type Especie, type Perfil, type Rareza, type Social,
 } from '../../shared/src';
 import { api, spriteUrl } from './api';
@@ -377,9 +377,9 @@ export class Menu {
   private tarjetaHistoria() {
     const h = this.perfil.historia;
     const n = medallasDeHistoria(h).length;
-    const sig = GIMNASIOS.find((g) => !h.gim.includes(g.id)) ?? ALTO_MANDO[h.elite];
+    const sig = siguienteRival(h) ?? ALTO_MANDO[ALTO_MANDO.length - 1];
     return `<div class="hist-card">
-      <div class="hc-lider">${retrato({ modelo: 0, lider: sig.id }, 'grande')}</div>
+      <div class="hc-lider">${retrato(avatarLider(sig), 'grande')}</div>
       <div class="hc-info"><small>${t('hist.sub')}</small><b>${t('hist.title')}</b>
         <span class="hc-medallas">${MEDALLAS.map((m) => `<i class="${medallasDeHistoria(h).includes(m.id) ? 'on' : ''}" style="--c:${ELEMENTOS[MEDALLA_EL[m.id] as keyof typeof ELEMENTOS].color}"></i>`).join('')}<em>${t('hist.medals', { n })}</em></span></div>
       <button class="btn primary" id="btn-hist">${icono('espadas')}${t('hist.go')}</button></div>`;
@@ -387,8 +387,8 @@ export class Menu {
 
   private nodoLider(l: Lider, estado: 'hecho' | 'sig' | 'bloq') {
     const el = ELEMENTOS[l.elemento];
-    return `<button class="hl-nodo ${estado}" data-lider="${l.id}" style="--c:${el.color}">
-      ${retrato({ modelo: 0, lider: l.id }, 'grande')}
+    return `<button class="hl-nodo ${estado} ${esRuta(l.id) ? 'ruta' : ''}" data-lider="${l.id}" style="--c:${el.color}">
+      ${retrato(avatarLider(l), 'grande')}
       <div class="hl-info"><b>${esc(l.nombre)}</b><small>${esc(bi(l.titulo))}</small><span>${icono('bandera')}${esc(bi(l.lugar))}</span></div>
       <div class="hl-el">${[l.elemento, l.elemento2].filter(Boolean).map((e) => `<span class="el mini" style="--c:${ELEMENTOS[e!].color}">${icono(e!)}${nombreElemento(e!)}</span>`).join('')}</div>
       <div class="hl-estado">${estado === 'hecho' ? `${icono('check')}${t('hist.beaten')}` : estado === 'sig' ? t('hist.next') : `${icono('candado')}`}</div>
@@ -397,7 +397,8 @@ export class Menu {
 
   private historia() {
     const h = this.perfil.historia;
-    const gims = GIMNASIOS.map((g, i) => this.nodoLider(g, h.gim.includes(g.id) ? 'hecho' : i === 0 || h.gim.includes(GIMNASIOS[i - 1].id) ? 'sig' : 'bloq')).join('<i class="hl-linea"></i>');
+    // el camino: entrenadores de ruta y gimnasios en orden
+    const gims = CAMINO.map((l) => this.nodoLider(l, h.gim.includes(l.id) || h.ruta?.includes(l.id) ? 'hecho' : puedeRetar(h, l.id) === null ? 'sig' : 'bloq')).join('<i class="hl-linea"></i>');
     const todas = h.gim.length >= GIMNASIOS.length;
     const elite = ALTO_MANDO.map((l, i) => this.nodoLider(l, !todas ? 'bloq' : i < h.elite ? 'hecho' : i === h.elite ? 'sig' : 'bloq')).join('<i class="hl-linea"></i>');
     return `<div class="page historia">
@@ -418,17 +419,18 @@ export class Menu {
     const l = liderPorId(id)!;
     const h = this.perfil.historia;
     const err = puedeRetar(h, id);
-    const vencido = h.gim.includes(id);
+    const vencido = h.gim.includes(id) || !!h.ruta?.includes(id);
     const esGim = GIMNASIOS.includes(l);
     const premio = esGim
       ? (vencido ? t('hist.rewardRematch') : t('hist.reward', { n: l.premio, m: medalla(l.medalla!).nombre }))
+      : esRuta(id) ? (vencido ? t('hist.rewardRuta') : t('hist.rewardCoins', { n: l.premio }))
       : t('hist.rewardCoins', { n: h.campeon ? Math.round(l.premio / 4) : l.premio });
     const equipo = l.equipo.map((e) => `<div class="hl-pri"><img src="${spriteUrl(e.esp)}" alt=""><small>${esc(ESPECIES[e.esp]?.nombre ?? e.esp)} · ${t('misc.level', { n: e.nivel })}</small></div>`).join('');
     const html = `<div class="hl-ficha" style="--c:${ELEMENTOS[l.elemento].color}">
-        <div class="hl-cuerpo">${imgAvatar({ modelo: 0, lider: l.id })}</div>
+        <div class="hl-cuerpo">${imgAvatar(avatarLider(l))}</div>
         <div class="hl-datos"><small>${esc(bi(l.titulo))} · ${esc(bi(l.lugar))}</small><h2 class="display">${esc(l.nombre)}</h2>
           <div class="hl-frase">“${esc(bi(l.frase))}”</div>
-          <div class="hl-terreno">${icono(l.elemento)}<b>${t('hist.terrain')}: ${esc(bi(TERRENOS[l.id].nombre))}</b><small>${textoTerreno(TERRENOS[l.id].efectos).map(esc).join(' · ')}</small></div>
+          ${TERRENOS[l.id] ? `<div class="hl-terreno">${icono(l.elemento)}<b>${t('hist.terrain')}: ${esc(bi(TERRENOS[l.id].nombre))}</b><small>${textoTerreno(TERRENOS[l.id].efectos).map(esc).join(' · ')}</small></div>` : ''}
           <div class="section-title">${t('hist.team')}</div><div class="hl-equipo">${equipo}</div>
           <p class="hl-premio">${icono('moneda')}${esc(premio)}</p>
           ${err ? `<p class="hl-error">${icono('candado')}${esc(tError(err))}</p>` : ''}</div></div>`;

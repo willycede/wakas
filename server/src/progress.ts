@@ -165,10 +165,12 @@ export function recompensar(d: Domador, gano: boolean, empate: boolean, modo: 'l
     d.uso ??= {};
     for (const uid of participaron) { const p = d.primales.find((x) => x.uid === uid); if (p) d.uso[p.esp] = (d.uso[p.esp] ?? 0) + 1; }
   }
-  const xpD = !gano ? 0 : modo === 'captura' ? RECOMPENSAS.captura.xpDomador : base.xpDomador;
+  // perder también enseña: un 30% de la experiencia (en la captura, sobre la de captura)
+  const k = gano ? 1 : empate ? 0.5 : 0.3;
+  const xpD = Math.round((modo === 'captura' ? RECOMPENSAS.captura.xpDomador : RECOMPENSAS.victoria.xpDomador) * k);
   const ups = darXpDomador(d, xpD);
   const bonoXp = 1 + habilidad(d, 'entrenador') + medallasDeHistoria(d.historia).length * BONO_MEDALLA_XP;
-  const xpP = (!gano ? 0 : modo === 'captura' ? RECOMPENSAS.captura.xpPrimal : base.xpPrimal) * bonoXp;
+  const xpP = (modo === 'captura' ? RECOMPENSAS.captura.xpPrimal : RECOMPENSAS.victoria.xpPrimal) * k * bonoXp;
   const xpPrimales: FinBatalla['xpPrimales'] = [];
   for (const uid of d.equipo) {
     const p = d.primales.find((x) => x.uid === uid);
@@ -195,9 +197,15 @@ export function recompensar(d: Domador, gano: boolean, empate: boolean, modo: 'l
 export function resultadoHistoria(d: Domador, liderId: string, gano: boolean, res: FinBatalla) {
   const h = (d.historia ??= historiaVacia());
   const lider = liderPorId(liderId)!;
-  const esGim = GIMNASIOS.includes(lider);
+  const esGim = GIMNASIOS.includes(lider), esElite = ALTO_MANDO.includes(lider);
   let primeraVez = false, campeon = false, reinicio = false, monedas = 0;
-  if (gano) {
+  if (gano && !esGim && !esElite) {
+    // entrenador de ruta
+    h.ruta ??= [];
+    primeraVez = !h.ruta.includes(lider.id);
+    if (primeraVez) h.ruta.push(lider.id);
+    monedas = primeraVez ? lider.premio : 15;
+  } else if (gano) {
     if (esGim) {
       primeraVez = !h.gim.includes(lider.id);
       if (primeraVez) { h.gim.push(lider.id); res.medallasNuevas = [lider.medalla!]; }
@@ -208,7 +216,7 @@ export function resultadoHistoria(d: Domador, liderId: string, gano: boolean, re
       h.elite++;
       if (h.elite >= ALTO_MANDO.length) { h.campeon++; h.elite = 0; campeon = true; }
     }
-  } else if (!esGim && h.elite > 0) {
+  } else if (esElite && h.elite > 0) {
     h.elite = 0;
     reinicio = true;
   }

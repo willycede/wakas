@@ -2,6 +2,7 @@
 // medallas, el Alto Mando: 4 Élite y la Campeona, que hay que vencer seguidos (si pierdes, vuelves a empezar).
 
 import type { Elemento } from './data';
+import type { Avatar } from './avatar';
 
 export interface Lider {
   id: string;
@@ -17,7 +18,11 @@ export interface Lider {
   frase: [string, string]; // antes de pelear
   derrota: [string, string]; // cuando lo vences
   trofeos: number; // decide el estadio y los obstáculos
+  avatar?: Avatar; // entrenadores de ruta: un entrenador normal (los líderes tienen su propio dibujo)
 }
+
+/** Cómo se ve un rival del Modo Historia. */
+export const avatarLider = (l: Lider): Avatar => l.avatar ?? { modelo: 0, lider: l.id };
 
 export const GIMNASIOS: Lider[] = [
   { id: 'nina', nombre: 'Nina', titulo: ['Líder de Fuego', 'Fire Leader'], lugar: ['Baños de Agua Santa', 'Baños de Agua Santa'], elemento: 'fuego', medalla: 'brasa', premio: 150, ia: 0.3, trofeos: 0,
@@ -40,16 +45,16 @@ export const GIMNASIOS: Lider[] = [
     equipo: [{ esp: 'galapon', nivel: 20 }, { esp: 'taranton', nivel: 20 }, { esp: 'martillazo', nivel: 22 }],
     frase: ['Estas piedras llevan siglos en pie. Mis Primales son igual de duros de derribar.', 'These stones have stood for centuries. My Primals are just as hard to topple.'],
     derrota: ['Partiste la roca. Pocos lo logran: la Medalla Roca es tuya.', 'You cracked the rock. Few manage it: the Boulder Badge is yours.'] },
-  { id: 'wayra', nombre: 'Wayra', titulo: ['Líder de Viento', 'Wind Leader'], lugar: ['Laguna del Quilotoa', 'Quilotoa Lagoon'], elemento: 'viento', medalla: 'vendaval', premio: 650, ia: 0.64, trofeos: 1000,
-    equipo: [{ esp: 'quindazo', nivel: 23 }, { esp: 'harpiandina', nivel: 24 }, { esp: 'fragatormenta', nivel: 25 }],
+  { id: 'wayra', nombre: 'Wayra', titulo: ['Líder de Viento', 'Wind Leader'], lugar: ['Laguna del Quilotoa', 'Quilotoa Lagoon'], elemento: 'viento', medalla: 'vendaval', premio: 650, ia: 0.55, trofeos: 1000,
+    equipo: [{ esp: 'patazul', nivel: 22 }, { esp: 'quindazo', nivel: 23 }, { esp: 'fragatormenta', nivel: 24 }],
     frase: ['Sobre el cráter del Quilotoa el viento no avisa. ¿Podrás seguirle el ritmo?', 'Above the Quilotoa crater the wind gives no warning. Can you keep up?'],
     derrota: ['Volaste más alto que mi vendaval. Toma la Medalla Vendaval.', 'You flew higher than my gale. Take the Gale Badge.'] },
-  { id: 'tuta', nombre: 'Tuta', titulo: ['Líder de Sombra', 'Shadow Leader'], lugar: ['Cueva de los Tayos', 'Cave of the Tayos'], elemento: 'sombra', medalla: 'umbral', premio: 750, ia: 0.7, trofeos: 1800,
-    equipo: [{ esp: 'chusikar', nivel: 27 }, { esp: 'otorongo', nivel: 28 }, { esp: 'ayahuma', nivel: 29 }],
+  { id: 'tuta', nombre: 'Tuta', titulo: ['Líder de Sombra', 'Shadow Leader'], lugar: ['Cueva de los Tayos', 'Cave of the Tayos'], elemento: 'sombra', medalla: 'umbral', premio: 750, ia: 0.57, trofeos: 1800,
+    equipo: [{ esp: 'taranton', nivel: 25 }, { esp: 'piranazo', nivel: 25 }, { esp: 'chusikar', nivel: 26 }],
     frase: ['En la oscuridad de los Tayos, solo los valientes encuentran la salida.', 'In the darkness of the Tayos, only the brave find the way out.'],
     derrota: ['Encontraste la luz en mi oscuridad. La Medalla Umbral es tuya.', 'You found light in my darkness. The Threshold Badge is yours.'] },
-  { id: 'rasu', nombre: 'Rasu', titulo: ['Líder de Hielo', 'Ice Leader'], lugar: ['Volcán Chimborazo', 'Chimborazo Volcano'], elemento: 'hielo', medalla: 'nevado', premio: 900, ia: 0.76, trofeos: 1800,
-    equipo: [{ esp: 'ukumarasu', nivel: 31 }, { esp: 'atukrasu', nivel: 32 }, { esp: 'cotopaxor', nivel: 33 }],
+  { id: 'rasu', nombre: 'Rasu', titulo: ['Líder de Hielo', 'Ice Leader'], lugar: ['Volcán Chimborazo', 'Chimborazo Volcano'], elemento: 'hielo', medalla: 'nevado', premio: 900, ia: 0.86, trofeos: 1800,
+    equipo: [{ esp: 'ukumarasu', nivel: 33 }, { esp: 'atukrasu', nivel: 34 }, { esp: 'cotopaxor', nivel: 35 }],
     frase: ['Estás en el punto más cercano al Sol. Aquí arriba, el hielo pone a prueba a los mejores.', 'You stand at the point closest to the Sun. Up here, the ice tests the very best.'],
     derrota: ['Ocho medallas… El Alto Mando te espera, Entrenador. Toma la Medalla Nevado.', 'Eight badges… The Elite Four awaits you, Trainer. Take the Summit Badge.'] },
 ];
@@ -77,30 +82,90 @@ export const ALTO_MANDO: Lider[] = [
     derrota: ['Increíble… Desde hoy eres el nuevo Campeón de la Liga Primal. ¡Tu nombre quedará en el Salón de la Fama!', 'Incredible… From today you are the new Primal League Champion. Your name will live in the Hall of Fame!'] },
 ];
 
-export const LIDERES: Lider[] = [...GIMNASIOS, ...ALTO_MANDO];
+// Entrenadores de ruta: dos en el camino hacia cada gimnasio (desde el segundo). Hay que vencerlos para
+// poder retar al líder; son más fáciles que él y dan monedas y experiencia.
+const ruta = (id: string, nombre: string, titulo: [string, string], lugar: [string, string], elemento: Elemento, avatar: Avatar, equipo: [string, number][], ia: number, premio: number, trofeos: number, frase: [string, string], derrota: [string, string]): Lider =>
+  ({ id, nombre, titulo, lugar, elemento, avatar, equipo: equipo.map(([esp, nivel]) => ({ esp, nivel })), ia, premio, trofeos, frase, derrota });
+export const RUTAS: Record<string, Lider[]> = {
+  yaku: [
+    ruta('rosa', 'Rosa', ['Vendedora de encebollado', 'Encebollado vendor'], ['Camino a Montañita', 'Road to Montañita'], 'electrico', { modelo: 5, arriba: 0, abajo: 9 }, [['chispez', 8], ['piquerito', 8]], 0.3, 80, 0,
+      ['¡Encebollado calientito! Pero primero, ¡una batalla!', 'Hot encebollado! But first, a battle!'], ['Ganaste… ¡te invito un encebollado!', 'You won… the encebollado is on me!']),
+    ruta('kevin', 'Kevin', ['Surfista', 'Surfer'], ['Camino a Montañita', 'Road to Montañita'], 'viento', { modelo: 6 }, [['quindito', 9], ['capibin', 9], ['pelusin', 10]], 0.34, 100, 0,
+      ['¡Hoy hay olas buenas! Y yo, ganas de pelear.', 'Great waves today! And I’m in the mood for a fight.'], ['Me revolcaste, ñaño. ¡Suerte con Yaku!', 'You wiped me out, bro. Good luck with Yaku!']),
+  ],
+  sacha: [
+    ruta('andres', 'Andrés', ['Observador de aves', 'Birdwatcher'], ['Camino a Mindo', 'Road to Mindo'], 'viento', { modelo: 7, arriba: 3 }, [['tucanin', 11], ['piranin', 11]], 0.38, 120, 400,
+      ['¡Shhh! Vas a espantar a los colibríes… ¡Pelea en silencio!', 'Shhh! You’ll scare the hummingbirds… fight quietly!'], ['Vuelas más alto que mis tucanes.', 'You fly higher than my toucans.']),
+    ruta('lucia', 'Lucía', ['Botánica', 'Botanist'], ['Camino a Mindo', 'Road to Mindo'], 'planta', { modelo: 3, arriba: 3, abajo: 1 }, [['frailito', 12], ['dardin', 12], ['aullin', 13]], 0.42, 140, 400,
+      ['Estudio orquídeas… y Primales fuertes.', 'I study orchids… and strong Primals.'], ['Interesante. Anotaré esta derrota en mi cuaderno.', 'Interesting. I’ll write this loss in my notebook.']),
+  ],
+  illapa: [
+    ruta('jacinto', 'Don Jacinto', ['Pescador', 'Fisherman'], ['Camino a Guayaquil', 'Road to Guayaquil'], 'agua', { modelo: 9, gorra: 10, arriba: 5 }, [['galapon', 15], ['pinzin', 15]], 0.45, 150, 400,
+      ['Cuarenta años pescando en el Guayas. ¡No me vas a ganar tan fácil!', 'Forty years fishing the Guayas. You won’t beat me that easily!'], ['¡Qué pesca la tuya, mijo!', 'What a catch you are, kid!']),
+    ruta('bryan', 'Bryan', ['Repartidor en moto', 'Delivery rider'], ['Camino a Guayaquil', 'Road to Guayaquil'], 'electrico', { modelo: 14, arriba: 0, gorra: 0 }, [['anguilampo', 16], ['harpin', 16], ['cuernin', 17]], 0.48, 170, 400,
+      ['¡Pedido urgente! Te despacho en un minuto.', 'Rush order! I’ll deliver you a loss in a minute.'], ['Llegué tarde… y perdí. Mal día.', 'Late delivery… and a loss. Bad day.']),
+  ],
+  rumi: [
+    ruta('mateo', 'Mateo', ['Ciclista', 'Cyclist'], ['Camino a Ingapirca', 'Road to Ingapirca'], 'fuego', { modelo: 0, gorra: 2, arriba: 2 }, [['llamaradon', 19], ['piranazo', 19]], 0.52, 190, 1000,
+      ['Subí todo el Cajas en bici. ¡Tengo piernas para pelear!', 'I rode all of El Cajas. I’ve got legs to fight!'], ['Me quedé sin aire… bien jugado.', 'Out of breath… well played.']),
+    ruta('daniela', 'Daniela', ['Arqueóloga', 'Archaeologist'], ['Camino a Ingapirca', 'Road to Ingapirca'], 'roca', { modelo: 2, arriba: 12, abajo: 12 }, [['pumita', 20], ['tapirin', 20], ['amaruto', 21]], 0.55, 210, 1000,
+      ['Estas ruinas guardan secretos. Mis Primales también.', 'These ruins keep secrets. So do my Primals.'], ['Tu estilo merece estar en un museo.', 'Your style belongs in a museum.']),
+  ],
+  wayra: [
+    ruta('sisa', 'Sisa', ['Pastora de llamas', 'Llama herder'], ['Camino al Quilotoa', 'Road to Quilotoa'], 'agua', { modelo: 4, arriba: 0 }, [['patazul', 23], ['dardosa', 23]], 0.57, 230, 1000,
+      ['Mis llamas se cansaron, ¡pero mis Primales no!', 'My llamas got tired, but my Primals didn’t!'], ['Arre… me ganaste. Sigue el camino al cráter.', 'Well… you won. Keep going to the crater.']),
+    ruta('ivan', 'Iván', ['Kayakista', 'Kayaker'], ['Camino al Quilotoa', 'Road to Quilotoa'], 'viento', { modelo: 10, arriba: 4 }, [['tucanazo', 24], ['aullatrueno', 24], ['vicunieve', 24]], 0.58, 250, 1000,
+      ['Remé toda la laguna para esperarte.', 'I paddled the whole lagoon to wait for you.'], ['Me volteaste el kayak. ¡Wayra te espera!', 'You flipped my kayak. Wayra awaits!']),
+  ],
+  tuta: [
+    ruta('camila', 'Camila', ['Espeleóloga', 'Cave explorer'], ['Camino a los Tayos', 'Road to the Tayos'], 'roca', { modelo: 8, gorra: 2, arriba: 1 }, [['taranton', 25], ['piranazo', 25]], 0.57, 270, 1800,
+      ['Ahí abajo no se ve nada. ¿Tienes miedo a la oscuridad?', 'You can’t see a thing down there. Afraid of the dark?'], ['Tienes luz propia. Vas a necesitarla.', 'You shine on your own. You’ll need it.']),
+    ruta('nantu', 'Nantu', ['Guía de la selva', 'Jungle guide'], ['Camino a los Tayos', 'Road to the Tayos'], 'sombra', { modelo: 10, arriba: 3, abajo: 12 }, [['chusikar', 25], ['caimanegro', 25], ['dardosa', 26]], 0.59, 290, 1800,
+      ['La selva cuida a quien la respeta. Demuestra que la respetas.', 'The jungle protects those who respect it. Show me you do.'], ['Pasas. Que la selva te acompañe.', 'You may pass. May the jungle walk with you.']),
+  ],
+  rasu: [
+    ruta('tomas', 'Tomás', ['Hielero', 'Ice harvester'], ['Camino al Chimborazo', 'Road to Chimborazo'], 'hielo', { modelo: 9, gorra: 11, arriba: 12 }, [['ukumari', 29], ['frailejon', 29]], 0.65, 320, 1800,
+      ['Bajo hielo del nevado desde niño. Esto no es nada.', 'I’ve carried ice down the mountain since I was a boy. This is nothing.'], ['Tienes más fuerza que mi burrito.', 'You’re stronger than my donkey.']),
+    ruta('valeria', 'Valeria', ['Andinista', 'Mountaineer'], ['Camino al Chimborazo', 'Road to Chimborazo'], 'hielo', { modelo: 11, gorra: 0, arriba: 0 }, [['galapingo', 31], ['vicunieve', 31], ['ranacristal', 32]], 0.7, 350, 1800,
+      ['Seis mil metros de altura. Aquí arriba solo llegan los fuertes.', 'Six thousand meters high. Only the strong make it up here.'], ['Llegaste a la cumbre. Rasu te espera.', 'You reached the summit. Rasu awaits.']),
+  ],
+};
+
+export const LIDERES: Lider[] = [...GIMNASIOS, ...ALTO_MANDO, ...Object.values(RUTAS).flat()];
+/** El camino completo en orden: gimnasio 1, ruta, gimnasio 2, ruta, … gimnasio 8. */
+export const CAMINO: Lider[] = GIMNASIOS.flatMap((g) => [...(RUTAS[g.id] ?? []), g]);
+export const esRuta = (id: string) => Object.values(RUTAS).some((r) => r.some((x) => x.id === id));
 export const liderPorId = (id: string) => LIDERES.find((l) => l.id === id);
 
 export interface ProgresoHistoria {
   gim: string[]; // gimnasios vencidos
+  ruta?: string[]; // entrenadores de ruta vencidos
   elite: number; // cuántos del Alto Mando llevas seguidos en este intento (0-5)
   campeon: number; // veces que venciste a la Campeona
 }
-export const historiaVacia = (): ProgresoHistoria => ({ gim: [], elite: 0, campeon: 0 });
+export const historiaVacia = (): ProgresoHistoria => ({ gim: [], ruta: [], elite: 0, campeon: 0 });
+const vencido = (h: ProgresoHistoria, id: string) => h.gim.includes(id) || !!h.ruta?.includes(id);
 
 /** Medallas ganadas (una por gimnasio vencido). */
 export const medallasDeHistoria = (h: ProgresoHistoria | undefined) => GIMNASIOS.filter((g) => h?.gim.includes(g.id)).map((g) => g.medalla!);
 
 /** Siguiente rival disponible, o null si ya está todo hecho en este intento. */
 export function siguienteRival(h: ProgresoHistoria): Lider | null {
-  const g = GIMNASIOS.find((x) => !h.gim.includes(x.id));
+  const g = CAMINO.find((x) => !vencido(h, x.id));
   if (g) return g;
   return ALTO_MANDO[h.elite] ?? null;
 }
 
 /** ¿Se puede retar a este líder ahora? (null = sí; si no, el motivo) */
 export function puedeRetar(h: ProgresoHistoria, id: string): string | null {
-  const gi = GIMNASIOS.findIndex((x) => x.id === id);
-  if (gi >= 0) return gi === 0 || h.gim.includes(GIMNASIOS[gi - 1].id) ? null : 'Primero vence al gimnasio anterior.';
+  const ci = CAMINO.findIndex((x) => x.id === id);
+  if (ci >= 0) {
+    if (vencido(h, id)) return null; // revancha
+    const antes = CAMINO.slice(0, ci);
+    const gAnt = [...antes].reverse().find((x) => GIMNASIOS.includes(x));
+    if (gAnt && !h.gim.includes(gAnt.id)) return 'Primero vence al gimnasio anterior.';
+    return antes.every((x) => vencido(h, x.id)) ? null : 'Primero vence a los entrenadores del camino.';
+  }
   const ei = ALTO_MANDO.findIndex((x) => x.id === id);
   if (ei < 0) return 'Ese rival no existe.';
   if (h.gim.length < GIMNASIOS.length) return 'Necesitas las 8 medallas para retar al Alto Mando.';
@@ -120,7 +185,7 @@ export const TERRENOS: Record<string, Terreno> = {
   illapa: { nombre: ['Red eléctrica', 'Power grid'], efectos: [{ el: ['electrico'], stat: 'velocidad', mult: 1.25 }, { el: ['agua'], stat: 'defensa', mult: 0.85 }] },
   rumi: { nombre: ['Muros de Ingapirca', 'Walls of Ingapirca'], efectos: [{ el: ['roca'], stat: 'defensa', mult: 1.25 }, { el: ['viento'], stat: 'ataque', mult: 0.9 }] },
   wayra: { nombre: ['Vendaval del cráter', 'Crater gale'], efectos: [{ el: ['viento'], stat: 'velocidad', mult: 1.2 }, { el: ['viento'], stat: 'ataque', mult: 1.1 }, { el: ['roca'], stat: 'velocidad', mult: 0.88 }] },
-  tuta: { nombre: ['Oscuridad total', 'Total darkness'], efectos: [{ el: ['sombra'], stat: 'ataque', mult: 1.2 }, { el: ['luz'], stat: 'ataque', mult: 0.85 }] },
+  tuta: { nombre: ['Oscuridad total', 'Total darkness'], efectos: [{ el: ['sombra'], stat: 'ataque', mult: 1.1 }, { el: ['luz'], stat: 'ataque', mult: 0.85 }] },
   rasu: { nombre: ['Ventisca', 'Blizzard'], efectos: [{ el: ['hielo'], stat: 'defensa', mult: 1.2 }, { el: ['hielo'], stat: 'ataque', mult: 1.1 }, { el: ['fuego'], stat: 'vida', mult: 0.88 }] },
   amaru: { nombre: ['Templo del río', 'River temple'], efectos: [{ el: ['agua', 'planta'], stat: 'vida', mult: 1.12 }] },
   supay: { nombre: ['Diablada en llamas', 'Blazing diablada'], efectos: [{ el: ['sombra', 'fuego'], stat: 'ataque', mult: 1.12 }] },
@@ -152,7 +217,7 @@ export const DIALOGOS: Record<string, Dialogos> = {
   wayra: { koSuyo: ['El viento cambió de dirección…', 'The wind changed direction…'], koTuyo: ['¡Volando al cráter!', 'Flying into the crater!'],
     ultimo: ['Fragatormenta, ¡llévate todo!', 'Fragatormenta, sweep it all away!'], especial: ['¡Vendaval del Quilotoa!', 'Quilotoa gale!'] },
   tuta: { koSuyo: ['La sombra se desvanece… por ahora.', 'The shadow fades… for now.'], koTuyo: ['La oscuridad te tragó.', 'The darkness swallowed you.'],
-    ultimo: ['Ayahuma… muéstrales el miedo.', 'Ayahuma… show them fear.'], especial: ['¡Que se apaguen las luces!', 'Lights out!'] },
+    ultimo: ['Chusikar… muéstrales el miedo.', 'Chusikar… show them fear.'], especial: ['¡Que se apaguen las luces!', 'Lights out!'] },
   rasu: { koSuyo: ['Ja, ja… tienes sangre caliente.', 'Ha ha… you’ve got warm blood.'], koTuyo: ['¡Congelado en la cumbre!', 'Frozen at the summit!'],
     ultimo: ['Cotopaxor, defiende la montaña.', 'Cotopaxor, defend the mountain.'], especial: ['¡Ventisca del Chimborazo!', 'Chimborazo blizzard!'] },
   amaru: { koSuyo: ['El río se desvía… no se detiene.', 'The river turns… it never stops.'], koTuyo: ['¡Atrapado por la serpiente!', 'Caught by the serpent!'],

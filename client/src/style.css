@@ -1093,3 +1093,9 @@ input:focus { outline: none; box-shadow: inset 0 0 0 2px var(--gold), 0 0 0 4px 
 .med-cer.listo .mc-toca { animation: mc-parpadea 1.4s ease-in-out infinite; }
 @keyframes mc-parpadea { 50% { opacity: .9; } }
 @media (max-width: 760px) { .mc-escena { width: 150px; height: 150px; } .mc-centro svg { width: 52px; height: 52px; } .mc-aro { inset: 12px; } .mc-centro { inset: 26px; } .mc-slot { width: 24px; height: 24px; } .mc-estuche { gap: 5px; } }
+
+/* entrenadores de ruta: nodos más pequeños entre gimnasios */
+.hl-nodo.ruta { margin-left: 26px; padding: 6px 12px; background: rgba(255,255,255,.04); }
+.hl-nodo.ruta .retrato { width: 44px; height: 44px; box-shadow: inset 0 0 0 2px rgba(255,255,255,.25); }
+.hl-nodo.ruta .hl-info b { font-size: 15px; }
+.hl-nodo.ruta .hl-el { display: none; }

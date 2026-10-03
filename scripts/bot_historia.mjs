@@ -25,6 +25,20 @@ ok(p.historia.gim.includes('nina'), 'progreso guardado');
 err = await call('POST', '/api/historia/retar', { id: 'amaru' }, A.token).catch((e) => e.message);
 ok(/8 medallas/.test(err), 'Alto Mando bloqueado sin 8 medallas');
 
+// entrenadores de ruta: Yaku pide vencer antes a Rosa y a Kevin, en orden
+err = await call('POST', '/api/historia/retar', { id: 'yaku' }, A.token).catch((e) => e.message);
+ok(/camino/.test(err), 'Yaku bloqueado sin los entrenadores del camino');
+err = await call('POST', '/api/historia/retar', { id: 'kevin' }, A.token).catch((e) => e.message);
+ok(/camino/.test(err), 'Kevin bloqueado sin vencer antes a Rosa');
+for (const id of ['rosa', 'kevin']) {
+  r = await A.pelear((await call('POST', '/api/historia/retar', { id }, A.token)).roomId);
+  log(id + ':', JSON.stringify(r.fin.historia), 'monedas', r.fin.monedas);
+  ok(r.fin.gano && r.fin.historia.primeraVez, 'vencido ' + id);
+}
+const yaku = await call('POST', '/api/historia/retar', { id: 'yaku' }, A.token);
+ok(!!yaku.roomId, 'Yaku disponible tras el camino');
+await A.pelear(yaku.roomId);
+
 // Alto Mando: con las 8 medallas, vencer a Amaru, no poder saltar, perder con Supay y volver a empezar
 await call('POST', '/api/truco', { historia: { gim: ['nina', 'yaku', 'sacha', 'illapa', 'rumi', 'wayra', 'tuta', 'rasu'], elite: 0, campeon: 0 } }, A.token);
 r = await A.pelear((await call('POST', '/api/historia/retar', { id: 'amaru' }, A.token)).roomId);

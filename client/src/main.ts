@@ -13,7 +13,7 @@ import { nombreMov } from './i18n';
 import { api, getToken, setToken, spriteUrl } from './api';
 import { BatallaScene } from './battle';
 import { alCambiarIdioma, aplicarHtml, bi, cambiarIdioma, idioma, medalla, t, tError } from './i18n';
-import { liderPorId, medallasDeHistoria } from '../../shared/src';
+import { avatarLider, liderPorId, medallasDeHistoria } from '../../shared/src';
 import { ceremoniaMedalla } from './medalla';
 import { retrato } from './avatar';
 import { icono } from './iconos';
@@ -234,7 +234,7 @@ async function terminar(r: FinBatalla) {
   const lider = r.historia ? liderPorId(r.historia.lider) : undefined;
   const historia = !r.historia || !lider ? '' : `
     ${r.historia.campeon ? `<div class="res-campeon">${icono('corona')}<b>${t('hist.champion')}</b><small>${t('hist.championTxt')}</small></div>` : ''}
-    <div class="res-lider">${retrato({ modelo: 0, lider: lider.id }, 'grande')}<div><b>${esc(lider.nombre)}</b><p>“${esc(r.gano ? bi(lider.derrota) : bi(lider.frase))}”</p></div></div>
+    <div class="res-lider">${retrato(avatarLider(lider), 'grande')}<div><b>${esc(lider.nombre)}</b><p>“${esc(r.gano ? bi(lider.derrota) : bi(lider.frase))}”</p></div></div>
     ${r.historia.elite && !r.historia.campeon ? `<div class="banner-line">${icono('corona')}${t('hist.eliteProg', { n: r.historia.elite })}</div>` : ''}
     ${r.historia.reinicio ? `<div class="banner-line info">${t('hist.reset')}</div>` : ''}`;
   const panel = $('result-body');
